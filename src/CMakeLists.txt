@@ -29,19 +29,23 @@ endif()
 
 # === Утилиты ===
 add_library(engicalc_util STATIC
+    util/theme.cpp
     util/placeholder.cpp
 )
 target_include_directories(engicalc_util PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_BINARY_DIR}/generated
 )
-target_link_libraries(engicalc_util PUBLIC Qt6::Core)
+target_link_libraries(engicalc_util PUBLIC Qt6::Core Qt6::Gui)
 
 # === Исполняемый файл ===
 add_executable(EngiCalc
     main.cpp
     ui/mainwindow.cpp
     ui/mainwindow.h
+    ui/navigation.cpp
+    ui/navigation.h
+    ${CMAKE_SOURCE_DIR}/resources/resource.qrc
 )
 target_include_directories(EngiCalc PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
