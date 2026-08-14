@@ -49,6 +49,8 @@ CableTab::CableTab(QWidget *parent) : QWidget(parent) {
     rl->setSpacing(16);
     setupResult(rc, rl);
     ml->addWidget(rc);
+
+    onCalculate();
 }
 
 void CableTab::setupInput(QWidget* c, QVBoxLayout* l) {

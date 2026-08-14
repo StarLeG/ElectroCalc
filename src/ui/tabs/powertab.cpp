@@ -203,7 +203,7 @@ void PowerTab::setupResultCard(QWidget* card, QVBoxLayout* layout)
     m_formulaPanel = new QFrame(card);
     m_formulaPanel->setObjectName("NormativePanel");
     m_formulaPanel->setStyleSheet(
-        "background: #2E343F; border: 1px solid #3A414D; border-radius: 8px; padding: 14px;");
+        "background: #2E343F; border: none; border-radius: 8px; padding: 14px;");
     m_formulaPanel->setVisible(false);
 
     auto* fpLayout = new QVBoxLayout(m_formulaPanel);

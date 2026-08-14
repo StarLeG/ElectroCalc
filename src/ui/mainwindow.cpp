@@ -28,6 +28,21 @@
 #include <QStatusBar>
 #include <QApplication>
 
+// Хлебные крошки для каждой вкладки
+static const char* BREADCRUMBS[] = {
+    "Электрика / Мощность и ток",
+    "Электрика / Кабели",
+    "Электрика / Потери напряжения",
+    "Электрика / Токи КЗ",
+    "Электрика / Заземление",
+    "Электрика / Автозащита",
+    "КИПиА / Расчёт",
+    "КИПиА / Датчики",
+    "КИПиА / Настройка",
+    "Проект / Отчёт",
+    "Проект / Справочник"
+};
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , m_theme(new Util::Theme)
@@ -35,6 +50,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_contentStack(nullptr)
     , m_themeToggle(nullptr)
     , m_versionLabel(nullptr)
+    , m_breadcrumb(nullptr)
 {
     setupUI();
     applyTheme();
@@ -73,11 +89,10 @@ void MainWindow::setupUI()
     auto* logoCalc = new QLabel("Calc", topBar);
     logoCalc->setObjectName("LogoAccent");
 
-    auto* breadcrumb = new QLabel("Электрика / Мощность и ток", topBar);
-    breadcrumb->setStyleSheet(
+    m_breadcrumb = new QLabel(BREADCRUMBS[0], topBar);
+    m_breadcrumb->setStyleSheet(
         "font-size: 13px; color: #9AA4B2; background: transparent; border: none; padding: 0;");
 
-    // Кнопки в правой части
     auto* langBtn = new QPushButton("RU / EN", topBar);
     langBtn->setStyleSheet(
         "background: transparent; color: #9AA4B2; border: 1px solid #3A414D;"
@@ -92,7 +107,7 @@ void MainWindow::setupUI()
     topLayout->addWidget(logoE);
     topLayout->addWidget(logoCalc);
     topLayout->addSpacing(24);
-    topLayout->addWidget(breadcrumb);
+    topLayout->addWidget(m_breadcrumb);
     topLayout->addStretch();
     topLayout->addWidget(langBtn);
     topLayout->addSpacing(8);
@@ -104,17 +119,17 @@ void MainWindow::setupUI()
     m_contentStack = new QStackedWidget(rightPanel);
 
     // Вкладки — порядок соответствует навигации
-    m_contentStack->addWidget(new Ui::PowerTab(rightPanel));          // 0: Мощность
-    m_contentStack->addWidget(new Ui::CableTab(rightPanel));          // 1: Кабели
-    m_contentStack->addWidget(new Ui::VoltageDropTab(rightPanel));    // 2: Потери
-    m_contentStack->addWidget(new Ui::ShortCircuitTab(rightPanel));   // 3: КЗ
-    m_contentStack->addWidget(new Ui::GroundingTab(rightPanel));      // 4: Заземление
-    m_contentStack->addWidget(new Ui::ProtectionTab(rightPanel));     // 5: Защита
-    m_contentStack->addWidget(new Ui::KipiaTab(rightPanel));          // 6: КИПиА (токовая петля, масштаб, RTD)
-    m_contentStack->addWidget(new Ui::KipiaTab(rightPanel));          // 7: КИПиА (датчики)
-    m_contentStack->addWidget(new Ui::KipiaTab(rightPanel));          // 8: КИПиА (ПИД, погрешности)
-    m_contentStack->addWidget(new QWidget(rightPanel));               // 9: Отчёт (заглушка)
-    m_contentStack->addWidget(new Ui::ReferenceBrowser(rightPanel));  // 10: Справка
+    m_contentStack->addWidget(new Ui::PowerTab(rightPanel));          // 0
+    m_contentStack->addWidget(new Ui::CableTab(rightPanel));          // 1
+    m_contentStack->addWidget(new Ui::VoltageDropTab(rightPanel));    // 2
+    m_contentStack->addWidget(new Ui::ShortCircuitTab(rightPanel));   // 3
+    m_contentStack->addWidget(new Ui::GroundingTab(rightPanel));      // 4
+    m_contentStack->addWidget(new Ui::ProtectionTab(rightPanel));     // 5
+    m_contentStack->addWidget(new Ui::KipiaTab(rightPanel));          // 6
+    m_contentStack->addWidget(new Ui::KipiaTab(rightPanel));          // 7
+    m_contentStack->addWidget(new Ui::KipiaTab(rightPanel));          // 8
+    m_contentStack->addWidget(new QWidget(rightPanel));               // 9
+    m_contentStack->addWidget(new Ui::ReferenceBrowser(rightPanel));  // 10
 
     rightLayout->addWidget(m_contentStack);
 
@@ -123,7 +138,6 @@ void MainWindow::setupUI()
 
     setCentralWidget(central);
 
-    // Статус-бар
     setupStatusBar();
 }
 
@@ -164,7 +178,6 @@ void MainWindow::setupStatusBar()
     statusBar->setObjectName("StatusBar");
 
     auto* hintLabel = new QLabel("Готово", this);
-
     auto* cosPhiLabel = new QLabel("cos φ: 0.85", this);
     cosPhiLabel->setStyleSheet("color: #9AA4B2; font-size: 11px;");
 
@@ -189,6 +202,11 @@ void MainWindow::onTabRequested(int index)
 {
     if (index >= 0 && index < m_contentStack->count()) {
         m_contentStack->setCurrentIndex(index);
+
+        // Обновить хлебные крошки
+        if (index >= 0 && index < 11) {
+            m_breadcrumb->setText(BREADCRUMBS[index]);
+        }
     }
 }
 

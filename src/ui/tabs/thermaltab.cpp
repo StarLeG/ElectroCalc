@@ -67,6 +67,7 @@ ThermalTab::ThermalTab(QWidget* p):QWidget(p){
     m_normativeText=new QLabel("",m_formulaPanel); m_normativeText->setStyleSheet("font-size:12px;color:#9AA4B2;font-style:italic;"); fl->addWidget(m_normativeText);
     rl2->addWidget(m_formulaPanel); rl2->addStretch();
     ml->addWidget(rc);
+    onCalculate();
 }
 void ThermalTab::onCalculate(){
     bool ok1,ok2,ok3,ok4;

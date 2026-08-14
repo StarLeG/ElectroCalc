@@ -27,6 +27,7 @@ VoltageDropTab::VoltageDropTab(QWidget* p):QWidget(p){
     auto* rc=new QFrame(this); rc->setObjectName("Card");
     auto* rl=new QVBoxLayout(rc); rl->setContentsMargins(24,24,24,24); rl->setSpacing(16);
     setupResult(rc,rl); ml->addWidget(rc);
+    onCalculate();
 }
 void VoltageDropTab::setupInput(QWidget* c, QVBoxLayout* l){
     l->addWidget(new QLabel("Исходные данные",c));

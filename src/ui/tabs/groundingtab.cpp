@@ -61,6 +61,7 @@ GroundingTab::GroundingTab(QWidget* p):QWidget(p){
     m_normativeText=new QLabel("",m_formulaPanel); m_normativeText->setStyleSheet("font-size:12px;color:#9AA4B2;font-style:italic;"); fl->addWidget(m_normativeText);
     rl->addWidget(m_formulaPanel); rl->addStretch();
     ml->addWidget(rc);
+    onCalculate();
 }
 void GroundingTab::onCalculate(){
     bool ok1,ok2,ok3,ok4;

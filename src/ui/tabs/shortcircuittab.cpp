@@ -59,6 +59,7 @@ ShortCircuitTab::ShortCircuitTab(QWidget* p):QWidget(p){
     m_normativeText=new QLabel("",m_formulaPanel); m_normativeText->setStyleSheet("font-size:12px;color:#9AA4B2;font-style:italic;"); fl->addWidget(m_normativeText);
     rl->addWidget(m_formulaPanel); rl->addStretch();
     ml->addWidget(rc);
+    onCalculate();
 }
 void ShortCircuitTab::onCalculate(){
     bool ok1,ok2; double U=m_voltageEdit->text().toDouble(&ok1); double Z=m_impedanceEdit->text().toDouble(&ok2);

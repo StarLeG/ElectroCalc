@@ -42,6 +42,7 @@ private:
     QStackedWidget* m_contentStack;
     QPushButton* m_themeToggle;
     QLabel* m_versionLabel;
+    QLabel* m_breadcrumb;
 };
 
 #endif // UI_MAINWINDOW_H
