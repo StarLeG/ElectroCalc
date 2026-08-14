@@ -30,6 +30,7 @@ endif()
 # === Утилиты ===
 add_library(engicalc_util STATIC
     util/theme.cpp
+    util/unitconverter.cpp
     util/placeholder.cpp
 )
 target_include_directories(engicalc_util PUBLIC
@@ -61,6 +62,10 @@ add_executable(EngiCalc
     ui/tabs/energytab.h
     ui/tabs/protectiontab.cpp
     ui/tabs/protectiontab.h
+    ui/referencebrowser.cpp
+    ui/referencebrowser.h
+    models/cabledatamodel.cpp
+    models/cabledatamodel.h
     ${CMAKE_SOURCE_DIR}/resources/resource.qrc
 )
 target_include_directories(EngiCalc PRIVATE

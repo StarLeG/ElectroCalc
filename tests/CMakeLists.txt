@@ -32,10 +32,12 @@ add_executable(core_tests
     unit/thermal_test.cpp
     unit/energy_test.cpp
     unit/protection_test.cpp
+    unit/unitconverter_test.cpp
 )
 target_link_libraries(core_tests PRIVATE
     GTest::gtest_main
     engicalc_core
+    engicalc_util
 )
 target_include_directories(core_tests PRIVATE
     ${CMAKE_SOURCE_DIR}/src

@@ -12,6 +12,7 @@
 #include "tabs/thermaltab.h"
 #include "tabs/energytab.h"
 #include "tabs/protectiontab.h"
+#include "referencebrowser.h"
 #include "util/theme.h"
 #include "util/constants.h"
 #include "version.h"
@@ -110,8 +111,8 @@ void MainWindow::setupUI()
     m_contentStack->addWidget(new Ui::EnergyTab(rightPanel));         // 6: Энергия
     m_contentStack->addWidget(new Ui::ProtectionTab(rightPanel));     // 7: Защита
 
-    // Заглушки для оставшихся вкладок (КИПиА, Справочник, Проект)
-    for (int i = 8; i <= 10; ++i) {
+    // Заглушки для КИПиА
+    for (int i = 8; i <= 9; ++i) {
         auto* stub = new QWidget(rightPanel);
         auto* stubLayout = new QVBoxLayout(stub);
         stubLayout->setAlignment(Qt::AlignCenter);
@@ -121,6 +122,9 @@ void MainWindow::setupUI()
         stubLayout->addWidget(stubLabel);
         m_contentStack->addWidget(stub);
     }
+
+    // Справочник (таблица кабелей, конвертер, справочник)
+    m_contentStack->addWidget(new Ui::ReferenceBrowser(rightPanel)); // 10: Справка
 
     rightLayout->addWidget(m_contentStack);
 
