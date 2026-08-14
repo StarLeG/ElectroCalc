@@ -1,6 +1,13 @@
 # === Ядро расчётов (static lib, без Qt Widgets) ===
 add_library(engicalc_core STATIC
-    core/placeholder.cpp
+    core/power.cpp
+    core/cable.cpp
+    core/voltage_drop.cpp
+    core/short_circuit.cpp
+    core/grounding.cpp
+    core/thermal.cpp
+    core/energy.cpp
+    core/protection.cpp
 )
 target_include_directories(engicalc_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
