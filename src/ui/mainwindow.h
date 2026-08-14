@@ -34,7 +34,6 @@ private slots:
 private:
     void setupUI();
     void setupNavigation();
-    void setupTopBar();
     void setupStatusBar();
     void applyTheme();
 

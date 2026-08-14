@@ -45,6 +45,8 @@ add_executable(EngiCalc
     ui/mainwindow.h
     ui/navigation.cpp
     ui/navigation.h
+    ui/tabs/powertab.cpp
+    ui/tabs/powertab.h
     ${CMAKE_SOURCE_DIR}/resources/resource.qrc
 )
 target_include_directories(EngiCalc PRIVATE

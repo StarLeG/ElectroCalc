@@ -5,6 +5,13 @@
         <file>icons/lightning.svg</file>
         <file>icons/cable.svg</file>
         <file>icons/gauge.svg</file>
+        <file>icons/thermometer.svg</file>
+        <file>icons/transformer.svg</file>
+        <file>icons/ground.svg</file>
+        <file>icons/shield.svg</file>
+        <file>icons/signal.svg</file>
+        <file>icons/report.svg</file>
+        <file>icons/book.svg</file>
         <file>fonts/Roboto-Regular.ttf</file>
         <file>fonts/JetBrainsMono-Regular.ttf</file>
         <file>metadata/developer_info.json</file>

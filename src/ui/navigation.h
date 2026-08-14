@@ -10,10 +10,10 @@
 
 class QPushButton;
 class QVBoxLayout;
+class QLabel;
 
 namespace Ui {
 
-/// Элемент навигации
 struct NavItem {
     QString iconPath;
     QString text;
@@ -21,38 +21,26 @@ struct NavItem {
     int tabIndex;
 };
 
-/// Группа навигации
 struct NavGroup {
     QString title;
     QVector<NavItem> items;
 };
 
-/// Навигационный рельс (сворачиваемый)
 class NavigationRail : public QFrame
 {
     Q_OBJECT
 
 public:
     explicit NavigationRail(QWidget *parent = nullptr);
-
-    /// Установить группы навигации
     void setGroups(const QVector<NavGroup>& groups);
-
-    /// Свёрнут/развёрнут
-    bool isCollapsed() const { return m_collapsed; }
-
-    /// Переключить состояние
-    void toggleCollapse();
 
 signals:
     void tabRequested(int index);
 
 private:
-    void updateButtons();
-
-    bool m_collapsed = true;
-    QVector<NavGroup> m_groups;
     QVector<QPushButton*> m_buttons;
+    QVector<QLabel*> m_labels;
+    QVector<QFrame*> m_dividers;
     QVBoxLayout* m_layout;
 };
 

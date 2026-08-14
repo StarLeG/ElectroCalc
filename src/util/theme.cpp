@@ -97,405 +97,338 @@ QString Theme::landingStyle() const
     return generateLandingQSS(tokens());
 }
 
-QString Theme::generateMainQSS(const ColorTokens& t) const
+static void applyTokens(QString& qss, const ColorTokens& t)
 {
     using namespace Constants;
-
-    return QString(R"(
-/* === Global === */
-QWidget {
-    background-color: %1;
-    color: %11;
-    font-family: 'Roboto', 'Segoe UI', sans-serif;
-    font-size: %15px;
+    qss.replace("$BG_BASE$",       t.bgBase);
+    qss.replace("$BG_SURFACE$",    t.bgSurface);
+    qss.replace("$BG_ELEVATED$",   t.bgElevated);
+    qss.replace("$BG_INPUT$",      t.bgInput);
+    qss.replace("$BORDER$",        t.border);
+    qss.replace("$ACCENT$",        t.accent);
+    qss.replace("$ACCENT_HOVER$",  t.accentHover);
+    qss.replace("$ACCENT2$",       t.accent2);
+    qss.replace("$RESULT$",        t.result);
+    qss.replace("$WARN$",          t.warn);
+    qss.replace("$ERROR$",         t.error);
+    qss.replace("$TEXT$",          t.text);
+    qss.replace("$TEXT_MUTED$",    t.textMuted);
+    qss.replace("$TEXT_ON_ACC$",   t.textOnAccent);
+    qss.replace("$FONT_BODY$",     QString::number(FontBody));
+    qss.replace("$FONT_CAP$",      QString::number(FontCaption));
+    qss.replace("$FONT_SUB$",      QString::number(FontSubtitle));
+    qss.replace("$FONT_TITLE$",    QString::number(FontTitle));
+    qss.replace("$FONT_RESULT$",   QString::number(FontResult));
+    qss.replace("$RADIUS_PILL$",   QString::number(RadiusPill));
+    qss.replace("$RADIUS_CARD$",   QString::number(RadiusCard));
+    qss.replace("$RADIUS_INPUT$",  QString::number(RadiusInput));
+    qss.replace("$SP4$",           QString::number(Spacing4));
+    qss.replace("$SP8$",           QString::number(Spacing8));
+    qss.replace("$SP12$",          QString::number(Spacing12));
+    qss.replace("$SP16$",          QString::number(Spacing16));
+    qss.replace("$SP24$",          QString::number(Spacing24));
+    qss.replace("$SP32$",          QString::number(Spacing32));
+    qss.replace("$TOP_BAR_H$",     QString::number(TopBarHeight));
+    qss.replace("$STATUS_BAR_H$",  QString::number(StatusBarHeight));
 }
 
-/* === Main Window === */
+QString Theme::generateMainQSS(const ColorTokens& t) const
+{
+    QString qss = R"(
+/* === Global === */
+QWidget {
+    background-color: $BG_BASE$;
+    color: $TEXT$;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: $FONT_BODY$px;
+}
+
 QMainWindow {
-    background-color: %1;
+    background-color: $BG_BASE$;
 }
 
 /* === Navigation Rail === */
 QFrame#NavRail {
-    background-color: %2;
-    border-right: 1px solid %4;
+    background-color: $BG_SURFACE$;
+    border-right: 1px solid $BORDER$;
 }
 
 QPushButton#NavButton {
     background: transparent;
     border: none;
-    border-radius: %16px;
-    padding: %17px;
-    color: %12;
-    font-size: %15px;
+    border-radius: $RADIUS_PILL$px;
+    padding: $SP8$px;
+    color: $TEXT_MUTED$;
+    font-size: $FONT_BODY$px;
+    min-width: 40px;
+    min-height: 40px;
 }
 
 QPushButton#NavButton:hover {
-    background-color: %3;
-    color: %11;
+    background-color: $BG_ELEVATED$;
+    color: $TEXT$;
 }
 
 QPushButton#NavButton:checked {
-    background-color: %3;
-    color: %5;
-    border-left: 3px solid %5;
+    background-color: $BG_ELEVATED$;
+    color: $ACCENT$;
+    border-left: 3px solid $ACCENT$;
+}
+
+QFrame#NavDivider {
+    background-color: $BORDER$;
+    max-height: 1px;
 }
 
 /* === Top Bar === */
 QFrame#TopBar {
-    background-color: %2;
-    border-bottom: 1px solid %4;
-    min-height: %18px;
-    max-height: %18px;
+    background-color: $BG_SURFACE$;
+    border-bottom: 1px solid $BORDER$;
+    min-height: $TOP_BAR_H$px;
+    max-height: $TOP_BAR_H$px;
 }
 
 QLabel#Logo {
-    font-size: %19px;
+    font-size: $FONT_TITLE$px;
     font-weight: 700;
-    color: %11;
+    color: $TEXT$;
 }
 
 QLabel#LogoAccent {
-    color: %5;
+    font-size: $FONT_TITLE$px;
+    font-weight: 700;
+    color: $ACCENT$;
 }
 
 /* === Status Bar === */
 QStatusBar {
-    background-color: %2;
-    border-top: 1px solid %4;
-    min-height: %20px;
-    max-height: %20px;
-    color: %12;
-    font-size: %21px;
+    background-color: $BG_SURFACE$;
+    border-top: 1px solid $BORDER$;
+    min-height: $STATUS_BAR_H$px;
+    max-height: $STATUS_BAR_H$px;
+    color: $TEXT_MUTED$;
+    font-size: $FONT_CAP$px;
+}
+
+QStatusBar QLabel {
+    color: $TEXT_MUTED$;
+    font-size: $FONT_CAP$px;
 }
 
 /* === Cards === */
 QFrame#Card {
-    background-color: %2;
-    border: 1px solid %4;
-    border-radius: %22px;
+    background-color: $BG_SURFACE$;
+    border: 1px solid $BORDER$;
+    border-radius: $RADIUS_CARD$px;
 }
 
 /* === Input Fields === */
 QLineEdit, QDoubleSpinBox, QComboBox {
-    background-color: %3;
-    border: 1px solid %4;
-    border-radius: %23px;
-    padding: %17px %24px;
-    color: %11;
-    font-size: %15px;
+    background-color: $BG_INPUT$;
+    border: 1px solid $BORDER$;
+    border-radius: $RADIUS_INPUT$px;
+    padding: $SP8$px $SP12$px;
+    color: $TEXT$;
+    font-size: $FONT_BODY$px;
 }
 
 QLineEdit:focus, QDoubleSpinBox:focus, QComboBox:focus {
-    border: 1px solid %5;
-}
-
-QLineEdit:invalid {
-    border: 1px solid %10;
+    border: 1px solid $ACCENT$;
 }
 
 /* === Buttons === */
 QPushButton#Primary {
-    background-color: %5;
-    color: %13;
+    background-color: $ACCENT$;
+    color: $TEXT_ON_ACC$;
     border: none;
-    border-radius: %23px;
-    padding: %17px %24px;
+    border-radius: $RADIUS_INPUT$px;
+    padding: $SP8$px $SP24$px;
     font-weight: 600;
-    font-size: %15px;
+    font-size: $FONT_BODY$px;
 }
 
 QPushButton#Primary:hover {
-    background-color: %6;
-}
-
-QPushButton#Primary:pressed {
-    background-color: %5;
+    background-color: $ACCENT_HOVER$;
 }
 
 QPushButton#Secondary {
     background: transparent;
-    color: %5;
-    border: 1px solid %5;
-    border-radius: %23px;
-    padding: %17px %24px;
-    font-size: %15px;
+    color: $ACCENT$;
+    border: 1px solid $ACCENT$;
+    border-radius: $RADIUS_INPUT$px;
+    padding: $SP8$px $SP24$px;
+    font-size: $FONT_BODY$px;
 }
 
 QPushButton#Secondary:hover {
-    background-color: %3;
+    background-color: $BG_ELEVATED$;
 }
 
 QPushButton#Ghost {
     background: transparent;
-    color: %12;
+    color: $TEXT_MUTED$;
     border: none;
-    border-radius: %23px;
-    padding: %17px %24px;
-    font-size: %15px;
+    border-radius: $RADIUS_INPUT$px;
+    padding: $SP8$px $SP16$px;
+    font-size: $FONT_BODY$px;
 }
 
 QPushButton#Ghost:hover {
-    color: %11;
-    background-color: %3;
+    color: $TEXT$;
+    background-color: $BG_ELEVATED$;
 }
 
 /* === Result Display === */
 QLabel#ResultValue {
-    font-family: 'JetBrains Mono', 'Consolas', monospace;
-    font-size: %25px;
+    font-family: 'Consolas', monospace;
+    font-size: $FONT_RESULT$px;
     font-weight: 700;
-    color: %8;
+    color: $RESULT$;
 }
 
 QLabel#ResultUnit {
-    color: %12;
-    font-size: %15px;
+    color: $TEXT_MUTED$;
+    font-size: $FONT_BODY$px;
 }
 
 QLabel#ResultLabel {
-    color: %12;
-    font-size: %21px;
+    color: $TEXT_MUTED$;
+    font-size: $FONT_CAP$px;
 }
 
 /* === Normative Reference === */
 QFrame#NormativePanel {
-    background-color: %3;
-    border: 1px solid %4;
-    border-radius: %23px;
-    padding: %17px;
+    background-color: $BG_ELEVATED$;
+    border: 1px solid $BORDER$;
+    border-radius: $RADIUS_INPUT$px;
+    padding: $SP12$px;
 }
 
 QLabel#NormativeText {
-    color: %12;
-    font-size: %21px;
+    color: $TEXT_MUTED$;
+    font-size: $FONT_CAP$px;
     font-style: italic;
 }
 
 /* === Tables === */
 QTableView {
-    background-color: %2;
-    alternate-background-color: %3;
-    border: 1px solid %4;
-    border-radius: %23px;
-    gridline-color: %4;
-    color: %11;
+    background-color: $BG_SURFACE$;
+    alternate-background-color: $BG_ELEVATED$;
+    border: 1px solid $BORDER$;
+    border-radius: $RADIUS_INPUT$px;
+    gridline-color: $BORDER$;
+    color: $TEXT$;
 }
 
 QHeaderView::section {
-    background-color: %2;
-    color: %12;
+    background-color: $BG_SURFACE$;
+    color: $TEXT_MUTED$;
     border: none;
-    border-bottom: 1px solid %4;
-    padding: %17px;
+    border-bottom: 1px solid $BORDER$;
+    padding: $SP8$px;
     font-weight: 600;
 }
 
-/* === Group Box === */
-QGroupBox {
-    background-color: %2;
-    border: 1px solid %4;
-    border-radius: %22px;
-    margin-top: %24px;
-    padding-top: %24px;
-    font-weight: 600;
-    color: %11;
+/* === Tab Widget === */
+QTabBar::tab {
+    background: transparent;
+    color: $TEXT_MUTED$;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: $SP8$px $SP24$px;
+    font-size: $FONT_BODY$px;
 }
 
-QGroupBox::title {
-    subcontrol-origin: margin;
-    left: %24px;
-    padding: 0 %17px;
+QTabBar::tab:hover {
+    color: $TEXT$;
 }
 
-/* === Tool Tips === */
-QToolTip {
-    background-color: %3;
-    color: %11;
-    border: 1px solid %4;
-    border-radius: %23px;
-    padding: %17px;
+QTabBar::tab:selected {
+    color: $ACCENT$;
+    border-bottom: 2px solid $ACCENT$;
 }
 
 /* === Scroll Bar === */
 QScrollBar:vertical {
     background: transparent;
     width: 8px;
-    margin: 0;
 }
 
 QScrollBar::handle:vertical {
-    background-color: %4;
+    background-color: $BORDER$;
     border-radius: 4px;
     min-height: 32px;
 }
 
 QScrollBar::handle:vertical:hover {
-    background-color: %12;
+    background-color: $TEXT_MUTED$;
 }
 
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     height: 0;
 }
+)";
 
-QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-    background: transparent;
-}
-
-/* === Tab Widget === */
-QTabWidget::pane {
-    border: 1px solid %4;
-    border-radius: %22px;
-    background-color: %2;
-}
-
-QTabBar::tab {
-    background: transparent;
-    color: %12;
-    border: none;
-    border-bottom: 2px solid transparent;
-    padding: %17px %24px;
-    font-size: %15px;
-}
-
-QTabBar::tab:hover {
-    color: %11;
-}
-
-QTabBar::tab:selected {
-    color: %5;
-    border-bottom: 2px solid %5;
-}
-
-/* === Combo Box Drop-down === */
-QComboBox::drop-down {
-    border: none;
-    width: 24px;
-}
-
-QComboBox QAbstractItemView {
-    background-color: %3;
-    border: 1px solid %4;
-    color: %11;
-    selection-background-color: %5;
-    selection-color: %13;
-}
-)")
-    .arg(t.bgBase)        // %1
-    .arg(t.bgSurface)     // %2
-    .arg(t.bgElevated)    // %3
-    .arg(t.border)        // %4
-    .arg(t.accent)        // %5
-    .arg(t.accentHover)   // %6
-    .arg(t.accent2)       // %7
-    .arg(t.result)        // %8
-    .arg(t.warn)          // %9
-    .arg(t.error)         // %10
-    .arg(t.text)          // %11
-    .arg(t.textMuted)     // %12
-    .arg(t.textOnAccent)  // %13
-    .arg(0)               // %14 (unused)
-    .arg(FontBody)        // %15
-    .arg(RadiusPill)      // %16
-    .arg(Spacing8)        // %17
-    .arg(TopBarHeight)    // %18
-    .arg(FontTitle)       // %19
-    .arg(StatusBarHeight) // %20
-    .arg(FontCaption)     // %21
-    .arg(RadiusCard)      // %22
-    .arg(RadiusInput)     // %23
-    .arg(Spacing12)       // %24
-    .arg(FontResult);     // %25
+    applyTokens(qss, t);
+    return qss;
 }
 
 QString Theme::generateLandingQSS(const ColorTokens& t) const
 {
     using namespace Constants;
-
-    return QString(R"(
-/* === Landing Page === */
+    QString qss = R"(
 QWidget#LandingPage {
-    background-color: %1;
+    background-color: $BG_BASE$;
 }
 
 QLabel#LandingTitle {
     font-size: 48px;
     font-weight: 700;
-    color: %11;
+    color: $TEXT$;
 }
 
 QLabel#LandingSubtitle {
-    font-size: %19px;
-    color: %12;
-}
-
-QLabel#LandingFeature {
-    font-size: %15px;
-    color: %12;
+    font-size: $FONT_SUB$px;
+    color: $TEXT_MUTED$;
 }
 
 QPushButton#LandingPrimary {
-    background-color: %5;
-    color: %13;
+    background-color: $ACCENT$;
+    color: $TEXT_ON_ACC$;
     border: none;
-    border-radius: %3px;
-    padding: %2px %4px;
-    font-size: %19px;
+    border-radius: $RADIUS_INPUT$px;
+    padding: $SP16$px $SP32$px;
+    font-size: $FONT_SUB$px;
     font-weight: 600;
 }
 
 QPushButton#LandingPrimary:hover {
-    background-color: %6;
+    background-color: $ACCENT_HOVER$;
 }
 
 QPushButton#LandingSecondary {
     background: transparent;
-    color: %5;
-    border: 2px solid %5;
-    border-radius: %3px;
-    padding: %2px %4px;
-    font-size: %19px;
+    color: $ACCENT$;
+    border: 2px solid $ACCENT$;
+    border-radius: $RADIUS_INPUT$px;
+    padding: $SP16$px $SP32$px;
+    font-size: $FONT_SUB$px;
 }
 
 QPushButton#LandingSecondary:hover {
-    background-color: %7;
+    background-color: $BG_ELEVATED$;
 }
 
 QFrame#FeatureCard {
-    background-color: %7;
-    border: 1px solid %8;
-    border-radius: %9px;
-    padding: %10px;
+    background-color: $BG_SURFACE$;
+    border: 1px solid $BORDER$;
+    border-radius: $RADIUS_CARD$px;
+    padding: $SP24$px;
 }
+)";
 
-QLabel#FeatureTitle {
-    font-size: %11px;
-    font-weight: 600;
-    color: %12;
-}
-
-QLabel#DonateText {
-    font-size: %15px;
-    color: %12;
-}
-)")
-    .arg(t.bgBase)        // %1
-    .arg(Spacing16)       // %2
-    .arg(RadiusInput)     // %3
-    .arg(Spacing32)       // %4
-    .arg(t.accent)        // %5
-    .arg(t.accentHover)   // %6
-    .arg(t.bgSurface)     // %7
-    .arg(t.border)        // %8
-    .arg(RadiusCard)      // %9
-    .arg(Spacing24)       // %10
-    .arg(FontSubtitle)    // %11
-    .arg(t.text)          // %12
-    .arg(t.textOnAccent)  // %13
-    .arg(FontBody)        // %14
-    .arg(FontCaption)     // %15
-    .arg(t.bgElevated)    // %16
-    .arg(t.textMuted);    // %17
+    applyTokens(qss, t);
+    return qss;
 }
 
 } // namespace Util

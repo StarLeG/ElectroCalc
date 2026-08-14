@@ -4,6 +4,7 @@
 
 #include "mainwindow.h"
 #include "navigation.h"
+#include "tabs/powertab.h"
 #include "util/theme.h"
 #include "util/constants.h"
 #include "version.h"
@@ -36,7 +37,6 @@ MainWindow::~MainWindow()
 
 void MainWindow::setupUI()
 {
-    // Центральный виджет
     auto* central = new QWidget(this);
     auto* mainLayout = new QHBoxLayout(central);
     mainLayout->setContentsMargins(0, 0, 0, 0);
@@ -44,25 +44,72 @@ void MainWindow::setupUI()
 
     // Навигационный рельс
     m_navRail = new Ui::NavigationRail(this);
-    m_navRail->setFixedWidth(Constants::NavRailWidthCollapsed);
     setupNavigation();
 
-    // Правая часть (контент)
+    // Правая часть
     auto* rightPanel = new QWidget(this);
     auto* rightLayout = new QVBoxLayout(rightPanel);
     rightLayout->setContentsMargins(0, 0, 0, 0);
     rightLayout->setSpacing(0);
 
     // Верхняя панель
-    setupTopBar();
+    auto* topBar = new QFrame(rightPanel);
+    topBar->setObjectName("TopBar");
+    auto* topLayout = new QHBoxLayout(topBar);
+    topLayout->setContentsMargins(24, 0, 24, 0);
+
+    auto* logoE = new QLabel("Engi", topBar);
+    logoE->setObjectName("Logo");
+    auto* logoCalc = new QLabel("Calc", topBar);
+    logoCalc->setObjectName("LogoAccent");
+
+    auto* breadcrumb = new QLabel("Электрика / Мощность и ток", topBar);
+    breadcrumb->setStyleSheet(
+        "font-size: 13px; color: #9AA4B2; background: transparent; border: none; padding: 0;");
+
+    // Кнопки в правой части
+    auto* langBtn = new QPushButton("RU / EN", topBar);
+    langBtn->setStyleSheet(
+        "background: transparent; color: #9AA4B2; border: 1px solid #3A414D;"
+        "border-radius: 6px; padding: 6px 12px; font-size: 12px;");
+
+    m_themeToggle = new QPushButton("☀", topBar);
+    m_themeToggle->setObjectName("NavButton");
+    m_themeToggle->setFixedSize(36, 36);
+    m_themeToggle->setToolTip("Переключить тему");
+    connect(m_themeToggle, &QPushButton::clicked, this, &MainWindow::onThemeToggle);
+
+    topLayout->addWidget(logoE);
+    topLayout->addWidget(logoCalc);
+    topLayout->addSpacing(24);
+    topLayout->addWidget(breadcrumb);
+    topLayout->addStretch();
+    topLayout->addWidget(langBtn);
+    topLayout->addSpacing(8);
+    topLayout->addWidget(m_themeToggle);
+
+    rightLayout->addWidget(topBar);
 
     // Стек контента
-    m_contentStack = new QStackedWidget(this);
-    auto* placeholder = new QLabel("Выберите раздел в навигации", this);
-    placeholder->setAlignment(Qt::AlignCenter);
-    m_contentStack->addWidget(placeholder);
+    m_contentStack = new QStackedWidget(rightPanel);
+
+    // Вкладка 0: Мощность и ток
+    m_contentStack->addWidget(new Ui::PowerTab(rightPanel));
+
+    // Заглушки для остальных вкладок
+    for (int i = 1; i <= 14; ++i) {
+        auto* stub = new QWidget(rightPanel);
+        auto* stubLayout = new QVBoxLayout(stub);
+        stubLayout->setAlignment(Qt::AlignCenter);
+        auto* stubLabel = new QLabel(QString("Вкладка %1 — в разработке").arg(i), stub);
+        stubLabel->setAlignment(Qt::AlignCenter);
+        stubLabel->setStyleSheet("font-size: 18px; color: #9AA4B2;");
+        stubLayout->addWidget(stubLabel);
+        m_contentStack->addWidget(stub);
+    }
 
     rightLayout->addWidget(m_contentStack);
+
     mainLayout->addWidget(m_navRail);
     mainLayout->addWidget(rightPanel);
 
@@ -79,27 +126,21 @@ void MainWindow::setupNavigation()
 
     QVector<NavGroup> groups = {
         { "Электрика", {
-            {":/icons/lightning.svg", "Мощность и ток", "Расчёт мощности и тока", 0},
-            {":/icons/cable.svg", "Кабели", "Подбор сечения кабелей", 1},
-            {":/icons/gauge.svg", "Потери", "Потери напряжения", 2},
-            {":/icons/lightning.svg", "КЗ", "Токи короткого замыкания", 3},
-            {":/icons/gauge.svg", "Заземление", "Расчёт заземления", 4},
-            {":/icons/gauge.svg", "Тепловые", "Тепловые расчёты", 5},
-            {":/icons/lightning.svg", "Энергия", "Энергия и стоимость", 6},
-            {":/icons/gauge.svg", "Защита", "Автоматическая защита", 7}
+            {":/icons/lightning.svg",    "Мощность", "Мощность и ток",    0},
+            {":/icons/cable.svg",        "Кабели",   "Подбор сечения",    1},
+            {":/icons/gauge.svg",        "Потери",   "Потери напряжения", 2},
+            {":/icons/transformer.svg",  "КЗ",       "Токи КЗ",           3},
+            {":/icons/ground.svg",       "Заземл.",  "Заземление",        4},
+            {":/icons/shield.svg",       "Защита",   "Автозащита",        5}
         }},
         { "КИПиА", {
-            {":/icons/gauge.svg", "Токовая петля", "4–20 мА", 8},
-            {":/icons/gauge.svg", "Масштабирование", "Сигналы", 9},
-            {":/icons/gauge.svg", "Температура", "RTD и термопары", 10}
-        }},
-        { "Справочник", {
-            {":/icons/cable.svg", "Кабели", "Таблицы кабелей", 11},
-            {":/icons/gauge.svg", "Единицы", "Конвертер единиц", 12}
+            {":/icons/signal.svg",       "4–20 мА",    "Токовая петля",   6},
+            {":/icons/gauge.svg",        "Масштаб",    "Масштабирование", 7},
+            {":/icons/thermometer.svg",  "Температ.",  "RTD/термопары",   8}
         }},
         { "Проект", {
-            {":/icons/app_icon.svg", "Отчёт", "Генерация отчёта", 13},
-            {":/icons/app_icon.svg", "Сохранить", "Сохранить проект", 14}
+            {":/icons/report.svg",       "Отчёт",      "Экспорт отчёта",  9},
+            {":/icons/book.svg",         "Справка",     "Справочник",     10}
         }}
     };
 
@@ -109,61 +150,21 @@ void MainWindow::setupNavigation()
             this, &MainWindow::onTabRequested);
 }
 
-void MainWindow::setupTopBar()
-{
-    auto* topBar = new QFrame(this);
-    topBar->setObjectName("TopBar");
-
-    auto* layout = new QHBoxLayout(topBar);
-    layout->setContentsMargins(Constants::Spacing16, 0, Constants::Spacing16, 0);
-
-    // Логотип
-    auto* logoE = new QLabel("Engi", this);
-    logoE->setObjectName("Logo");
-    auto* logoCalc = new QLabel("Calc", this);
-    logoCalc->setObjectName("LogoAccent");
-
-    // Хлебные крошки
-    auto* breadcrumb = new QLabel("Электрика > Мощность и ток", this);
-    breadcrumb->setObjectName("Breadcrumb");
-
-    // Переключатель темы
-    m_themeToggle = new QPushButton("☀", this);
-    m_themeToggle->setObjectName("NavButton");
-    m_themeToggle->setToolTip("Переключить тему");
-    connect(m_themeToggle, &QPushButton::clicked, this, &MainWindow::onThemeToggle);
-
-    layout->addWidget(logoE);
-    layout->addWidget(logoCalc);
-    layout->addSpacing(Constants::Spacing24);
-    layout->addWidget(breadcrumb);
-    layout->addStretch();
-    layout->addWidget(m_themeToggle);
-
-    // Добавить в layout (будет добавлен в setupUI)
-    topBar->setParent(this);
-    if (auto* central = centralWidget()) {
-        if (auto* mainLayout = central->layout()) {
-            if (auto* rightPanel = mainLayout->itemAt(1)->widget()) {
-                if (auto* rightLayout = rightPanel->layout()) {
-                    rightLayout->addWidget(topBar);
-                }
-            }
-        }
-    }
-}
-
 void MainWindow::setupStatusBar()
 {
     auto* statusBar = new QStatusBar(this);
     statusBar->setObjectName("StatusBar");
 
     auto* hintLabel = new QLabel("Готово", this);
+
+    auto* cosPhiLabel = new QLabel("cos φ: 0.85", this);
+    cosPhiLabel->setStyleSheet("color: #9AA4B2; font-size: 11px;");
+
     m_versionLabel = new QLabel(
         QString("v%1 (%2)").arg(APP_VERSION_STRING, APP_GIT_VERSION), this);
-    m_versionLabel->setObjectName("VersionLabel");
 
     statusBar->addWidget(hintLabel, 1);
+    statusBar->addPermanentWidget(cosPhiLabel);
     statusBar->addPermanentWidget(m_versionLabel);
 
     setStatusBar(statusBar);

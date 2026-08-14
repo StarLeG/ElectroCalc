@@ -8,98 +8,99 @@
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QIcon>
+#include <QScrollArea>
+#include <QFrame>
 
 namespace Ui {
 
 NavigationRail::NavigationRail(QWidget *parent)
     : QFrame(parent)
-    , m_collapsed(true)
 {
     setObjectName("NavRail");
-    m_layout = new QVBoxLayout(this);
-    m_layout->setContentsMargins(Constants::Spacing8, Constants::Spacing12,
-                                 Constants::Spacing8, Constants::Spacing12);
-    m_layout->setSpacing(Constants::Spacing4);
+    setFixedWidth(Constants::NavRailWidthCollapsed);
+
+    auto* mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(0);
+
+    auto* scrollArea = new QScrollArea(this);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scrollArea->setFrameShape(QFrame::NoFrame);
+    scrollArea->setStyleSheet("background: transparent;");
+
+    auto* scrollWidget = new QWidget();
+    scrollWidget->setStyleSheet("background: transparent;");
+    m_layout = new QVBoxLayout(scrollWidget);
+    m_layout->setContentsMargins(6, 12, 6, 12);
+    m_layout->setSpacing(2);
     m_layout->addStretch();
+
+    scrollArea->setWidget(scrollWidget);
+    mainLayout->addWidget(scrollArea);
 }
 
 void NavigationRail::setGroups(const QVector<NavGroup>& groups)
 {
-    m_groups = groups;
-
-    // Очистить старые кнопки
-    for (auto* btn : m_buttons) {
-        m_layout->removeWidget(btn);
-        delete btn;
-    }
-    m_buttons.clear();
-
-    // Удалить stretch
-    if (m_layout->count() > 0) {
-        QLayoutItem* item = m_layout->takeAt(m_layout->count() - 1);
+    // Полностью очистить все старые виджеты
+    QLayoutItem* item;
+    while ((item = m_layout->takeAt(0)) != nullptr) {
+        if (item->widget()) {
+            delete item->widget();
+        }
         delete item;
     }
+    m_buttons.clear();
+    m_labels.clear();
+    m_dividers.clear();
 
     // Создать кнопки для каждой группы
-    for (const auto& group : m_groups) {
-        // Заголовок группы (только в развёрнутом режиме)
-        auto* label = new QLabel(group.title, this);
-        label->setObjectName("NavGroupLabel");
-        label->setVisible(!m_collapsed);
-        m_layout->addWidget(label);
+    for (int g = 0; g < groups.size(); ++g) {
+        const auto& group = groups[g];
 
-        for (const auto& item : group.items) {
+        // Разделитель между группами
+        if (g > 0) {
+            auto* divider = new QFrame(this);
+            divider->setObjectName("NavDivider");
+            divider->setFrameShape(QFrame::HLine);
+            divider->setFixedHeight(1);
+            divider->setStyleSheet("background: #3A414D; margin: 6px 8px;");
+            m_layout->addSpacing(6);
+            m_layout->addWidget(divider);
+            m_layout->addSpacing(6);
+            m_dividers.append(divider);
+        }
+
+        for (const auto& navItem : group.items) {
             auto* btn = new QPushButton(this);
             btn->setObjectName("NavButton");
             btn->setCheckable(true);
-            btn->setToolTip(item.tooltip);
+            btn->setToolTip(navItem.tooltip);
+            btn->setFixedSize(48, 48);
 
-            if (!item.iconPath.isEmpty()) {
-                btn->setIcon(QIcon(item.iconPath));
-                btn->setIconSize(QSize(20, 20));
+            if (!navItem.iconPath.isEmpty()) {
+                btn->setIcon(QIcon(navItem.iconPath));
+                btn->setIconSize(QSize(22, 22));
             }
 
-            if (!m_collapsed) {
-                btn->setText(item.text);
-            }
-
-            connect(btn, &QPushButton::clicked, this, [this, index = item.tabIndex]() {
+            connect(btn, &QPushButton::clicked, this, [this, index = navItem.tabIndex, btn]() {
+                for (auto* b : m_buttons) {
+                    b->setChecked(false);
+                }
+                btn->setChecked(true);
                 emit tabRequested(index);
             });
 
-            m_layout->addWidget(btn);
+            m_layout->addWidget(btn, 0, Qt::AlignHCenter);
             m_buttons.append(btn);
         }
     }
 
     m_layout->addStretch();
-    updateButtons();
-}
 
-void NavigationRail::toggleCollapse()
-{
-    m_collapsed = !m_collapsed;
-    setFixedWidth(m_collapsed ? Constants::NavRailWidthCollapsed
-                              : Constants::NavRailWidthExpanded);
-    updateButtons();
-}
-
-void NavigationRail::updateButtons()
-{
-    int idx = 0;
-    for (const auto& group : m_groups) {
-        // Пропустить заголовок группы
-        if (auto* label = qobject_cast<QLabel*>(m_layout->itemAt(idx)->widget())) {
-            label->setVisible(!m_collapsed);
-            ++idx;
-        }
-
-        for (const auto& item : group.items) {
-            if (idx < m_buttons.size()) {
-                m_buttons[idx]->setText(m_collapsed ? "" : item.text);
-                ++idx;
-            }
-        }
+    // Выделить первую кнопку
+    if (!m_buttons.isEmpty()) {
+        m_buttons[0]->setChecked(true);
     }
 }
 
