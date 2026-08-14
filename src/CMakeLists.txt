@@ -47,6 +47,20 @@ add_executable(EngiCalc
     ui/navigation.h
     ui/tabs/powertab.cpp
     ui/tabs/powertab.h
+    ui/tabs/cabletab.cpp
+    ui/tabs/cabletab.h
+    ui/tabs/voltagedroptab.cpp
+    ui/tabs/voltagedroptab.h
+    ui/tabs/shortcircuittab.cpp
+    ui/tabs/shortcircuittab.h
+    ui/tabs/groundingtab.cpp
+    ui/tabs/groundingtab.h
+    ui/tabs/thermaltab.cpp
+    ui/tabs/thermaltab.h
+    ui/tabs/energytab.cpp
+    ui/tabs/energytab.h
+    ui/tabs/protectiontab.cpp
+    ui/tabs/protectiontab.h
     ${CMAKE_SOURCE_DIR}/resources/resource.qrc
 )
 target_include_directories(EngiCalc PRIVATE

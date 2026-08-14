@@ -5,6 +5,13 @@
 #include "mainwindow.h"
 #include "navigation.h"
 #include "tabs/powertab.h"
+#include "tabs/cabletab.h"
+#include "tabs/voltagedroptab.h"
+#include "tabs/shortcircuittab.h"
+#include "tabs/groundingtab.h"
+#include "tabs/thermaltab.h"
+#include "tabs/energytab.h"
+#include "tabs/protectiontab.h"
 #include "util/theme.h"
 #include "util/constants.h"
 #include "version.h"
@@ -93,11 +100,18 @@ void MainWindow::setupUI()
     // Стек контента
     m_contentStack = new QStackedWidget(rightPanel);
 
-    // Вкладка 0: Мощность и ток
-    m_contentStack->addWidget(new Ui::PowerTab(rightPanel));
+    // Вкладки калькуляторов
+    m_contentStack->addWidget(new Ui::PowerTab(rightPanel));          // 0: Мощность
+    m_contentStack->addWidget(new Ui::CableTab(rightPanel));          // 1: Кабели
+    m_contentStack->addWidget(new Ui::VoltageDropTab(rightPanel));    // 2: Потери
+    m_contentStack->addWidget(new Ui::ShortCircuitTab(rightPanel));   // 3: КЗ
+    m_contentStack->addWidget(new Ui::GroundingTab(rightPanel));      // 4: Заземление
+    m_contentStack->addWidget(new Ui::ThermalTab(rightPanel));        // 5: Тепловые
+    m_contentStack->addWidget(new Ui::EnergyTab(rightPanel));         // 6: Энергия
+    m_contentStack->addWidget(new Ui::ProtectionTab(rightPanel));     // 7: Защита
 
-    // Заглушки для остальных вкладок
-    for (int i = 1; i <= 14; ++i) {
+    // Заглушки для оставшихся вкладок (КИПиА, Справочник, Проект)
+    for (int i = 8; i <= 10; ++i) {
         auto* stub = new QWidget(rightPanel);
         auto* stubLayout = new QVBoxLayout(stub);
         stubLayout->setAlignment(Qt::AlignCenter);
