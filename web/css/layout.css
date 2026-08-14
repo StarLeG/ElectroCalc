@@ -1,0 +1,114 @@
+/* EngiCalc — Layout: sidebar, topbar, content, statusbar */
+
+/* Sidebar */
+.sidebar{
+  width:var(--nav-width);
+  background:var(--bg-surface);
+  border-right:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  padding:var(--sp-3) var(--sp-2);
+  overflow-y:auto;
+  flex-shrink:0;
+  transition:left .3s;
+}
+.sidebar .group{
+  font-size:10px;font-weight:600;color:var(--text-muted);
+  text-transform:uppercase;letter-spacing:1px;
+  padding:var(--sp-2) var(--sp-3) var(--sp-1);
+  margin-top:var(--sp-2);
+}
+.sidebar .group:first-child{margin-top:0}
+.sidebar .sep{height:1px;background:var(--border);margin:var(--sp-1) 0}
+
+/* Nav items */
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:var(--sp-2) var(--sp-3);
+  border-radius:var(--r-input);
+  color:var(--text-muted);
+  font-size:13px;margin:2px 0;
+  transition:all .15s;
+  cursor:pointer;
+  user-select:none;
+}
+.nav-item:hover{background:var(--bg-elevated);color:var(--text)}
+.nav-item.active{
+  background:var(--bg-elevated);
+  color:var(--accent);
+  border-left:3px solid var(--accent);
+}
+.nav-item svg{
+  width:18px;height:18px;
+  stroke:currentColor;fill:none;stroke-width:2;
+  flex-shrink:0;
+}
+
+/* Mobile nav toggle */
+.nav-toggle{
+  display:none;
+  position:fixed;top:var(--sp-3);left:var(--sp-3);
+  z-index:1001;
+  background:var(--bg-surface);
+  border:1px solid var(--border);
+  border-radius:var(--r-input);
+  padding:var(--sp-2);
+  color:var(--text);
+}
+.nav-toggle svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2}
+.nav-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.5);z-index:999;
+}
+
+/* Main area */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+
+/* Topbar */
+.topbar{
+  height:var(--topbar-height);
+  background:var(--bg-surface);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;
+  padding:0 var(--sp-5);gap:var(--sp-4);
+  flex-shrink:0;
+}
+.logo{font-size:20px;font-weight:700;white-space:nowrap}
+.logo .e{color:var(--text)}.logo .c{color:var(--accent)}
+.breadcrumb{font-size:13px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-right{margin-left:auto;display:flex;gap:var(--sp-2);align-items:center}
+
+/* Content area */
+.content{
+  flex:1;padding:var(--sp-5);
+  overflow-y:auto;
+  display:flex;gap:var(--sp-5);
+}
+
+/* Statusbar */
+.statusbar{
+  height:var(--statusbar-height);
+  background:var(--bg-surface);
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;
+  padding:0 var(--sp-4);
+  font-size:11px;color:var(--text-muted);
+  flex-shrink:0;
+}
+.statusbar-right{margin-left:auto;display:flex;gap:var(--sp-4)}
+
+/* Page visibility */
+.page{display:none}.page.active{display:flex}
+
+/* Mobile */
+@media(max-width:768px){
+  .sidebar{position:fixed;left:-260px;top:0;bottom:0;z-index:1000;width:260px}
+  .sidebar.open{left:0}
+  .nav-overlay.show{display:block}
+  .nav-toggle{display:block}
+  .topbar{padding-left:52px}
+  .content{padding:var(--sp-4);gap:var(--sp-4);flex-direction:column}
+}
+@media(max-width:1024px){
+  .content{flex-direction:column}
+}

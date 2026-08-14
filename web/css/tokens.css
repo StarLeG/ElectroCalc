@@ -1,0 +1,55 @@
+/* EngiCalc — Design Tokens */
+:root {
+  /* Dark theme (default) */
+  --bg-base: #1E2128;
+  --bg-surface: #252A33;
+  --bg-elevated: #2E343F;
+  --bg-input: #1A1D23;
+  --border: #3A414D;
+  --accent: #FFB300;
+  --accent-hover: #FFC94D;
+  --accent-2: #38BDF8;
+  --result: #22E88A;
+  --warn: #FF9F43;
+  --error: #FF5D5D;
+  --text: #E6EAF0;
+  --text-muted: #9AA4B2;
+  --text-on-accent: #12151A;
+
+  /* Typography */
+  --font-ui: 'Roboto', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Consolas', 'Fira Code', monospace;
+
+  /* Spacing scale */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px;
+
+  /* Radii */
+  --r-card: 10px; --r-input: 6px; --r-pill: 999px;
+
+  /* Shadows */
+  --shadow: 0 2px 8px rgba(0,0,0,.35);
+
+  /* Layout */
+  --nav-width: 232px;
+  --topbar-height: 56px;
+  --statusbar-height: 28px;
+}
+
+/* Light theme */
+[data-theme="light"] {
+  --bg-base: #F4F6FA;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #F0F0F0;
+  --bg-input: #FFFFFF;
+  --border: #E2E8F0;
+  --accent: #E39A00;
+  --accent-hover: #CC8A00;
+  --accent-2: #0284C7;
+  --result: #0E9F6E;
+  --warn: #D97706;
+  --error: #E02424;
+  --text: #1A2230;
+  --text-muted: #64748B;
+  --text-on-accent: #FFFFFF;
+  --shadow: 0 2px 8px rgba(15,23,42,.08);
+}

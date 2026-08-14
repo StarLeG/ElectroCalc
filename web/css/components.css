@@ -1,0 +1,125 @@
+/* EngiCalc — Components: buttons, inputs, cards, tabs, results */
+
+/* Cards */
+.card{
+  background:var(--bg-surface);
+  border:1px solid var(--border);
+  border-radius:var(--r-card);
+  padding:var(--sp-5);
+  box-shadow:var(--shadow);
+}
+.card-title{font-size:16px;font-weight:600;margin-bottom:var(--sp-4)}
+.input-card{width:380px;min-width:380px;display:flex;flex-direction:column;gap:var(--sp-3)}
+.result-card{flex:1;display:flex;flex-direction:column;gap:var(--sp-4)}
+
+/* Form fields */
+.field{display:flex;flex-direction:column}
+.field label{font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:6px}
+.field input,.field select{
+  width:100%;
+  background:var(--bg-input);
+  border:1px solid var(--border);
+  border-radius:var(--r-input);
+  padding:8px 12px;
+  color:var(--text);
+  font-size:14px;
+  font-family:var(--font-mono);
+  outline:none;
+  transition:border-color .15s;
+}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.field input.err{border-color:var(--error)}
+.field .hint{font-size:11px;color:var(--text-muted);margin-top:4px}
+.field .error{font-size:11px;color:var(--error);margin-top:4px}
+.row{display:flex;gap:var(--sp-3)}.row .field{flex:1}
+
+/* Buttons */
+.btns{display:flex;gap:var(--sp-3);margin-top:var(--sp-2)}
+.btn{
+  border:none;border-radius:var(--r-input);
+  padding:8px 24px;font-weight:600;font-size:14px;
+  cursor:pointer;transition:all .15s;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.btn-primary{background:var(--accent);color:var(--text-on-accent)}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-secondary{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.btn-secondary:hover{background:var(--accent);color:var(--text-on-accent)}
+.btn-ghost{background:transparent;color:var(--text-muted)}
+.btn-ghost:hover{color:var(--text)}
+
+/* Results */
+.result-val{
+  font-family:var(--font-mono);
+  font-size:48px;font-weight:700;
+  color:var(--result);
+  text-align:center;line-height:1;
+}
+.result-unit{font-size:16px;color:var(--text-muted);text-align:center;margin-top:var(--sp-1)}
+.result-desc{font-size:13px;color:var(--text-muted);text-align:center;margin-top:2px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3)}
+.detail{background:var(--bg-input);border-radius:var(--r-input);padding:14px 10px}
+.detail .lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
+.detail .val{font-family:var(--font-mono);font-size:18px;font-weight:600;color:var(--text);margin-top:4px}
+
+/* Formula panel */
+.formula-panel{
+  background:var(--bg-elevated);
+  border-radius:var(--r-input);
+  padding:var(--sp-3);
+}
+.formula-panel .title{
+  font-size:11px;font-weight:600;color:var(--text-muted);
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;
+}
+.formula-panel .formula{font-family:var(--font-mono);font-size:15px;color:var(--accent-2)}
+.formula-panel .ref{font-size:12px;color:var(--text-muted);font-style:italic;margin-top:4px}
+
+/* Sub-tabs */
+.sub-tabs{display:flex;gap:0;margin-bottom:var(--sp-4);flex-wrap:wrap}
+.sub-tab{
+  padding:8px 16px;font-size:12px;
+  color:var(--text-muted);
+  cursor:pointer;
+  border:1px solid var(--border);
+  border-radius:var(--r-input) var(--r-input) 0 0;
+  border-bottom:none;
+  margin-right:2px;
+  transition:all .15s;
+}
+.sub-tab.active{color:var(--accent);background:var(--bg-elevated);border-color:var(--accent)}
+.sub-tab:not(.active){background:transparent}
+.sub-tab:hover{color:var(--text)}
+.sub-page{display:none}.sub-page.active{display:flex}
+
+/* Export buttons */
+.export-btns{display:flex;gap:var(--sp-3);margin-top:auto;padding-top:var(--sp-2)}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:24px;right:24px;
+  background:var(--bg-surface);
+  border:1px solid var(--border);
+  border-radius:var(--r-input);
+  padding:12px 20px;
+  font-size:13px;color:var(--text);
+  z-index:1000;
+  opacity:0;transform:translateY(10px);
+  transition:all .3s;
+  pointer-events:none;
+  box-shadow:var(--shadow);
+}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* Check mark */
+.check{color:var(--result);font-weight:600}
+
+/* Responsive */
+@media(max-width:768px){
+  .input-card{width:100%;min-width:0}
+  .result-val{font-size:36px}
+  .grid{grid-template-columns:1fr}
+  .row{flex-direction:column;gap:0}
+  .sub-tabs{gap:4px}
+  .sub-tab{padding:6px 10px;font-size:11px}
+}
