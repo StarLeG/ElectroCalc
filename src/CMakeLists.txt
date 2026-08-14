@@ -80,6 +80,12 @@ add_executable(EngiCalc
     ui/referencebrowser.h
     models/cabledatamodel.cpp
     models/cabledatamodel.h
+    report/csvreport.cpp
+    report/csvreport.h
+    report/pdfreport.cpp
+    report/pdfreport.h
+    report/projectmanager.cpp
+    report/projectmanager.h
     ${CMAKE_SOURCE_DIR}/resources/resource.qrc
 )
 target_include_directories(EngiCalc PRIVATE

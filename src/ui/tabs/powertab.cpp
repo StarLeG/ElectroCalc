@@ -4,6 +4,8 @@
 
 #include "powertab.h"
 #include "core/power.h"
+#include "report/csvreport.h"
+#include "report/pdfreport.h"
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -15,6 +17,10 @@
 #include <QFrame>
 #include <QStackedWidget>
 #include <QDoubleValidator>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QClipboard>
+#include <QApplication>
 #include <QTabBar>
 #include <QStatusBar>
 
@@ -211,10 +217,12 @@ void PowerTab::setupResultCard(QWidget* card, QVBoxLayout* layout)
 
     auto* exportBtn = new QPushButton("Экспорт PDF", exportRow);
     exportBtn->setObjectName("Secondary");
+    connect(exportBtn, &QPushButton::clicked, this, &PowerTab::onExportPdf);
     exportLayout->addWidget(exportBtn);
 
     auto* copyBtn = new QPushButton("Копировать", exportRow);
     copyBtn->setObjectName("Ghost");
+    connect(copyBtn, &QPushButton::clicked, this, &PowerTab::onCopyResults);
     exportLayout->addWidget(copyBtn);
 
     exportLayout->addStretch();
@@ -317,6 +325,52 @@ void PowerTab::updateStatusBarCosPhi(double cosPhi)
             break;
         }
     }
+}
+
+void PowerTab::onExportPdf()
+{
+    QString filePath = QFileDialog::getSaveFileName(this,
+        "Экспорт протокола", "power_report.html",
+        "HTML (*.html);;PDF (*.pdf)");
+    if (filePath.isEmpty()) return;
+
+    Report::PdfReport report;
+    report.setTitle("Протокол расчёта — Мощность и ток");
+    report.addRow("Мощность", m_powerEdit->text(), "кВт");
+    report.addRow("Напряжение", m_voltageEdit->text(), "В");
+    report.addRow("Фазность", m_phaseCombo->currentText(), "");
+    report.addRow("cos φ", m_cosPhiEdit->text(), "");
+    report.addRow("КПД", m_efficiencyEdit->text(), "");
+    report.addRow("Ток", m_resultValue->text(), "А");
+    report.addRow("Полная мощность", m_detailApparent->text(), "");
+    report.addRow("Активная мощность", m_detailActive->text(), "");
+    report.addFormula(m_formulaText->text());
+    report.addNormative(m_normativeText->text());
+
+    if (report.saveAsHtml(filePath)) {
+        QMessageBox::information(this, "Экспорт",
+            QString("Протокол сохранён:\n%1").arg(filePath));
+    }
+}
+
+void PowerTab::onCopyResults()
+{
+    QString text = QString("Мощность и ток\n"
+        "Мощность: %1 кВт\n"
+        "Напряжение: %2 В\n"
+        "cos φ: %3\n"
+        "КПД: %4\n"
+        "Ток: %5 А\n"
+        "Полная мощность: %6")
+        .arg(m_powerEdit->text())
+        .arg(m_voltageEdit->text())
+        .arg(m_cosPhiEdit->text())
+        .arg(m_efficiencyEdit->text())
+        .arg(m_resultValue->text())
+        .arg(m_detailApparent->text());
+
+    QApplication::clipboard()->setText(text);
+    QMessageBox::information(this, "Копировать", "Результаты скопированы в буфер обмена");
 }
 
 } // namespace Ui

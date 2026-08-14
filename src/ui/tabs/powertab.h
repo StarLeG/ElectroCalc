@@ -26,6 +26,8 @@ public:
 private slots:
     void onCalculate();
     void onReset();
+    void onExportPdf();
+    void onCopyResults();
 
 private:
     void setupInputCard(QWidget* parent, QVBoxLayout* parentLayout);
