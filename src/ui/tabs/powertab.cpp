@@ -106,6 +106,15 @@ void PowerTab::setupInputCard(QWidget* card, QVBoxLayout* layout)
 
     layout->addWidget(rowCE);
 
+    // Ток нагрузки (А) — опциональное поле
+    m_currentEdit = new QLineEdit(card);
+    m_currentEdit->setPlaceholderText("Рассчитывается автоматически");
+    m_currentEdit->setReadOnly(true);
+    m_currentEdit->setStyleSheet(
+        "background: #252A33; border: 1px solid #3A414D; border-radius: 6px;"
+        "padding: 8px 12px; color: #9AA4B2; font-size: 14px;");
+    layout->addWidget(makeField(card, "Ток нагрузки (А)", m_currentEdit));
+
     // Кнопки
     layout->addSpacing(8);
     auto* btnRow = new QWidget(card);
@@ -265,8 +274,13 @@ void PowerTab::onCalculate()
 
     m_resultValue->setText(QString::number(result.current, 'f', 2));
     m_resultUnit->setText("Ампер");
-    m_resultDesc->setText(isThreePhase ? "Расчётный ток трёхфазной нагрузки"
-                                       : "Расчётный ток однофазной нагрузки");
+    m_resultDesc->setText("Расчётный ток нагрузки");
+
+    // Обновить поле «Ток нагрузки»
+    m_currentEdit->setText(QString::number(result.current, 'f', 2));
+    m_currentEdit->setStyleSheet(
+        "background: #252A33; border: 1px solid #3A414D; border-radius: 6px;"
+        "padding: 8px 12px; color: #E6EAF0; font-size: 14px;");
 
     m_detailApparent->setText(QString("%1 кВА").arg(result.apparentPower / 1000.0, 0, 'f', 2));
     m_detailReactive->setText(QString("%1 квар").arg(result.reactivePower / 1000.0, 0, 'f', 2));
@@ -290,6 +304,7 @@ void PowerTab::onReset()
     m_phaseCombo->setCurrentIndex(1);
     m_cosPhiEdit->setText("0.85");
     m_efficiencyEdit->setText("0.92");
+    m_currentEdit->setText("");
     clearErrors();
 
     m_resultValue->setText("—");
