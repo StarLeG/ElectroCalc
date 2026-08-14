@@ -1,0 +1,12 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/">
+        <file>icons/app_icon.svg</file>
+        <file>icons/lightning.svg</file>
+        <file>icons/cable.svg</file>
+        <file>icons/gauge.svg</file>
+        <file>fonts/Roboto-Regular.ttf</file>
+        <file>fonts/JetBrainsMono-Regular.ttf</file>
+        <file>metadata/developer_info.json</file>
+    </qresource>
+</RCC>
