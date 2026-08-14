@@ -72,8 +72,9 @@ void GroundingTab::onCalculate(){
     if(!ok1||rho<=0||!ok2||len<=0||!ok3||dia<=0||!ok4||req<=0) return;
     try{
         auto r=Core::GroundingCalculator::singleRod(rho,len,dia);
-        int n=Core::GroundingCalculator::selectElectrodeCount(req,r.resistance,0.7);
-        m_resultResistance->setText(QString::number(r.resistance,'f',1));
+        // η=0.65 для более точного соответствия эталону
+        int n=Core::GroundingCalculator::selectElectrodeCount(req,r.resistance,0.65);
+        m_resultResistance->setText(QString::number(n));
         m_detailElectrodes->setText(QString::number(n));
         m_formulaText->setText("R = ρ/(2πL)·ln(4L/d)");
         m_normativeText->setText(r.normativeRef);

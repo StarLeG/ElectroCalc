@@ -16,10 +16,10 @@ private:
     void setupInput(QWidget* c, QVBoxLayout* l);
     void setupResult(QWidget* c, QVBoxLayout* l);
     QLineEdit* m_currentEdit; QLineEdit* m_lengthEdit;
-    QLineEdit* m_resistanceEdit; QLineEdit* m_voltageEdit;
-    QLineEdit* m_cosPhiEdit; QComboBox* m_phaseCombo;
+    QLineEdit* m_resistanceEdit; QLineEdit* m_reactanceEdit;
+    QLineEdit* m_voltageEdit; QLineEdit* m_cosPhiEdit;
     QLabel* m_resultVolts; QLabel* m_resultPercent;
-    QLabel* m_detailEndVoltage; QLabel* m_detailDropVolts;
+    QLabel* m_detailDropVolts;
     QLabel* m_formulaText; QLabel* m_normativeText;
     QWidget* m_formulaPanel;
 };

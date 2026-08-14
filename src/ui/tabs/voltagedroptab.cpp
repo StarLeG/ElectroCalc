@@ -9,9 +9,9 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QComboBox>
 #include <QPushButton>
 #include <QFrame>
+
 namespace Ui {
 static QWidget* mkF(QWidget* p, const QString& lb, QWidget* w) {
     auto* g=new QWidget(p); auto* l=new QVBoxLayout(g);
@@ -34,13 +34,12 @@ void VoltageDropTab::setupInput(QWidget* c, QVBoxLayout* l){
     m_currentEdit=new QLineEdit("10",c); l->addWidget(mkF(c,"Ток (А)",m_currentEdit));
     m_lengthEdit=new QLineEdit("100",c); l->addWidget(mkF(c,"Длина линии (м)",m_lengthEdit));
     m_resistanceEdit=new QLineEdit("7.24",c); l->addWidget(mkF(c,"R (Ом/км)",m_resistanceEdit));
+    m_reactanceEdit=new QLineEdit("0.08",c); l->addWidget(mkF(c,"X (Ом/км)",m_reactanceEdit));
     auto* row=new QWidget(c); auto* rl=new QHBoxLayout(row);
     rl->setContentsMargins(0,0,0,0); rl->setSpacing(12);
     m_voltageEdit=new QLineEdit("380",row); rl->addWidget(mkF(row,"U (В)",m_voltageEdit));
     m_cosPhiEdit=new QLineEdit("0.85",row); rl->addWidget(mkF(row,"cos φ",m_cosPhiEdit));
     l->addWidget(row);
-    m_phaseCombo=new QComboBox(c); m_phaseCombo->addItem("1 фаза"); m_phaseCombo->addItem("3 фазы"); m_phaseCombo->setCurrentIndex(1);
-    l->addWidget(mkF(c,"Фазность",m_phaseCombo));
     l->addSpacing(8);
     auto* br=new QWidget(c); auto* bl=new QHBoxLayout(br); bl->setContentsMargins(0,0,0,0);
     auto* cb=new QPushButton("Рассчитать",br); cb->setObjectName("Primary");
@@ -68,11 +67,10 @@ void VoltageDropTab::setupResult(QWidget* c, QVBoxLayout* l){
         il2->addWidget(va); grid->addWidget(it,r,col); return va;
     };
     m_resultPercent=mkD("ПАДЕНИЕ (%)",0,0);
-    m_detailEndVoltage=mkD("НАПРЯЖЕНИЕ НА КОНЦЕ",0,1);
-    m_detailDropVolts=mkD("ПАДЕНИЕ (В)",1,0);
+    m_detailDropVolts=mkD("ПАДЕНИЕ (В)",0,1);
     l->addLayout(grid);
     m_formulaPanel=new QFrame(c);
-    m_formulaPanel->setStyleSheet("background:#2E343F;border:1px solid #3A414D;border-radius:8px;padding:14px;");
+    m_formulaPanel->setStyleSheet("background:#2E343F;border:none;border-radius:8px;padding:14px;");
     m_formulaPanel->setVisible(false);
     auto* fl=new QVBoxLayout(m_formulaPanel); fl->setSpacing(6);
     auto* ft=new QLabel("ФОРМУЛА И НОРМАТИВ",m_formulaPanel);
@@ -84,32 +82,33 @@ void VoltageDropTab::setupResult(QWidget* c, QVBoxLayout* l){
     l->addWidget(m_formulaPanel); l->addStretch();
 }
 void VoltageDropTab::onCalculate(){
-    bool ok1,ok2,ok3,ok4,ok5;
+    bool ok1,ok2,ok3,ok4,ok5,ok6;
     double I=m_currentEdit->text().toDouble(&ok1);
     double L=m_lengthEdit->text().toDouble(&ok2);
     double R=m_resistanceEdit->text().toDouble(&ok3);
-    double U=m_voltageEdit->text().toDouble(&ok4);
-    double cos=m_cosPhiEdit->text().toDouble(&ok5);
-    if(!ok1||I<=0||!ok2||L<=0||!ok3||R<0||!ok4||U<=0||!ok5||cos<0.1||cos>1.0) return;
-    bool three=m_phaseCombo->currentIndex()==1;
-    Core::VoltageDropResult r;
-    try {
-        r=three?Core::VoltageDropCalculator::threePhase(I,L,R,0,cos,U)
-               :Core::VoltageDropCalculator::singlePhase(I,L,R,0,cos,U);
-    } catch(...){return;}
-    m_resultVolts->setText(QString::number(r.dropVolts,'f',1));
-    m_resultPercent->setText(QString("%1 %").arg(r.dropPercent,0,'f',2));
-    m_detailEndVoltage->setText(QString("%1 В").arg(r.voltageAtEnd,0,'f',1));
-    m_detailDropVolts->setText(QString("%1 В").arg(r.dropVolts,0,'f',1));
-    m_formulaText->setText(three?"ΔU = √3·I·L·(R·cosφ+X·sinφ)/1000":"ΔU = 2·I·L·(R·cosφ+X·sinφ)/1000");
-    m_normativeText->setText(r.normativeRef);
+    double X=m_reactanceEdit->text().toDouble(&ok4);
+    double U=m_voltageEdit->text().toDouble(&ok5);
+    double cos=m_cosPhiEdit->text().toDouble(&ok6);
+    if(!ok1||I<=0||!ok2||L<=0||!ok3||R<0||!ok4||X<0||!ok5||U<=0||!ok6||cos<0.1||cos>1.0) return;
+
+    // ΔU = √3 * I * L * (R·cosφ + X·sinφ) / 1000
+    double sqrt3 = std::sqrt(3.0);
+    double sinPhi = std::sqrt(1.0 - cos * cos);
+    double dropVolts = sqrt3 * I * L * (R * cos + X * sinPhi) / 1000.0;
+    double dropPercent = (dropVolts / U) * 100.0;
+
+    m_resultVolts->setText(QString("%1 В").arg(dropVolts, 0, 'f', 1));
+    m_resultPercent->setText(QString("%1 %").arg(dropPercent, 0, 'f', 2));
+    m_detailDropVolts->setText(QString("%1 В").arg(dropVolts, 0, 'f', 1));
+    m_formulaText->setText("ΔU = √3·I·L·(R·cosφ+X·sinφ)/1000");
+    m_normativeText->setText("ПУЭ п. 1.3.10 — потери напряжения");
     m_formulaPanel->setVisible(true);
 }
 void VoltageDropTab::onReset(){
     m_currentEdit->setText("10"); m_lengthEdit->setText("100");
-    m_resistanceEdit->setText("7.24"); m_voltageEdit->setText("380");
-    m_cosPhiEdit->setText("0.85"); m_resultVolts->setText("—");
-    m_resultPercent->setText("—"); m_detailEndVoltage->setText("—");
+    m_resistanceEdit->setText("7.24"); m_reactanceEdit->setText("0.08");
+    m_voltageEdit->setText("380"); m_cosPhiEdit->setText("0.85");
+    m_resultVolts->setText("—"); m_resultPercent->setText("—");
     m_detailDropVolts->setText("—"); m_formulaPanel->setVisible(false);
 }
 } // namespace Ui

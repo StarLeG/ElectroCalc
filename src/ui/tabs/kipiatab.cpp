@@ -17,6 +17,7 @@
 #include <QPushButton>
 #include <QFrame>
 #include <QComboBox>
+#include <QTimer>
 
 namespace Ui {
 
@@ -38,6 +39,21 @@ KipiaTab::KipiaTab(QWidget* p) : QWidget(p) {
     setupPid(this, tabs);
     setupAccuracy(this, tabs);
     layout->addWidget(tabs);
+
+    // Авторасчёт: нажать все кнопки "Рассчитать" после отрисовки
+    QTimer::singleShot(0, this, [tabs]() {
+        for (int i = 0; i < tabs->count(); ++i) {
+            if (auto* page = tabs->widget(i)) {
+                auto buttons = page->findChildren<QPushButton*>();
+                for (auto* btn : buttons) {
+                    if (btn->objectName() == "Primary") {
+                        btn->click();
+                        break;
+                    }
+                }
+            }
+        }
+    });
 }
 
 void KipiaTab::setupCurrentLoop(QWidget*, QTabWidget* tabs) {

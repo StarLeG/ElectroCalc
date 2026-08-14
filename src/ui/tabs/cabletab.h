@@ -26,7 +26,6 @@ private:
     QComboBox* m_materialCombo;
     QLineEdit* m_lengthEdit;
     QLineEdit* m_voltageEdit;
-    QLineEdit* m_maxDropEdit;
     QLabel* m_resultSection;
     QLabel* m_resultDiameter;
     QLabel* m_resultMaxCurrent;

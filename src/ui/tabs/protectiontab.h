@@ -14,9 +14,8 @@ private slots:
     void onCalculate(); void onReset();
 private:
     QLineEdit* m_loadCurrentEdit; QComboBox* m_characteristicCombo;
-    QLineEdit* m_leakageEdit; QLineEdit* m_upstreamEdit;
+    QLineEdit* m_leakageEdit;
     QLabel* m_resultBreaker; QLabel* m_detailRCD;
-    QLabel* m_detailSelectivity;
     QLabel* m_formulaText; QLabel* m_normativeText; QWidget* m_formulaPanel;
 };
 }

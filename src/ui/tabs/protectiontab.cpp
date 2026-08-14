@@ -32,7 +32,6 @@ ProtectionTab::ProtectionTab(QWidget* p):QWidget(p){
     m_characteristicCombo->setCurrentIndex(1);
     il->addWidget(mkF(ic,"Характеристика автомата",m_characteristicCombo));
     m_leakageEdit=new QLineEdit("30",ic); il->addWidget(mkF(ic,"Ток утечки (мА)",m_leakageEdit));
-    m_upstreamEdit=new QLineEdit("63",ic); il->addWidget(mkF(ic,"Ток вводного автомата (А)",m_upstreamEdit));
     il->addSpacing(8);
     auto* br=new QWidget(ic); auto* bl=new QHBoxLayout(br); bl->setContentsMargins(0,0,0,0);
     auto* cb=new QPushButton("Рассчитать",br); cb->setObjectName("Primary");
@@ -61,7 +60,6 @@ ProtectionTab::ProtectionTab(QWidget* p):QWidget(p){
         grid->addWidget(it,r,col); return va;
     };
     m_detailRCD=mkD("НОМИНАЛ УЗО (мА)",0,0);
-    m_detailSelectivity=mkD("СЕЛЕКТИВНОСТЬ",0,1);
     rl->addLayout(grid);
     m_formulaPanel=new QFrame(rc);
     m_formulaPanel->setStyleSheet("background:#2E343F;border:1px solid #3A414D;border-radius:8px;padding:14px;");
@@ -75,20 +73,16 @@ ProtectionTab::ProtectionTab(QWidget* p):QWidget(p){
     onCalculate();
 }
 void ProtectionTab::onCalculate(){
-    bool ok1,ok2,ok3;
+    bool ok1,ok2;
     double loadI=m_loadCurrentEdit->text().toDouble(&ok1);
     double leakage=m_leakageEdit->text().toDouble(&ok2);
-    double upstream=m_upstreamEdit->text().toDouble(&ok3);
-    if(!ok1||loadI<=0||!ok2||leakage<=0||!ok3||upstream<=0) return;
+    if(!ok1||loadI<=0||!ok2||leakage<=0) return;
     QString ch; int ci=m_characteristicCombo->currentIndex();
     ch=(ci==0)?"B":(ci==1)?"C":"D";
     try{
-        double breaker=Core::ProtectionCalculator::selectBreaker(loadI,ch);
         double rcd=Core::ProtectionCalculator::selectRCD(leakage);
-        bool sel=Core::ProtectionCalculator::checkSelectivity(upstream,breaker);
-        m_resultBreaker->setText(QString::number(breaker,'f',0));
+        m_resultBreaker->setText(QString::number(rcd,'f',0));
         m_detailRCD->setText(QString::number(rcd,'f',0));
-        m_detailSelectivity->setText(sel?"✓ Обеспечена":"✗ Не обеспечена");
         m_formulaText->setText("Iавт ≥ Iнагр · kзап");
         m_normativeText->setText("ПУЭ п. 1.7.79 — выбор автоматического выключателя");
         m_formulaPanel->setVisible(true);
@@ -96,8 +90,8 @@ void ProtectionTab::onCalculate(){
 }
 void ProtectionTab::onReset(){
     m_loadCurrentEdit->setText("16"); m_characteristicCombo->setCurrentIndex(1);
-    m_leakageEdit->setText("30"); m_upstreamEdit->setText("63");
+    m_leakageEdit->setText("30");
     m_resultBreaker->setText("—"); m_detailRCD->setText("—");
-    m_detailSelectivity->setText("—"); m_formulaPanel->setVisible(false);
+    m_formulaPanel->setVisible(false);
 }
 } // namespace Ui

@@ -39,7 +39,6 @@ private:
     QComboBox* m_phaseCombo;
     QLineEdit* m_cosPhiEdit;
     QLineEdit* m_efficiencyEdit;
-    QLineEdit* m_currentEdit;
 
     QLabel* m_resultValue;
     QLabel* m_resultUnit;

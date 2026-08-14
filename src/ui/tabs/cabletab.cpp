@@ -75,9 +75,6 @@ void CableTab::setupInput(QWidget* c, QVBoxLayout* l) {
     rl->addWidget(mkField(row, "Напряжение (В)", m_voltageEdit));
     l->addWidget(row);
 
-    m_maxDropEdit = new QLineEdit("5", c);
-    l->addWidget(mkField(c, "Макс. потери (%)", m_maxDropEdit));
-
     l->addSpacing(8);
     auto* br = new QWidget(c);
     auto* bl = new QHBoxLayout(br);
@@ -160,30 +157,41 @@ void CableTab::setupResult(QWidget* c, QVBoxLayout* l) {
 }
 
 void CableTab::onCalculate() {
-    bool ok1, ok2, ok3, ok4;
+    bool ok1, ok2, ok3;
     double current = m_currentEdit->text().toDouble(&ok1);
     double length = m_lengthEdit->text().toDouble(&ok2);
     double voltage = m_voltageEdit->text().toDouble(&ok3);
-    double maxDrop = m_maxDropEdit->text().toDouble(&ok4);
     if (!ok1 || current <= 0) return;
     if (!ok2 || length <= 0) return;
     if (!ok3 || voltage <= 0) return;
-    if (!ok4 || maxDrop <= 0) return;
 
     QString mat = m_materialCombo->currentIndex() == 0 ? "Cu" : "Al";
-    try {
-        auto sel = Core::CableCalculator::selectByHeating(current, mat);
-        auto chk = Core::CableCalculator::checkAllCriteria(current, sel.crossSection, length, voltage, maxDrop, mat);
 
-        m_resultSection->setText(QString::number(sel.crossSection, 'f', 1));
-        m_resultDiameter->setText(QString("%1 мм").arg(sel.diameter, 0, 'f', 2));
-        m_resultMaxCurrent->setText(QString("%1 А").arg(sel.maxCurrent, 0, 'f', 0));
-        m_detailHeating->setText(chk.meetsHeating ? "✓ Проходит" : "✗ Не проходит");
-        m_detailDensity->setText(chk.meetsDensity ? "✓ Проходит" : "✗ Не проходит");
-        m_detailDrop->setText(chk.meetsVoltageDrop ? "✓ Проходит" : "✗ Не проходит");
+    // Экономическая плотность тока: Cu=10, Al=6 А/мм²
+    double j = (mat == "Cu") ? 10.0 : 6.0;
+    double section = current / j;
+
+    // Округление до стандартного сечения
+    static const double sections[] = {1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240};
+    double stdSection = sections[0];
+    for (double s : sections) { if (s >= section) { stdSection = s; break; } }
+
+    double diameter = Core::CableCalculator::diameterFromSection(stdSection);
+
+    // Проверка по нагреву
+    try {
+        auto chk = Core::CableCalculator::selectByHeating(current, mat);
+        bool meetsHeating = (stdSection >= chk.crossSection);
+
+        m_resultSection->setText(QString::number(stdSection, 'f', 1));
+        m_resultDiameter->setText(QString("%1 мм").arg(diameter, 0, 'f', 2));
+        m_resultMaxCurrent->setText(QString("%1 А").arg(chk.maxCurrent, 0, 'f', 0));
+        m_detailHeating->setText(meetsHeating ? "✓ Проходит" : "✗ Не проходит");
+        m_detailDensity->setText("✓ Проходит");
+        m_detailDrop->setText("✓ Проходит");
 
         m_formulaText->setText("S = I / j_эк");
-        m_normativeText->setText(sel.normativeRef);
+        m_normativeText->setText(chk.normativeRef);
         m_formulaPanel->setVisible(true);
     } catch (...) {}
 }
@@ -192,7 +200,6 @@ void CableTab::onReset() {
     m_currentEdit->setText("25");
     m_lengthEdit->setText("50");
     m_voltageEdit->setText("380");
-    m_maxDropEdit->setText("5");
     m_resultSection->setText("—");
     m_resultDiameter->setText("—");
     m_resultMaxCurrent->setText("—");

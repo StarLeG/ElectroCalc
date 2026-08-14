@@ -11,7 +11,6 @@
 #include "tabs/groundingtab.h"
 #include "tabs/protectiontab.h"
 #include "tabs/kipiatab.h"
-#include "referencebrowser.h"
 #include "util/theme.h"
 #include "util/constants.h"
 #include "version.h"
@@ -32,10 +31,7 @@ static const char* BREADCRUMBS[] = {
     "Электрика / Токи КЗ",
     "Электрика / Заземление",
     "Электрика / Автозащита",
-    "КИПиА / Расчёт",
-    "КИПиА / Датчики",
-    "КИПиА / Настройка",
-    "Справочник"
+    "КИПиА"
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -71,7 +67,6 @@ void MainWindow::setupUI()
     rightLayout->setContentsMargins(0, 0, 0, 0);
     rightLayout->setSpacing(0);
 
-    // Верхняя панель
     auto* topBar = new QFrame(rightPanel);
     topBar->setObjectName("TopBar");
     auto* topLayout = new QHBoxLayout(topBar);
@@ -108,7 +103,6 @@ void MainWindow::setupUI()
 
     rightLayout->addWidget(topBar);
 
-    // Стек контента — 10 вкладок (6 электрика + 3 КИПиА + 1 справочник)
     m_contentStack = new QStackedWidget(rightPanel);
     m_contentStack->addWidget(new Ui::PowerTab(rightPanel));          // 0
     m_contentStack->addWidget(new Ui::CableTab(rightPanel));          // 1
@@ -116,10 +110,7 @@ void MainWindow::setupUI()
     m_contentStack->addWidget(new Ui::ShortCircuitTab(rightPanel));   // 3
     m_contentStack->addWidget(new Ui::GroundingTab(rightPanel));      // 4
     m_contentStack->addWidget(new Ui::ProtectionTab(rightPanel));     // 5
-    m_contentStack->addWidget(new Ui::KipiaTab(rightPanel));          // 6 (все подвкладки внутри)
-    m_contentStack->addWidget(new Ui::KipiaTab(rightPanel));          // 7
-    m_contentStack->addWidget(new Ui::KipiaTab(rightPanel));          // 8
-    m_contentStack->addWidget(new Ui::ReferenceBrowser(rightPanel));  // 9
+    m_contentStack->addWidget(new Ui::KipiaTab(rightPanel));          // 6
 
     rightLayout->addWidget(m_contentStack);
     mainLayout->addWidget(m_navRail);
@@ -131,10 +122,7 @@ void MainWindow::setupUI()
 
 void MainWindow::setupNavigation()
 {
-    using Ui::NavGroup;
-    using Ui::NavItem;
-
-    QVector<NavGroup> groups = {
+    QVector<Ui::NavGroup> groups = {
         { "Электрика", {
             {":/icons/lightning.svg",    "Мощность",  "Мощность и ток",     0},
             {":/icons/cable.svg",        "Кабели",    "Подбор сечения",     1},
@@ -144,12 +132,7 @@ void MainWindow::setupNavigation()
             {":/icons/shield.svg",       "Защита",    "Автозащита",         5}
         }},
         { "КИПиА", {
-            {":/icons/signal.svg",       "Расчёт",    "Расчёты КИПиА",      6},
-            {":/icons/thermometer.svg",  "Датчики",   "Датчики и сигналы",  7},
-            {":/icons/gauge.svg",        "Настройка",  "ПИД и погрешности", 8}
-        }},
-        { "Проект", {
-            {":/icons/book.svg",         "Справка",    "Справочник",        9}
+            {":/icons/signal.svg",       "Расчёт",    "Расчёты КИПиА",      6}
         }}
     };
 
@@ -187,7 +170,7 @@ void MainWindow::onTabRequested(int index)
 {
     if (index >= 0 && index < m_contentStack->count()) {
         m_contentStack->setCurrentIndex(index);
-        if (index >= 0 && index < 10) {
+        if (index >= 0 && index < 7) {
             m_breadcrumb->setText(BREADCRUMBS[index]);
         }
     }
