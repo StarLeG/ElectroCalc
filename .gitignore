@@ -1,0 +1,73 @@
+# ===== Build =====
+build/
+cmake-build-*/
+out/
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+
+# ===== Qt generated =====
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+*.qm
+*.moc
+
+# ===== IDE =====
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.sln
+*.vcxproj*
+*.ncb
+*.sdf
+*.opensdf
+*.aps
+CMakeSettings.json
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== MiMoCode / Agents =====
+.mimocode/
+AGENTS.md
+
+# ===== Project prompts & analysis =====
+engicalc_final_prompt.md
+*.prompt
+*.analysis
+
+# ===== Temporary =====
+*.tmp
+*.log
+*.swp
+*.swo
+*~
+.cache/
+
+# ===== Coverage =====
+coverage/
+*.gcda
+*.gcno
+*.gcov
+*.info
+
+# ===== Documentation build =====
+docs/html/
+docs/latex/
+
+# ===== Python (if used for scripts) =====
+__pycache__/
+*.pyc
+.env
+.venv
