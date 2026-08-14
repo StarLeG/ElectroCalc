@@ -141,14 +141,6 @@ void PowerTab::setupResultCard(QWidget* card, QVBoxLayout* layout)
     title->setStyleSheet("font-size: 16px; font-weight: 600;");
     layout->addWidget(title);
 
-    // Вкладки
-    auto* tabBar = new QTabBar(card);
-    tabBar->addTab("Основной");
-    tabBar->addTab("Дополнительно");
-    tabBar->addTab("Формула");
-    tabBar->setCurrentIndex(0);
-    layout->addWidget(tabBar);
-
     // Табло результата
     auto* resultDisplay = new QWidget(card);
     auto* rdl = new QVBoxLayout(resultDisplay);
@@ -172,7 +164,7 @@ void PowerTab::setupResultCard(QWidget* card, QVBoxLayout* layout)
 
     layout->addWidget(resultDisplay);
 
-    // Сетка деталей: Полная → Реактивная → Активная → Коэффициент
+    // Сетка деталей: Полная + Активная (по эталону)
     auto* grid = new QGridLayout();
     grid->setSpacing(12);
 
@@ -193,9 +185,7 @@ void PowerTab::setupResultCard(QWidget* card, QVBoxLayout* layout)
     };
 
     m_detailApparent = makeDetail("ПОЛНАЯ МОЩНОСТЬ", 0, 0);
-    m_detailReactive = makeDetail("РЕАКТИВНАЯ МОЩНОСТЬ", 0, 1);
-    m_detailActive   = makeDetail("АКТИВНАЯ МОЩНОСТЬ", 1, 0);
-    m_detailCosPhi   = makeDetail("КОЭФФИЦИЕНТ МОЩНОСТИ", 1, 1);
+    m_detailActive   = makeDetail("АКТИВНАЯ МОЩНОСТЬ", 0, 1);
 
     layout->addLayout(grid);
 
@@ -283,9 +273,7 @@ void PowerTab::onCalculate()
         "padding: 8px 12px; color: #E6EAF0; font-size: 14px;");
 
     m_detailApparent->setText(QString("%1 кВА").arg(result.apparentPower / 1000.0, 0, 'f', 2));
-    m_detailReactive->setText(QString("%1 квар").arg(result.reactivePower / 1000.0, 0, 'f', 2));
     m_detailActive->setText(QString("%1 кВт").arg(power, 0, 'f', 2));
-    m_detailCosPhi->setText(QString::number(cosPhi, 'f', 2));
 
     QString formula = isThreePhase
         ? "I = P / (√3 × U × cos φ × η)"
@@ -312,8 +300,6 @@ void PowerTab::onReset()
     m_resultDesc->setText("Расчётный ток нагрузки");
     m_detailActive->setText("—");
     m_detailApparent->setText("—");
-    m_detailReactive->setText("—");
-    m_detailCosPhi->setText("—");
     m_formulaPanel->setVisible(false);
 }
 

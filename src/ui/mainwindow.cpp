@@ -9,10 +9,7 @@
 #include "tabs/voltagedroptab.h"
 #include "tabs/shortcircuittab.h"
 #include "tabs/groundingtab.h"
-#include "tabs/thermaltab.h"
-#include "tabs/energytab.h"
 #include "tabs/protectiontab.h"
-#include "tabs/extensionstab.h"
 #include "tabs/kipiatab.h"
 #include "referencebrowser.h"
 #include "util/theme.h"
@@ -28,7 +25,6 @@
 #include <QStatusBar>
 #include <QApplication>
 
-// Хлебные крошки для каждой вкладки
 static const char* BREADCRUMBS[] = {
     "Электрика / Мощность и ток",
     "Электрика / Кабели",
@@ -39,8 +35,7 @@ static const char* BREADCRUMBS[] = {
     "КИПиА / Расчёт",
     "КИПиА / Датчики",
     "КИПиА / Настройка",
-    "Проект / Отчёт",
-    "Проект / Справочник"
+    "Справочник"
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -68,11 +63,9 @@ void MainWindow::setupUI()
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
 
-    // Навигационный рельс
     m_navRail = new Ui::NavigationRail(this);
     setupNavigation();
 
-    // Правая часть
     auto* rightPanel = new QWidget(this);
     auto* rightLayout = new QVBoxLayout(rightPanel);
     rightLayout->setContentsMargins(0, 0, 0, 0);
@@ -115,27 +108,22 @@ void MainWindow::setupUI()
 
     rightLayout->addWidget(topBar);
 
-    // Стек контента
+    // Стек контента — 10 вкладок (6 электрика + 3 КИПиА + 1 справочник)
     m_contentStack = new QStackedWidget(rightPanel);
-
-    // Вкладки — порядок соответствует навигации
     m_contentStack->addWidget(new Ui::PowerTab(rightPanel));          // 0
     m_contentStack->addWidget(new Ui::CableTab(rightPanel));          // 1
     m_contentStack->addWidget(new Ui::VoltageDropTab(rightPanel));    // 2
     m_contentStack->addWidget(new Ui::ShortCircuitTab(rightPanel));   // 3
     m_contentStack->addWidget(new Ui::GroundingTab(rightPanel));      // 4
     m_contentStack->addWidget(new Ui::ProtectionTab(rightPanel));     // 5
-    m_contentStack->addWidget(new Ui::KipiaTab(rightPanel));          // 6
+    m_contentStack->addWidget(new Ui::KipiaTab(rightPanel));          // 6 (все подвкладки внутри)
     m_contentStack->addWidget(new Ui::KipiaTab(rightPanel));          // 7
     m_contentStack->addWidget(new Ui::KipiaTab(rightPanel));          // 8
-    m_contentStack->addWidget(new QWidget(rightPanel));               // 9
-    m_contentStack->addWidget(new Ui::ReferenceBrowser(rightPanel));  // 10
+    m_contentStack->addWidget(new Ui::ReferenceBrowser(rightPanel));  // 9
 
     rightLayout->addWidget(m_contentStack);
-
     mainLayout->addWidget(m_navRail);
     mainLayout->addWidget(rightPanel);
-
     setCentralWidget(central);
 
     setupStatusBar();
@@ -161,13 +149,11 @@ void MainWindow::setupNavigation()
             {":/icons/gauge.svg",        "Настройка",  "ПИД и погрешности", 8}
         }},
         { "Проект", {
-            {":/icons/report.svg",       "Отчёт",     "Экспорт отчёта",    9},
-            {":/icons/book.svg",         "Справка",    "Справочник",       10}
+            {":/icons/book.svg",         "Справка",    "Справочник",        9}
         }}
     };
 
     m_navRail->setGroups(groups);
-
     connect(m_navRail, &Ui::NavigationRail::tabRequested,
             this, &MainWindow::onTabRequested);
 }
@@ -187,7 +173,6 @@ void MainWindow::setupStatusBar()
     statusBar->addWidget(hintLabel, 1);
     statusBar->addPermanentWidget(cosPhiLabel);
     statusBar->addPermanentWidget(m_versionLabel);
-
     setStatusBar(statusBar);
 }
 
@@ -202,9 +187,7 @@ void MainWindow::onTabRequested(int index)
 {
     if (index >= 0 && index < m_contentStack->count()) {
         m_contentStack->setCurrentIndex(index);
-
-        // Обновить хлебные крошки
-        if (index >= 0 && index < 11) {
+        if (index >= 0 && index < 10) {
             m_breadcrumb->setText(BREADCRUMBS[index]);
         }
     }

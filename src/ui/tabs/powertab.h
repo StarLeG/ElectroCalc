@@ -45,9 +45,7 @@ private:
     QLabel* m_resultUnit;
     QLabel* m_resultDesc;
     QLabel* m_detailApparent;
-    QLabel* m_detailReactive;
     QLabel* m_detailActive;
-    QLabel* m_detailCosPhi;
     QLabel* m_formulaText;
     QLabel* m_normativeText;
     QWidget* m_formulaPanel;
