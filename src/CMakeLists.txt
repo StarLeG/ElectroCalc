@@ -24,7 +24,11 @@ target_link_libraries(engicalc_core PUBLIC Qt6::Core)
 # === Модуль КИПиА (static lib, опционально) ===
 if(BUILD_KIPIA)
     add_library(engicalc_kipia STATIC
-        kipia/placeholder.cpp
+        kipia/currentloop.cpp
+        kipia/signalscaling.cpp
+        kipia/rtd.cpp
+        kipia/pidtuning.cpp
+        kipia/accuracy.cpp
     )
     target_include_directories(engicalc_kipia PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
@@ -70,6 +74,8 @@ add_executable(EngiCalc
     ui/tabs/protectiontab.h
     ui/tabs/extensionstab.cpp
     ui/tabs/extensionstab.h
+    ui/tabs/kipiatab.cpp
+    ui/tabs/kipiatab.h
     ui/referencebrowser.cpp
     ui/referencebrowser.h
     models/cabledatamodel.cpp

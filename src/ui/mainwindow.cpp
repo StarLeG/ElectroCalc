@@ -13,6 +13,7 @@
 #include "tabs/energytab.h"
 #include "tabs/protectiontab.h"
 #include "tabs/extensionstab.h"
+#include "tabs/kipiatab.h"
 #include "referencebrowser.h"
 #include "util/theme.h"
 #include "util/constants.h"
@@ -109,9 +110,9 @@ void MainWindow::setupUI()
     m_contentStack->addWidget(new Ui::ShortCircuitTab(rightPanel));   // 3: КЗ
     m_contentStack->addWidget(new Ui::GroundingTab(rightPanel));      // 4: Заземление
     m_contentStack->addWidget(new Ui::ProtectionTab(rightPanel));     // 5: Защита
-    m_contentStack->addWidget(new Ui::ExtensionsTab(rightPanel));     // 6: Расчёты (Компенсация, Двигатель, Трансформатор, ИБП)
-    m_contentStack->addWidget(new Ui::ExtensionsTab(rightPanel));     // 7: Двигатели (та же вкладка)
-    m_contentStack->addWidget(new Ui::ExtensionsTab(rightPanel));     // 8: Освещение (та же вкладка)
+    m_contentStack->addWidget(new Ui::KipiaTab(rightPanel));          // 6: КИПиА (токовая петля, масштаб, RTD)
+    m_contentStack->addWidget(new Ui::KipiaTab(rightPanel));          // 7: КИПиА (датчики)
+    m_contentStack->addWidget(new Ui::KipiaTab(rightPanel));          // 8: КИПиА (ПИД, погрешности)
     m_contentStack->addWidget(new QWidget(rightPanel));               // 9: Отчёт (заглушка)
     m_contentStack->addWidget(new Ui::ReferenceBrowser(rightPanel));  // 10: Справка
 
@@ -140,10 +141,10 @@ void MainWindow::setupNavigation()
             {":/icons/ground.svg",       "Заземл.",   "Заземление",         4},
             {":/icons/shield.svg",       "Защита",    "Автозащита",         5}
         }},
-        { "Расширения", {
-            {":/icons/signal.svg",       "Расчёт",    "Расширенные расчёты", 6},
-            {":/icons/thermometer.svg",  "Двигатели", "Электродвигатели",    7},
-            {":/icons/gauge.svg",        "Освещение", "Светотехника",        8}
+        { "КИПиА", {
+            {":/icons/signal.svg",       "Расчёт",    "Расчёты КИПиА",      6},
+            {":/icons/thermometer.svg",  "Датчики",   "Датчики и сигналы",  7},
+            {":/icons/gauge.svg",        "Настройка",  "ПИД и погрешности", 8}
         }},
         { "Проект", {
             {":/icons/report.svg",       "Отчёт",     "Экспорт отчёта",    9},
