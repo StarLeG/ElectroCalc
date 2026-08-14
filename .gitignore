@@ -54,6 +54,8 @@ engicalc_final_prompt.md
 *.swo
 *~
 .cache/
+screenshot*.png
+preview*.html
 
 # ===== Coverage =====
 coverage/
