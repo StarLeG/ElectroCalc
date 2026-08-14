@@ -46,8 +46,10 @@ target_include_directories(core_tests PRIVATE
 
 include(GoogleTest)
 gtest_discover_tests(smoke_test
-    ENVIRONMENT "PATH=${CMAKE_PREFIX_PATH}/bin;$ENV{PATH}"
+    ENVIRONMENT "PATH=D:/Qt/Tools/mingw64_16.1.0/bin;D:/Qt/6.11.1/MinGW64_16.1.0/bin;$ENV{PATH}"
+    DISCOVERY_TIMEOUT 10
 )
 gtest_discover_tests(core_tests
-    ENVIRONMENT "PATH=${CMAKE_PREFIX_PATH}/bin;$ENV{PATH}"
+    ENVIRONMENT "PATH=D:/Qt/Tools/mingw64_16.1.0/bin;D:/Qt/6.11.1/MinGW64_16.1.0/bin;$ENV{PATH}"
+    DISCOVERY_TIMEOUT 10
 )

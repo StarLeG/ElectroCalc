@@ -12,6 +12,7 @@
 #include "tabs/thermaltab.h"
 #include "tabs/energytab.h"
 #include "tabs/protectiontab.h"
+#include "tabs/extensionstab.h"
 #include "referencebrowser.h"
 #include "util/theme.h"
 #include "util/constants.h"
@@ -101,30 +102,18 @@ void MainWindow::setupUI()
     // Стек контента
     m_contentStack = new QStackedWidget(rightPanel);
 
-    // Вкладки калькуляторов
+    // Вкладки — порядок соответствует навигации
     m_contentStack->addWidget(new Ui::PowerTab(rightPanel));          // 0: Мощность
     m_contentStack->addWidget(new Ui::CableTab(rightPanel));          // 1: Кабели
     m_contentStack->addWidget(new Ui::VoltageDropTab(rightPanel));    // 2: Потери
     m_contentStack->addWidget(new Ui::ShortCircuitTab(rightPanel));   // 3: КЗ
     m_contentStack->addWidget(new Ui::GroundingTab(rightPanel));      // 4: Заземление
-    m_contentStack->addWidget(new Ui::ThermalTab(rightPanel));        // 5: Тепловые
-    m_contentStack->addWidget(new Ui::EnergyTab(rightPanel));         // 6: Энергия
-    m_contentStack->addWidget(new Ui::ProtectionTab(rightPanel));     // 7: Защита
-
-    // Заглушки для КИПиА
-    for (int i = 8; i <= 9; ++i) {
-        auto* stub = new QWidget(rightPanel);
-        auto* stubLayout = new QVBoxLayout(stub);
-        stubLayout->setAlignment(Qt::AlignCenter);
-        auto* stubLabel = new QLabel(QString("Вкладка %1 — в разработке").arg(i), stub);
-        stubLabel->setAlignment(Qt::AlignCenter);
-        stubLabel->setStyleSheet("font-size: 18px; color: #9AA4B2;");
-        stubLayout->addWidget(stubLabel);
-        m_contentStack->addWidget(stub);
-    }
-
-    // Справочник (таблица кабелей, конвертер, справочник)
-    m_contentStack->addWidget(new Ui::ReferenceBrowser(rightPanel)); // 10: Справка
+    m_contentStack->addWidget(new Ui::ProtectionTab(rightPanel));     // 5: Защита
+    m_contentStack->addWidget(new Ui::ExtensionsTab(rightPanel));     // 6: Расчёты (Компенсация, Двигатель, Трансформатор, ИБП)
+    m_contentStack->addWidget(new Ui::ExtensionsTab(rightPanel));     // 7: Двигатели (та же вкладка)
+    m_contentStack->addWidget(new Ui::ExtensionsTab(rightPanel));     // 8: Освещение (та же вкладка)
+    m_contentStack->addWidget(new QWidget(rightPanel));               // 9: Отчёт (заглушка)
+    m_contentStack->addWidget(new Ui::ReferenceBrowser(rightPanel));  // 10: Справка
 
     rightLayout->addWidget(m_contentStack);
 
@@ -144,21 +133,21 @@ void MainWindow::setupNavigation()
 
     QVector<NavGroup> groups = {
         { "Электрика", {
-            {":/icons/lightning.svg",    "Мощность", "Мощность и ток",    0},
-            {":/icons/cable.svg",        "Кабели",   "Подбор сечения",    1},
-            {":/icons/gauge.svg",        "Потери",   "Потери напряжения", 2},
-            {":/icons/transformer.svg",  "КЗ",       "Токи КЗ",           3},
-            {":/icons/ground.svg",       "Заземл.",  "Заземление",        4},
-            {":/icons/shield.svg",       "Защита",   "Автозащита",        5}
+            {":/icons/lightning.svg",    "Мощность",  "Мощность и ток",     0},
+            {":/icons/cable.svg",        "Кабели",    "Подбор сечения",     1},
+            {":/icons/gauge.svg",        "Потери",    "Потери напряжения",  2},
+            {":/icons/transformer.svg",  "КЗ",        "Токи КЗ",            3},
+            {":/icons/ground.svg",       "Заземл.",   "Заземление",         4},
+            {":/icons/shield.svg",       "Защита",    "Автозащита",         5}
         }},
-        { "КИПиА", {
-            {":/icons/signal.svg",       "4–20 мА",    "Токовая петля",   6},
-            {":/icons/gauge.svg",        "Масштаб",    "Масштабирование", 7},
-            {":/icons/thermometer.svg",  "Температ.",  "RTD/термопары",   8}
+        { "Расширения", {
+            {":/icons/signal.svg",       "Расчёт",    "Расширенные расчёты", 6},
+            {":/icons/thermometer.svg",  "Двигатели", "Электродвигатели",    7},
+            {":/icons/gauge.svg",        "Освещение", "Светотехника",        8}
         }},
         { "Проект", {
-            {":/icons/report.svg",       "Отчёт",      "Экспорт отчёта",  9},
-            {":/icons/book.svg",         "Справка",     "Справочник",     10}
+            {":/icons/report.svg",       "Отчёт",     "Экспорт отчёта",    9},
+            {":/icons/book.svg",         "Справка",    "Справочник",       10}
         }}
     };
 

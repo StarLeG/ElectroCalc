@@ -8,6 +8,12 @@ add_library(engicalc_core STATIC
     core/thermal.cpp
     core/energy.cpp
     core/protection.cpp
+    core/compensation.cpp
+    core/motor.cpp
+    core/transformer.cpp
+    core/lighting.cpp
+    core/ups.cpp
+    core/trayfill.cpp
 )
 target_include_directories(engicalc_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -62,6 +68,8 @@ add_executable(EngiCalc
     ui/tabs/energytab.h
     ui/tabs/protectiontab.cpp
     ui/tabs/protectiontab.h
+    ui/tabs/extensionstab.cpp
+    ui/tabs/extensionstab.h
     ui/referencebrowser.cpp
     ui/referencebrowser.h
     models/cabledatamodel.cpp
