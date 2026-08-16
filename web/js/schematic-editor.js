@@ -14,7 +14,7 @@ import {
   SchematicModel, COMPONENT_TYPES, PIN_OFFSETS, getComponentPins,
   formatSI, unitSymbol, setLocale, GROUND_LEAD, pointOnSegment,
 } from './schematic-model.js';
-import { solveDC } from './circuit-sim.js';
+import { solveDC, solveTransient } from './circuit-sim.js';
 import { PRESETS, loadPreset } from './schematic-presets.js';
 
 /* ===================== КОНСТАНТЫ ===================== */
@@ -33,8 +33,10 @@ const PX_PER_MM = 3.8;          // экранный масштаб чертеж�
 let model = new SchematicModel();
 let selection = null;           // { kind: 'comp'|'wire', id }
 let tool = null;                // тип компонента для установки, либо 'wire'
-let mode = 'edit';              // 'edit' | 'sim'
+let mode = 'edit';              // 'edit' | 'sim' | 'transient'
 let simResult = null;
+let trResult = null;            // результат расчёта переходного процесса
+let trSelected = new Set();     // выбранные для графика сигналы
 let probes = new Set();         // имена узлов с закреплённым пробником
 
 let drag = null;                // перетаскивание компонента
@@ -91,7 +93,9 @@ export function refreshEditorLang() {
   buildPresetList();
   buildPalette();
   updateProperties();
+  updateModeButton();
   if (mode === 'sim') renderSimReport();
+  if (mode === 'transient') renderTransient();
   render();
 }
 
@@ -181,6 +185,11 @@ function bindToolbar() {
   });
 
   $('#btn-editor-mode')?.addEventListener('click', toggleMode);
+  $('#btn-editor-transient')?.addEventListener('click', toggleTransient);
+  $('#btn-tr-run')?.addEventListener('click', runTransient);
+  for (const id of ['#tr-tstop', '#tr-tstep']) {
+    $(id)?.addEventListener('change', () => { if (mode === 'transient') runTransient(); });
+  }
   $('#btn-editor-save')?.addEventListener('click', exportJSON);
   $('#btn-editor-import')?.addEventListener('click', importJSON);
   $('#btn-editor-export-svg')?.addEventListener('click', exportSVG);
@@ -449,18 +458,18 @@ function scheduleSave() {
   }, 400);
 }
 
-/* ===================== РЕЖИМ ЭМУЛЯЦИИ ===================== */
-function toggleMode() {
-  if (mode === 'edit') {
-    simResult = solveDC(model);
-    mode = 'sim';
-    tool = null; pending = null; drag = null;
-    syncPaletteState();
-  } else {
-    mode = 'edit';
-    simResult = null;
-    probes.clear();
-  }
+/* ===================== РЕЖИМЫ РАСЧЁТА ===================== */
+function toggleMode() { setMode(mode === 'sim' ? 'edit' : 'sim'); }
+function toggleTransient() { setMode(mode === 'transient' ? 'edit' : 'transient'); }
+
+function setMode(next) {
+  mode = next;
+  tool = null; pending = null; drag = null;
+  if (mode !== 'sim') { simResult = null; probes.clear(); }
+  if (mode !== 'transient') trResult = null;
+  if (mode === 'sim') simResult = solveDC(model);
+  if (mode === 'transient') runTransient();
+  syncPaletteState();
   updateModeButton();
   renderSimReport();
   render();
@@ -468,20 +477,171 @@ function toggleMode() {
 
 /** Результат расчёта устарел после правки схемы. */
 function invalidateSim() {
-  if (mode !== 'sim') return;
-  simResult = solveDC(model);
-  renderSimReport();
+  if (mode === 'sim') { simResult = solveDC(model); renderSimReport(); }
+  else if (mode === 'transient') runTransient();
 }
 
 function updateModeButton() {
   const btn = $('#btn-editor-mode');
   if (btn) {
-    btn.textContent = mode === 'edit' ? T('editor.run') : T('editor.stop');
+    btn.textContent = mode === 'sim' ? T('editor.stop') : T('editor.run');
     btn.classList.toggle('active', mode === 'sim');
   }
-  $('#page-editor')?.classList.toggle('sim-mode', mode === 'sim');
-  const panel = $('#editor-sim-results');
-  if (panel) panel.style.display = mode === 'sim' ? '' : 'none';
+  $('#btn-editor-transient')?.classList.toggle('active', mode === 'transient');
+  // Канва доступна только для чтения в обоих расчётных режимах
+  $('#page-editor')?.classList.toggle('sim-mode', mode !== 'edit');
+  const simPanel = $('#editor-sim-results');
+  if (simPanel) simPanel.style.display = mode === 'sim' ? '' : 'none';
+  const trPanel = $('#editor-transient');
+  if (trPanel) trPanel.style.display = mode === 'transient' ? '' : 'none';
+}
+
+/* ===================== ПЕРЕХОДНЫЙ ПРОЦЕСС ===================== */
+function runTransient() {
+  const tStop = parseFloat($('#tr-tstop')?.value);
+  const tStep = parseFloat($('#tr-tstep')?.value);
+  trResult = solveTransient(model, {
+    tStop: Number.isFinite(tStop) && tStop > 0 ? tStop : 0.5,
+    tStep: Number.isFinite(tStep) && tStep > 0 ? tStep : undefined,
+  });
+  if (trResult.ok) pickDefaultSignals();
+  renderTransient();
+}
+
+/** По умолчанию показываем то, ради чего процесс и считают: реактивные элементы. */
+function pickDefaultSignals() {
+  const keys = signalList().map(s => s.key);
+  // сохраняем прежний выбор, если сигналы никуда не делись
+  trSelected = new Set([...trSelected].filter(k => keys.includes(k)));
+  if (trSelected.size) return;
+  for (const s of signalList()) {
+    if (s.reactive) trSelected.add(s.key);
+  }
+  if (!trSelected.size) trSelected = new Set(keys.slice(0, 3));
+}
+
+/** Все доступные для графика сигналы. */
+function signalList() {
+  if (!trResult?.ok) return [];
+  const out = [];
+  for (const name of Object.keys(trResult.nodes)) {
+    if (name === 'GND') continue;
+    out.push({ key: 'n:' + name, label: name, unit: 'volt', data: trResult.nodes[name] });
+  }
+  for (const [id, br] of Object.entries(trResult.branches)) {
+    const type = model.getComponent(id)?.type;
+    const reactive = type === 'capacitor' || type === 'inductor';
+    out.push({ key: 'u:' + id, label: id + ' · U', unit: 'volt', data: br.u, reactive });
+    out.push({ key: 'i:' + id, label: id + ' · I', unit: 'amp', data: br.i, reactive });
+  }
+  return out;
+}
+
+const TR_COLORS = ['--accent', '--accent-2', '--result', '--warn', '--error'];
+
+function renderTransient() {
+  const chart = $('#tr-chart');
+  const legend = $('#tr-legend');
+  if (!chart || !legend) return;
+
+  if (!trResult) { chart.innerHTML = ''; legend.innerHTML = ''; return; }
+  if (!trResult.ok) {
+    chart.innerHTML = `<p class="sim-error">${escapeHtml(T(trResult.messageKey))}</p>`;
+    legend.innerHTML = '';
+    return;
+  }
+
+  const all = signalList();
+  const shown = all.filter(s => trSelected.has(s.key));
+  const css = getComputedStyle(document.documentElement);
+  const colorOf = (i) => css.getPropertyValue(TR_COLORS[i % TR_COLORS.length]).trim() || '#FFB300';
+
+  // Напряжения и токи разводим по отдельным графикам: на общей оси
+  // величина в милливольтах рядом с амперами выродилась бы в прямую.
+  const groups = [
+    { unit: 'volt', titleKey: 'editor.tr_voltages', items: shown.filter(s => s.unit === 'volt') },
+    { unit: 'amp',  titleKey: 'editor.tr_currents', items: shown.filter(s => s.unit === 'amp') },
+  ].filter(g => g.items.length);
+
+  chart.innerHTML = groups.length
+    ? groups.map(g => plotGroup(g, all, colorOf)).join('')
+    : `<p class="props-hint">${escapeHtml(T('editor.tr_pick'))}</p>`;
+
+  legend.innerHTML = all.map((s, i) => {
+    const on = trSelected.has(s.key);
+    return `<button type="button" class="tr-sig${on ? ' on' : ''}" data-key="${escapeHtml(s.key)}">` +
+      `<span class="tr-dot" style="background:${on ? colorOf(all.filter(x => trSelected.has(x.key)).indexOf(s)) : 'transparent'}"></span>` +
+      escapeHtml(s.label) + `</button>`;
+  }).join('');
+
+  legend.querySelectorAll('.tr-sig').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const k = btn.dataset.key;
+      trSelected.has(k) ? trSelected.delete(k) : trSelected.add(k);
+      renderTransient();
+    });
+  });
+}
+
+/** Округление шага шкалы к 1, 2, 5 × 10ⁿ. */
+function niceNum(range, round) {
+  if (!(range > 0)) return 1;
+  const exp = Math.floor(Math.log10(range));
+  const f = range / 10 ** exp;
+  const nf = round
+    ? (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10)
+    : (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10);
+  return nf * 10 ** exp;
+}
+
+/** Границы и шаг шкалы, охватывающие [lo, hi] круглыми значениями. */
+function niceScale(lo, hi, ticks) {
+  const step = niceNum(niceNum(hi - lo, false) / Math.max(1, ticks - 1), true);
+  return { lo: Math.floor(lo / step) * step, hi: Math.ceil(hi / step) * step, step };
+}
+
+/** Один график: оси, подписи и ломаные выбранных сигналов. */
+function plotGroup(group, all, colorOf) {
+  const W = 600, H = 180, L = 58, R = 12, TOP = 12, B = 26;
+  const t = trResult.t;
+  const tMax = t[t.length - 1] || 1;
+
+  let lo = Infinity, hi = -Infinity;
+  for (const s of group.items) for (const v of s.data) { if (v < lo) lo = v; if (v > hi) hi = v; }
+  if (!isFinite(lo)) { lo = 0; hi = 1; }
+  if (hi - lo < 1e-12) { hi = lo + Math.max(Math.abs(lo) * 0.1, 1e-9); }
+  // Деления округляем к «круглым» значениям — иначе на оси стоят числа
+  // вроде «−794.5 мВ», по которым неудобно читать график.
+  const sc = niceScale(lo, hi, 5);
+  lo = sc.lo; hi = sc.hi;
+
+  const px = (time) => L + (time / tMax) * (W - L - R);
+  const py = (v) => TOP + (1 - (v - lo) / (hi - lo)) * (H - TOP - B);
+
+  const ticksX = 5;
+  let axes = '';
+  const stepsY = Math.round((hi - lo) / sc.step);
+  for (let i = 0; i <= stepsY; i++) {
+    const v = lo + sc.step * i, y = py(v);
+    axes += `<line class="tr-grid" x1="${L}" y1="${y.toFixed(1)}" x2="${W - R}" y2="${y.toFixed(1)}"/>` +
+      `<text class="tr-tick" x="${L - 5}" y="${(y + 3).toFixed(1)}" text-anchor="end">${escapeHtml(formatSI(v, group.unit))}</text>`;
+  }
+  for (let i = 0; i <= ticksX; i++) {
+    const time = tMax * i / ticksX, x = px(time);
+    axes += `<line class="tr-grid" x1="${x.toFixed(1)}" y1="${TOP}" x2="${x.toFixed(1)}" y2="${H - B}"/>` +
+      `<text class="tr-tick" x="${x.toFixed(1)}" y="${H - B + 14}" text-anchor="middle">${escapeHtml(formatSI(time, 'sec'))}</text>`;
+  }
+
+  // Индекс цвета берём по общему списку выбранных, чтобы он совпадал с легендой
+  const chosen = all.filter(s => trSelected.has(s.key));
+  const lines = group.items.map(s => {
+    const idx = chosen.indexOf(s);
+    const d = s.data.map((v, i) => `${i ? 'L' : 'M'}${px(t[i]).toFixed(1)} ${py(v).toFixed(1)}`).join(' ');
+    return `<path class="tr-line" d="${d}" stroke="${colorOf(idx)}"/>`;
+  }).join('');
+
+  return `<figure class="tr-plot"><figcaption>${escapeHtml(T(group.titleKey))}</figcaption>` +
+    `<svg viewBox="0 0 ${W} ${H}" class="tr-svg" preserveAspectRatio="xMidYMid meet">${axes}${lines}</svg></figure>`;
 }
 
 function probeAt(x, y) {

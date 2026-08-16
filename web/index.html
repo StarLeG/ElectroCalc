@@ -1257,6 +1257,7 @@
         <button type="button" class="btn btn-ghost btn-sm" id="btn-editor-clear" data-i18n="editor.clear">Очистить</button>
         <span class="editor-sep"></span>
         <button type="button" class="btn btn-secondary btn-sm" id="btn-editor-mode">&#9654; Эмуляция</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-editor-transient" data-i18n="editor.transient">Процесс</button>
         <span class="editor-sep"></span>
         <button type="button" class="btn btn-ghost btn-sm" id="btn-editor-save" data-i18n="editor.json">JSON</button>
         <button type="button" class="btn btn-ghost btn-sm" id="btn-editor-import" data-i18n="editor.import">Импорт</button>
@@ -1281,6 +1282,19 @@
       <div id="editor-sim-results" class="editor-sim-results" style="display:none">
         <h3 class="editor-panel-title" data-i18n="editor.sim_results">Результаты эмуляции</h3>
         <div id="editor-sim-content"></div>
+      </div>
+
+      <div id="editor-transient" class="editor-transient" style="display:none">
+        <h3 class="editor-panel-title" data-i18n="editor.transient_results">Переходный процесс</h3>
+        <div class="transient-controls">
+          <label class="tr-field"><span data-i18n="editor.tr_time">Время, с</span>
+            <input type="number" id="tr-tstop" class="tbl-input" step="any" min="0" value="0.5" inputmode="decimal"></label>
+          <label class="tr-field"><span data-i18n="editor.tr_step">Шаг, с</span>
+            <input type="number" id="tr-tstep" class="tbl-input" step="any" min="0" value="0.001" inputmode="decimal"></label>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-tr-run" data-i18n="editor.tr_run">Рассчитать</button>
+        </div>
+        <div id="tr-chart" class="tr-chart"></div>
+        <div id="tr-legend" class="tr-legend"></div>
       </div>
     </div>
   </main>
