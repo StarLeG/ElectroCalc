@@ -141,7 +141,7 @@ assert('Zener: 24V/5.1V/20mA/10mA', calcZener(24, 5.1, 20, 10), 630, 10);
 
 // ==================== DC SOLVER (MNA) ====================
 import { SchematicModel, COMPONENT_TYPES, getComponentPins, PIN_OFFSETS, formatSI } from './js/schematic-model.js';
-import { solveDC } from './js/circuit-sim.js';
+import { solveDC, solveTransient } from './js/circuit-sim.js';
 import { PRESETS, loadPreset } from './js/schematic-presets.js';
 
 output.innerHTML += '<h3 style="color:#FFB300;margin-top:16px">DC solver</h3>';
@@ -529,6 +529,103 @@ function seriesCircuit(E, resistances) {
   m.updateValue('GB2', 30);                       // меняем только выходное питание
   const b = solveDC(m).branches.VU1.iled;
   assert('Optocoupler: output does not load the input', b, a, 1e-12);
+}
+
+// --- переходный процесс ---
+output.innerHTML += '<h3 style="color:#FFB300;margin-top:16px">Transient</h3>';
+
+/** Последовательная RC- или RL-цепь: источник, резистор, реактивный элемент. */
+function seriesReactive(kind, E, R, X) {
+  const m = new SchematicModel();
+  const gb = put(m, 'vsource', 30, 60, { id: 'GB1', value: E, rotate: 90 });
+  const r1 = put(m, 'resistor', 70, 25, { id: 'R1', value: R });
+  const el = put(m, kind, 110, 60, { id: kind === 'capacitor' ? 'C1' : 'L1', value: X, rotate: 90 });
+  const gnd = put(m, 'ground', 70, 105, { id: 'GND1' });
+  m.addWire([[20, 100], [130, 100]]);
+  m.addWire([gb.p, [30, 25], r1.a]);
+  m.addWire([r1.b, [110, 25], el.a]);
+  m.addWire([el.b, [110, 100]]);
+  m.addWire([gb.n, [30, 100]]);
+  return m;
+}
+/** Значение ряда в момент времени t. */
+function atTime(res, series, time) {
+  const i = res.t.findIndex(v => v >= time - 1e-12);
+  return series[i < 0 ? series.length - 1 : i];
+}
+
+// Заряд конденсатора: U(t) = E·(1 − e^(−t/RC)), τ = 0.1 с
+{
+  const tau = 1000 * 100e-6;
+  const r = solveTransient(seriesReactive('capacitor', 10, 1000, 100e-6), { tStop: 0.5, tStep: 1e-4 });
+  assertTrue('Transient RC: solves', r.ok);
+  const u = r.branches.C1.u;
+  assert('RC: U(0) = 0 (начальные условия)', u[0], 0, 1e-9);
+  assert('RC: U(τ) ≈ 63.2% от E', atTime(r, u, tau), 10 * (1 - Math.exp(-1)), 0.01);
+  assert('RC: U(3τ) ≈ 95%', atTime(r, u, 3 * tau), 10 * (1 - Math.exp(-3)), 0.01);
+  assert('RC: U(5τ) ≈ E', u[u.length - 1], 10 * (1 - Math.exp(-5)), 0.01);
+  assertTrue('RC: напряжение монотонно растёт', u.every((v, i) => i === 0 || v >= u[i - 1] - 1e-12));
+  // Разряженный конденсатор в первый момент ведёт себя как перемычка,
+  // поэтому ток ограничен только резистором
+  assert('RC: I(0) = E/R', atTime(r, r.branches.R1.i, 0), 10 / 1000, 1e-9);
+  assertTrue('RC: ток спадает к нулю', Math.abs(r.branches.R1.i[r.branches.R1.i.length - 1]) < 1e-3);
+}
+// Уменьшение шага уменьшает погрешность — признак сходимости метода
+{
+  const tau = 0.1, exact = 10 * (1 - Math.exp(-1));
+  const err = h => Math.abs(atTime(
+    solveTransient(seriesReactive('capacitor', 10, 1000, 100e-6), { tStop: 0.2, tStep: h }),
+    solveTransient(seriesReactive('capacitor', 10, 1000, 100e-6), { tStop: 0.2, tStep: h }).branches.C1.u,
+    tau) - exact);
+  assertTrue('RC: мельче шаг — точнее результат', err(1e-4) < err(1e-3));
+}
+// Разряд: конденсатор заряжен, источник закорочен
+{
+  const m = seriesReactive('capacitor', 0, 1000, 100e-6);
+  m.getComponent('C1').props = { v0: 10 };
+  const r = solveTransient(m, { tStop: 0.3, tStep: 1e-4 });
+  const u = r.branches.C1.u;
+  assert('RC разряд: U(0) = 10 В', u[0], 10, 1e-9);
+  assert('RC разряд: U(τ) ≈ 36.8%', atTime(r, u, 0.1), 10 * Math.exp(-1), 0.01);
+  assertTrue('RC разряд: напряжение монотонно падает', u.every((v, i) => i === 0 || v <= u[i - 1] + 1e-12));
+}
+// Ток в катушке: I(t) = (E/R)·(1 − e^(−t·R/L)), τ = L/R = 0.1 с
+{
+  const r = solveTransient(seriesReactive('inductor', 10, 10, 1), { tStop: 0.6, tStep: 1e-4 });
+  assertTrue('Transient RL: solves', r.ok);
+  const i = r.branches.L1.i;
+  assert('RL: I(0) = 0 (ток в катушке не меняется скачком)', i[0], 0, 1e-9);
+  assert('RL: I(τ) ≈ 63.2% от E/R', atTime(r, i, 0.1), 1 * (1 - Math.exp(-1)), 1e-3);
+  assert('RL: I(∞) → E/R', i[i.length - 1], 1, 5e-3);
+}
+// Катушка с начальным током
+{
+  const m = seriesReactive('inductor', 0, 10, 1);
+  m.getComponent('L1').props = { i0: 1 };
+  const r = solveTransient(m, { tStop: 0.3, tStep: 1e-4 });
+  assert('RL: начальный ток учтён', r.branches.L1.i[0], 1, 1e-9);
+  assert('RL: ток спадает по экспоненте', atTime(r, r.branches.L1.i, 0.1), Math.exp(-1), 1e-3);
+}
+// Установившийся режим совпадает со статическим расчётом
+{
+  const m = seriesReactive('capacitor', 10, 1000, 1e-6);   // τ = 1 мс
+  const tr = solveTransient(m, { tStop: 0.05, tStep: 1e-5 });
+  const dc = solveDC(m);
+  assert('Transient сходится к статике', tr.branches.C1.u[tr.branches.C1.u.length - 1], dc.branches.C1.u, 1e-6);
+}
+// Вырожденные случаи
+{
+  const m = loadPreset('voltage-divider');                 // без реактивных элементов
+  const r = solveTransient(m, { tStop: 0.1, tStep: 1e-3 });
+  assertTrue('Transient: без C и L возвращается ошибка, а не мусор', !r.ok && r.error === 'no-reactive');
+  const bad = solveTransient(new SchematicModel(), { tStop: 0.1, tStep: 1e-3 });
+  assertTrue('Transient: пустая схема не роняет расчёт', bad.ok === false);
+}
+// Число точек ограничено, шаг подстраивается
+{
+  const r = solveTransient(seriesReactive('capacitor', 10, 1000, 100e-6), { tStop: 1, tStep: 1e-9 });
+  assertTrue('Transient: число точек ограничено', r.t.length <= 2002);
+  assertTrue('Transient: шаг увеличен вместо зависания', r.tStep > 1e-9);
 }
 
 // --- вырожденные случаи не роняют UI ---
