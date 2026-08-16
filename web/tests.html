@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>EngiCalc — Unit Tests</title>
+<style>
+  body { font-family: 'Consolas', monospace; background: #1a1a2e; color: #e0e0e0; padding: 20px; }
+  h1 { color: #FFB300; }
+  .pass { color: #22E88A; }
+  .fail { color: #FF5D5D; }
+  .summary { font-size: 18px; margin-top: 20px; padding: 12px; border-radius: 8px; }
+  .summary.ok { background: rgba(34,232,138,0.15); border: 1px solid #22E88A; }
+  .summary.err { background: rgba(255,93,93,0.15); border: 1px solid #FF5D5D; }
+  .test { margin: 4px 0; }
+</style>
+</head>
+<body>
+<h1>EngiCalc Unit Tests</h1>
+<div id="output"></div>
+<div id="summary"></div>
+<script type="module">
+const output = document.getElementById('output');
+const summary = document.getElementById('summary');
+let passed = 0, failed = 0;
+
+function assert(name, actual, expected, tolerance = 0.01) {
+  const diff = Math.abs(actual - expected);
+  if (diff <= tolerance) {
+    passed++;
+    output.innerHTML += `<div class="test"><span class="pass">✓</span> ${name}: ${actual} ≈ ${expected}</div>`;
+  } else {
+    failed++;
+    output.innerHTML += `<div class="test"><span class="fail">✗</span> ${name}: got ${actual}, expected ${expected} (diff: ${diff.toFixed(4)})</div>`;
+  }
+}
+
+// Import calculation functions from modules
+import { round } from './js/core.js';
+
+// ==================== POWER ====================
+function calcPower(P, U, phase, cos, eta) {
+  return phase === 3 ? P * 1000 / (Math.sqrt(3) * U * cos * eta) : P * 1000 / (U * cos * eta);
+}
+
+assert('Power: 2.2kW/380V/3ph/0.85/0.92', calcPower(2.2, 380, 3, 0.85, 0.92), 4.27, 0.05);
+assert('Power: 15kW/400V/3ph/0.85/0.92', calcPower(15, 400, 3, 0.85, 0.92), 27.64, 0.1);
+assert('Power: 1kW/220V/1ph/1.0/1.0', calcPower(1, 220, 1, 1.0, 1.0), 4.55, 0.05);
+assert('Power: 7.5kW/380V/3ph/0.85/0.9', calcPower(7.5, 380, 3, 0.85, 0.9), 14.98, 0.1);
+
+// ==================== CABLE ====================
+function calcCableSection(I, mat) {
+  const j = mat === 'Cu' ? 10 : 6;
+  return I / j;
+}
+
+assert('Cable: 25A Cu', calcCableSection(25, 'Cu'), 2.5, 0.01);
+assert('Cable: 40A Al', calcCableSection(40, 'Al'), 6.67, 0.05);
+
+// ==================== VOLTAGE DROP ====================
+function calcVoltageDrop(I, L, R, X, U, cos) {
+  const sin = Math.sqrt(1 - cos * cos);
+  return Math.sqrt(3) * I * L * (R * cos + X * sin) / 1000;
+}
+
+assert('VDrop: 10A/100m/7.24/0.08/380/0.85', calcVoltageDrop(10, 100, 7.24, 0.08, 380, 0.85), 10.7, 0.5);
+assert('VDrop: 25A/50m/7.24/0.08/380/0.85', calcVoltageDrop(25, 50, 7.24, 0.08, 380, 0.85), 13.4, 0.5);
+
+// ==================== SHORT CIRCUIT ====================
+function calcSC(U, Z) { return U / (Math.sqrt(3) * Z); }
+
+assert('SC: 380V/0.1Ω', calcSC(380, 0.1), 2194, 10);
+assert('SC: 400V/0.05Ω', calcSC(400, 0.05), 4619, 20);
+
+// ==================== GROUNDING ====================
+function calcGrounding(rho, L, d) { return rho / (2 * Math.PI * L) * Math.log(4 * L / d); }
+
+assert('Ground: ρ=100/L=3/d=0.02', calcGrounding(100, 3, 0.02), 33.94, 0.5);
+assert('Ground: ρ=50/L=2.5/d=0.016', calcGrounding(50, 2.5, 0.016), 20.49, 0.5);
+
+// ==================== COMPENSATION ====================
+function calcComp(P, cos1, cos2) {
+  const tg1 = Math.sqrt(1 - cos1 * cos1) / cos1;
+  const tg2 = Math.sqrt(1 - cos2 * cos2) / cos2;
+  return P * (tg1 - tg2);
+}
+
+assert('Comp: 100kW/0.6→0.95', calcComp(100, 0.6, 0.95), 100.46, 0.5);
+assert('Comp: 50kW/0.7→0.95', calcComp(50, 0.7, 0.95), 34.58, 0.5);
+
+// ==================== DIAMETER TO SECTION ====================
+function calcDiam2Sec(d) { return Math.PI * d * d / 4; }
+
+assert('Diam: 1.78mm', calcDiam2Sec(1.78), 2.49, 0.02);
+assert('Diam: 2.26mm', calcDiam2Sec(2.26), 4.01, 0.02);
+
+// ==================== RLC ====================
+function calcRLC(R, L, C, f) {
+  const XL = 2 * Math.PI * f * L / 1000;
+  const XC = 1 / (2 * Math.PI * f * C / 1000000);
+  return Math.sqrt(R * R + (XL - XC) * (XL - XC));
+}
+
+assert('RLC: 100Ω/10mH/1µF/1kHz', calcRLC(100, 10, 1, 1000), 138.85, 1);
+
+// ==================== NE555 ====================
+function calc555(R1, R2, C_uF) {
+  const C = C_uF / 1000000;
+  return 1.44 / ((R1 + 2 * R2) * C);
+}
+
+assert('555: R1=1k/R2=10k/C=0.1µF', calc555(1000, 10000, 0.1), 685.7, 5);
+assert('555: R1=10k/R2=10k/C=1µF', calc555(10000, 10000, 1), 48, 2);
+
+// ==================== OP-AMP ====================
+function calcInvOpamp(R1, Rf) { return -Rf / R1; }
+function calcNonInvOpamp(R1, Rf) { return 1 + Rf / R1; }
+
+assert('InvOpamp: R1=10k/Rf=100k', calcInvOpamp(10, 100), -10, 0.01);
+assert('NonInvOpamp: R1=10k/Rf=100k', calcNonInvOpamp(10, 100), 11, 0.01);
+
+// ==================== WHEATSTONE ====================
+function calcBridge(R1, R2, R3, R4, V) {
+  return V * (R3 / (R3 + R4) - R2 / (R1 + R2));
+}
+
+assert('Bridge: balanced', calcBridge(1000, 1000, 1000, 1000, 5), 0, 0.001);
+assert('Bridge: unbalanced', calcBridge(1000, 2000, 1000, 1000, 5), -0.833, 0.01);
+
+// ==================== LED ====================
+function calcLED(V, Vf, I_mA) { return (V - Vf) / (I_mA / 1000); }
+
+assert('LED: 12V/2V/20mA', calcLED(12, 2, 20), 500, 1);
+assert('LED: 5V/2V/20mA', calcLED(5, 2, 20), 150, 1);
+
+// ==================== ZENER ====================
+function calcZener(Vin, Vz, IL_mA, Iz_mA) {
+  return (Vin - Vz) / ((Iz_mA + IL_mA) / 1000);
+}
+
+assert('Zener: 24V/5.1V/20mA/10mA', calcZener(24, 5.1, 20, 10), 630, 10);
+
+// ==================== DC SOLVER (MNA) ====================
+import { SchematicModel, COMPONENT_TYPES, getComponentPins, PIN_OFFSETS, formatSI } from './js/schematic-model.js';
+import { solveDC } from './js/circuit-sim.js';
+import { PRESETS, loadPreset } from './js/schematic-presets.js';
+
+output.innerHTML += '<h3 style="color:#FFB300;margin-top:16px">DC solver</h3>';
+
+function assertTrue(name, cond) {
+  if (cond) { passed++; output.innerHTML += `<div class="test"><span class="pass">✓</span> ${name}</div>`; }
+  else { failed++; output.innerHTML += `<div class="test"><span class="fail">✗</span> ${name}</div>`; }
+}
+
+/** Добавить компонент и вернуть абсолютные координаты его выводов. */
+function put(m, type, x, y, opts) {
+  const c = m.addComponent(type, x, y, opts);
+  return getComponentPins(c, COMPONENT_TYPES[type]);
+}
+
+/**
+ * Цепочка резисторов, запитанная источником E, с возвратом через землю.
+ * Резисторы стоят столбиком по x=70, обратный провод идёт НИЖЕ последнего
+ * резистора — иначе он замкнул бы его накоротко.
+ */
+function seriesCircuit(E, resistances) {
+  const m = new SchematicModel();
+  const n = resistances.length;
+  const bottom = 40 * n + 30;
+
+  const gb = put(m, 'vsource', 30, 60, { id: 'GB1', value: E, rotate: 90 });
+  const gnd = put(m, 'ground', 30, bottom + 5, { id: 'GND1' });
+
+  let prev = gb.p;
+  resistances.forEach((R, i) => {
+    const y = 40 + 40 * i;
+    const r = put(m, 'resistor', 70, y, { id: 'R' + (i + 1), value: R, rotate: 90 });
+    m.addWire(i === 0 ? [prev, [30, y - 10], r.a] : [prev, r.a]);
+    prev = r.b;
+  });
+
+  m.addWire([prev, [70, bottom], gnd.g]);
+  m.addWire([gb.n, gnd.g]);
+  return m;
+}
+
+// --- делитель напряжения ---
+{
+  const r = solveDC(seriesCircuit(12, [10000, 10000]));
+  assertTrue('Solver: divider solves', r.ok);
+  assert('Divider: U(R1)', r.branches.R1.u, 6, 1e-6);
+  assert('Divider: U(R2)', r.branches.R2.u, 6, 1e-6);
+  assert('Divider: I', r.branches.R1.i, 6e-4, 1e-9);
+  assert('Divider: P(R1)', r.branches.R1.p, 3.6e-3, 1e-9);
+  assert('Divider: source delivers (P<0)', Math.sign(r.branches.GB1.p), -1, 0);
+}
+
+// --- последовательное сопротивление: 3 резистора ---
+{
+  const r = solveDC(seriesCircuit(9, [100, 200, 300]));
+  const I = 9 / 600;
+  assert('Series: I', r.branches.R1.i, I, 1e-9);
+  assert('Series: U(R3)', r.branches.R3.u, I * 300, 1e-6);
+  assert('Series: ΣU = E', r.branches.R1.u + r.branches.R2.u + r.branches.R3.u, 9, 1e-6);
+}
+
+// --- параллельное соединение + закон Кирхгофа по токам ---
+{
+  const r = solveDC(loadPreset('series-parallel'));
+  assert('Parallel: I(R2)', r.branches.R2.i, 0.0225, 1e-9);
+  assert('Parallel: I(R3)', r.branches.R3.i, 0.0225, 1e-9);
+  assert('Kirchhoff KCL at node', r.branches.R1.i - r.branches.R2.i - r.branches.R3.i, 0, 1e-12);
+  assert('Parallel: U(R1) on 100Ω', r.branches.R1.u, 4.5, 1e-6);
+}
+
+// --- цепь со светодиодом: проверка Vf и тока ---
+{
+  const r = solveDC(loadPreset('led-circuit'));
+  const I = (5 - 2) / (220 + 10);   // Vf = 2 В, Ron = 10 Ом
+  assertTrue('LED: solves', r.ok);
+  assert('LED: I', r.branches.HL1.i, I, 1e-7);
+  assert('LED: U ≈ Vf', r.branches.HL1.u, 2 + 10 * I, 1e-6);
+  assertTrue('LED: forward current is positive', r.branches.HL1.i > 0);
+}
+
+// --- обратно включённый диод не проводит ---
+{
+  const m = loadPreset('led-circuit');
+  m.getComponent('HL1').rotate = 270;   // разворот на 180° → катод к плюсу
+  const r = solveDC(m);
+  assertTrue('LED reversed: current ≈ 0', Math.abs(r.branches.HL1.i) < 1e-6);
+}
+
+// --- источник тока ---
+{
+  const r = solveDC(loadPreset('current-source'));
+  assert('Current source: I(R1)', r.branches.R1.i, 0.01, 1e-9);
+  assert('Current source: U(R1)', r.branches.R1.u, 10, 1e-6);
+}
+
+// --- стабилитрон ---
+{
+  const r = solveDC(loadPreset('zener-reg'));
+  const V = 0.5355319148936 / 0.10312765957;
+  assert('Zener reg: load voltage', r.branches.R2.u, V, 1e-4);
+  assertTrue('Zener reg: zener conducts in breakdown', r.branches.VD1.i < -1e-4);
+}
+
+// --- конденсатор в статике: разрыв ---
+{
+  const r = solveDC(loadPreset('rc-filter'));
+  assertTrue('Capacitor blocks DC (I ≈ 0)', Math.abs(r.branches.R1.i) < 1e-8);
+  assert('Capacitor holds full source voltage', r.branches.C1.u, 10, 1e-3);
+}
+
+// --- ключ ---
+{
+  const m = loadPreset('switch-lamp');
+  assert('Switch closed: I', solveDC(m).branches.HL1.i, 0.12, 1e-7);
+  m.updateValue('S1', 0);
+  assertTrue('Switch open: I ≈ 0', Math.abs(solveDC(m).branches.HL1.i) < 1e-9);
+}
+
+// --- биполярный транзистор: активный режим ---
+{
+  const r = solveDC(loadPreset('bjt-amp'));
+  assertTrue('BJT active: solves', r.ok);
+  const b = r.branches.VT1;
+  const Ib = (12 - 0.7) / (200000 + 10);   // R1 последовательно с R_ON перехода
+  assertTrue('BJT active: region detected', b.region === 'active');
+  assert('BJT active: Ib', b.ib, Ib, 1e-9);
+  assert('BJT active: Ic = β·Ib', b.i, 100 * Ib, 1e-7);
+  assert('BJT active: Vce = E − Ic·Rc', b.u, 12 - 100 * Ib * 1000, 1e-4);
+  assert('BJT active: Ie = Ib + Ic', b.ie, Ib + 100 * Ib, 1e-9);
+  assert('BJT active: Vbe ≈ 0.7', b.vbe, 0.7 + 10 * Ib, 1e-6);
+  assert('BJT active: Ic through Rc matches', r.branches.R2.i, 100 * Ib, 1e-7);
+}
+
+// --- биполярный транзистор: насыщение ---
+{
+  const r = solveDC(loadPreset('bjt-switch'));
+  const b = r.branches.VT1;
+  assertTrue('BJT saturated: region detected', b.region === 'sat');
+  // В насыщении ток коллектора задаёт внешняя цепь, а не β·Ib
+  assertTrue('BJT saturated: Ic << β·Ib', b.i < 0.2 * 100 * b.ib);
+  assert('BJT saturated: Vce ≈ Vce_sat', b.u, 0.2, 0.02);
+  // Закон Кирхгофа в узле коллектора: весь ток R2 уходит в коллектор
+  assert('BJT saturated: Ic = I(R2) (KCL)', b.i, r.branches.R2.i, 1e-9);
+  assert('BJT saturated: Ic = (E − Vce)/Rc', b.i, (12 - b.u) / 1000, 1e-7);
+  assertTrue('BJT saturated: Ie = Ib + Ic', Math.abs(b.ie - (b.ib + b.i)) < 1e-9);
+}
+
+// --- биполярный транзистор: отсечка ---
+// Кусочно-линейный переход открывается строго при Vbe > Vf, поэтому большой
+// базовый резистор в отсечку не загоняет — базу надо притянуть к эмиттеру.
+{
+  const m = new SchematicModel();
+  const gb  = put(m, 'vsource', 30, 70, { id: 'GB1', value: 12, rotate: 90 });
+  const rb  = put(m, 'resistor', 70, 70, { id: 'R1', value: 10000 });
+  const rc  = put(m, 'resistor', 115, 40, { id: 'R2', value: 1000, rotate: 90 });
+  const vt  = put(m, 'npn', 110, 70, { id: 'VT1', value: 100 });
+  const gnd = put(m, 'ground', 70, 105, { id: 'GND1' });
+
+  m.addWire([gb.p, [30, 20], [115, 20], rc.a]);
+  m.addWire([rc.b, vt.c]);
+  m.addWire([vt.b, rb.b]);                  // база через R1 на землю
+  m.addWire([rb.a, [60, 100], gnd.g]);
+  m.addWire([vt.e, [115, 100], gnd.g]);
+  m.addWire([gb.n, [30, 100], gnd.g]);
+
+  const b = solveDC(m).branches.VT1;
+  assertTrue('BJT cutoff: region detected', b.region === 'cutoff');
+  assertTrue('BJT cutoff: Ic ≈ 0', Math.abs(b.i) < 1e-6);
+  assert('BJT cutoff: Vce ≈ E', b.u, 12, 1e-3);
+}
+
+// --- параметры транзистора реально влияют на расчёт ---
+{
+  const m = loadPreset('bjt-amp');
+  m.getComponent('VT1').value = 50;         // β вдвое меньше
+  const b = solveDC(m).branches.VT1;
+  const Ib = (12 - 0.7) / (200000 + 10);
+  assert('BJT: β=50 halves Ic', b.i, 50 * Ib, 1e-7);
+
+  const m2 = loadPreset('bjt-amp');
+  m2.getComponent('VT1').props = { vbe: 0.6 };
+  const b2 = solveDC(m2).branches.VT1;
+  assert('BJT: Vbe=0.6 raises Ib', b2.ib, (12 - 0.6) / (200000 + 10), 1e-9);
+}
+
+// --- p-n-p зеркален n-p-n ---
+{
+  const m = loadPreset('bjt-amp');
+  // Переворачиваем питание и тип: токи должны стать теми же по модулю
+  m.getComponent('VT1').type = 'pnp';
+  m.getComponent('GB1').value = -12;
+  const b = solveDC(m).branches.VT1;
+  const Ib = (12 - 0.7) / (200000 + 10);
+  assertTrue('PNP: region active', b.region === 'active');
+  assert('PNP: Ic magnitude matches NPN', b.i, 100 * Ib, 1e-7);
+}
+
+// --- операционный усилитель ---
+{
+  const A = 1e5;
+  const r = solveDC(loadPreset('opamp-inv'));
+  assertTrue('Op-amp inverting: solves', r.ok);
+  const d = r.branches.DA1;
+  assertTrue('Op-amp inverting: linear region', d.region === 'linear');
+  // Точное решение с конечным K: Uвых = −K·Uвх·Rос / (R1 + Rос + K·R1)
+  assert('Op-amp inverting: Vout exact', d.u, -A * 10 / (11 + A), 1e-6);
+  assertTrue('Op-amp inverting: Vout ≈ −10·Vin', Math.abs(d.u + 10) < 0.01);
+  assertTrue('Op-amp inverting: virtual ground at inv', Math.abs(d.vd) < 1e-3);
+  // Входной ток задаётся R1: Iвх = Uвх/R1
+  assert('Op-amp inverting: input current', r.branches.R1.i, 1 / 10000, 1e-7);
+  assert('Op-amp inverting: feedback current equals input', r.branches.R2.i, r.branches.R1.i, 1e-9);
+}
+{
+  const A = 1e5;
+  const d = solveDC(loadPreset('opamp-ninv')).branches.DA1;
+  assertTrue('Op-amp non-inverting: linear region', d.region === 'linear');
+  assert('Op-amp non-inverting: Vout exact', d.u, 11 * A / (11 + A), 1e-6);
+  assertTrue('Op-amp non-inverting: Vout ≈ 11·Vin', Math.abs(d.u - 11) < 0.01);
+}
+{
+  const A = 1e5;
+  const d = solveDC(loadPreset('opamp-follower')).branches.DA1;
+  assert('Op-amp follower: Vout exact', d.u, A / (1 + A), 1e-9);
+  assertTrue('Op-amp follower: Vout ≈ Vin', Math.abs(d.u - 1) < 1e-4);
+}
+// насыщение: при большом входе выход упирается в шину питания
+{
+  const m = loadPreset('opamp-inv');
+  m.updateValue('GB1', 5);                       // ожидаемые −50 В недостижимы
+  const d = solveDC(m).branches.DA1;
+  assertTrue('Op-amp saturates on − rail', d.region === 'sat_lo');
+  assert('Op-amp clamped to vee', d.u, -15, 1e-6);
+}
+{
+  const m = loadPreset('opamp-inv');
+  m.updateValue('GB1', -5);
+  const d = solveDC(m).branches.DA1;
+  assertTrue('Op-amp saturates on + rail', d.region === 'sat_hi');
+  assert('Op-amp clamped to vcc', d.u, 15, 1e-6);
+}
+// шины питания настраиваются: однополярное питание 0…5 В
+{
+  const m = loadPreset('opamp-inv');
+  m.updateValue('GB1', 5);
+  m.getComponent('DA1').props = { vcc: 5, vee: 0 };
+  const d = solveDC(m).branches.DA1;
+  assert('Op-amp single supply clamps at 0 V', d.u, 0, 1e-6);
+}
+// коэффициент усиления влияет на точность
+{
+  const m = loadPreset('opamp-follower');
+  m.getComponent('DA1').value = 10;              // грубый ОУ
+  const d = solveDC(m).branches.DA1;
+  assert('Op-amp low gain follower', d.u, 10 / 11, 1e-9);
+}
+
+// --- реле: контакты управляются своей катушкой ---
+{
+  const r = solveDC(loadPreset('relay-latch'));
+  assertTrue('Relay: solves', r.ok);
+  assertTrue('Relay: coil energised', r.branches.K1.region === 'coil_on');
+  assert('Relay: coil current = U/R', r.branches.K1.i, 24 / 400, 1e-7);
+  assertTrue('Relay: NO contact closed', r.branches.K2.region === 'ct_closed');
+  assertTrue('Relay: NC contact open', r.branches.K3.region === 'ct_open');
+  assert('Relay: lamp on NO contact lit', r.branches.HL1.i, 24 / 240, 1e-7);
+  assertTrue('Relay: lamp on NC contact dark', Math.abs(r.branches.HL2.i) < 1e-9);
+}
+// кнопка разомкнута — катушка обесточена, контакты возвращаются в исходное
+{
+  const m = loadPreset('relay-latch');
+  m.updateValue('S1', 0);
+  const r = solveDC(m);
+  assertTrue('Relay: coil de-energised', r.branches.K1.region === 'coil_off');
+  assertTrue('Relay: NO contact opens', r.branches.K2.region === 'ct_open');
+  assertTrue('Relay: NC contact closes', r.branches.K3.region === 'ct_closed');
+  assertTrue('Relay: HL1 dark', Math.abs(r.branches.HL1.i) < 1e-9);
+  assert('Relay: HL2 lit', r.branches.HL2.i, 24 / 240, 1e-7);
+}
+// катушка не срабатывает, если напряжения не хватает
+{
+  const m = loadPreset('relay-latch');
+  m.getComponent('K1').props = { upick: 30 };      // порог выше питания
+  const r = solveDC(m);
+  assertTrue('Relay: below pickup stays off', r.branches.K1.region === 'coil_off');
+  assertTrue('Relay: contact stays open below pickup', r.branches.K2.region === 'ct_open');
+}
+
+// --- тиристор ---
+{
+  const r = solveDC(loadPreset('scr-switch'));
+  assertTrue('SCR: solves', r.ok);
+  assertTrue('SCR: triggered by gate current', r.branches.VS1.region === 'thy_on');
+  assertTrue('SCR: gate current above Igt', r.branches.VS1.ig >= 0.005);
+  // Открытый тиристор = Vt последовательно с R_ON, поэтому ток цепи
+  // I = (E − Vt) / (Rнагр + R_ON), а падение на приборе Vt + R_ON·I
+  const I = (24 - 1) / (240 + 10);
+  assert('SCR: load current', r.branches.HL1.i, I, 1e-7);
+  assert('SCR: on-state drop', r.branches.VS1.u, 1 + 10 * I, 1e-6);
+  assert('SCR: gate current', r.branches.VS1.ig, (24 - 0.7) / (1000 + 10), 1e-7);
+}
+// без тока управления тиристор закрыт
+{
+  const m = loadPreset('scr-switch');
+  m.updateValue('R1', 1e7);                        // ток управления исчезающе мал
+  const r = solveDC(m);
+  assertTrue('SCR: stays blocking without gate current', r.branches.VS1.region === 'thy_off');
+  assertTrue('SCR: lamp dark', Math.abs(r.branches.HL1.i) < 1e-6);
+}
+// принудительное открытие свойством
+{
+  const m = loadPreset('scr-switch');
+  m.updateValue('R1', 1e7);
+  m.getComponent('VS1').props = { on: 1 };
+  assertTrue('SCR: forced on conducts', solveDC(m).branches.VS1.region === 'thy_on');
+}
+
+// --- динистор: включается по напряжению пробоя ---
+{
+  const mk = (e) => {
+    const m = new SchematicModel();
+    const gb  = put(m, 'vsource', 30, 60, { id: 'GB1', value: e, rotate: 90 });
+    const r1  = put(m, 'resistor', 80, 25, { id: 'R1', value: 1000 });
+    const vd  = put(m, 'diac', 120, 60, { id: 'VD1', value: 32, rotate: 90 });
+    const gnd = put(m, 'ground', 75, 100, { id: 'GND1' });
+    m.addWire([[20, 95], [130, 95]]);
+    m.addWire([gnd.g, [75, 95]]);
+    m.addWire([gb.p, [30, 25], r1.a]);
+    m.addWire([r1.b, [120, 25], vd.a1]);
+    m.addWire([vd.a2, [120, 95]]);
+    m.addWire([gb.n, [30, 95]]);
+    return m;
+  };
+  const low = solveDC(mk(20)).branches.VD1;
+  assertTrue('Diac: blocks below breakover', low.region === 'thy_off');
+  const high = solveDC(mk(60)).branches.VD1;
+  assertTrue('Diac: fires above breakover', high.region === 'thy_on');
+  const Id = (60 - 1.5) / (1000 + 10);
+  assert('Diac: on-state current', high.i, Id, 1e-7);
+  assert('Diac: on-state drop', high.u, 1.5 + 10 * Id, 1e-6);
+}
+
+// --- оптопара ---
+{
+  const r = solveDC(loadPreset('optocoupler'));
+  assertTrue('Optocoupler: solves', r.ok);
+  const v = r.branches.VU1;
+  const Iled = (5 - 1.2) / (1000 + 10);          // светодиод: Vf + R_ON
+  assertTrue('Optocoupler: output in active region', v.region === 'active');
+  assert('Optocoupler: LED current', v.iled, Iled, 1e-9);
+  assert('Optocoupler: Ic = CTR·Iled', v.i, 0.5 * Iled, 1e-9);
+  assert('Optocoupler: Vce = E − Ic·Rc', v.u, 12 - 0.5 * Iled * 2000, 1e-6);
+  assert('Optocoupler: load current matches (KCL)', r.branches.R2.i, v.i, 1e-9);
+  assert('Optocoupler: input current through R1', r.branches.R1.i, Iled, 1e-9);
+}
+// коэффициент передачи влияет на выход
+{
+  const m = loadPreset('optocoupler');
+  m.getComponent('VU1').value = 1.0;
+  const v = solveDC(m).branches.VU1;
+  const Iled = (5 - 1.2) / (1000 + 10);
+  assert('Optocoupler: CTR=1 doubles Ic', v.i, Iled, 1e-9);
+}
+// при большой нагрузке фототранзистор входит в насыщение
+{
+  const m = loadPreset('optocoupler');
+  m.updateValue('R2', 20000);
+  const v = solveDC(m).branches.VU1;
+  assertTrue('Optocoupler: saturates on heavy load', v.region === 'sat');
+  assert('Optocoupler: Vce clamped near Vce_sat', v.u, 0.2, 0.02);
+  assertTrue('Optocoupler: Ic limited by load, not CTR', v.i < 0.5 * v.iled);
+}
+// без тока светодиода выход заперт
+{
+  const m = loadPreset('optocoupler');
+  m.updateValue('GB1', 0);
+  const v = solveDC(m).branches.VU1;
+  assertTrue('Optocoupler: cutoff without LED current', v.region === 'cutoff');
+  assertTrue('Optocoupler: Ic ≈ 0', Math.abs(v.i) < 1e-6);
+  assert('Optocoupler: Vce ≈ supply', v.u, 12, 1e-3);
+}
+// гальваническая развязка: выходная цепь не влияет на входную
+{
+  const a = solveDC(loadPreset('optocoupler')).branches.VU1.iled;
+  const m = loadPreset('optocoupler');
+  m.updateValue('GB2', 30);                       // меняем только выходное питание
+  const b = solveDC(m).branches.VU1.iled;
+  assert('Optocoupler: output does not load the input', b, a, 1e-12);
+}
+
+// --- вырожденные случаи не роняют UI ---
+{
+  const m = new SchematicModel();
+  m.addComponent('resistor', 40, 40);
+  const r = solveDC(m);
+  assertTrue('No ground → structured error', !r.ok && r.error === 'no-ground');
+  assertTrue('No ground → i18n key returned', r.messageKey === 'editor.err_no_ground');
+  assertTrue('Empty model → no throw', solveDC(new SchematicModel()).ok === false);
+}
+
+// ==================== MODEL GEOMETRY ====================
+output.innerHTML += '<h3 style="color:#FFB300;margin-top:16px">Model &amp; geometry</h3>';
+
+// Имена выводов в описании типа обязаны совпадать с геометрией — иначе
+// солвер молча принимает вывод за землю.
+{
+  let ok = true;
+  for (const [type, def] of Object.entries(COMPONENT_TYPES)) {
+    const keys = Object.keys(PIN_OFFSETS[type] || {});
+    if (def.pins.some(p => !keys.includes(p))) { ok = false; break; }
+  }
+  assertTrue('Pin names match pin geometry for every type', ok);
+}
+
+// Выводы всех типов обязаны попадать в узлы сетки 5 мм — иначе провод
+// не сойдётся с концом УГО, а элемент нельзя аккуратно поставить на схему.
+{
+  const off = [];
+  for (const [type, pins] of Object.entries(PIN_OFFSETS)) {
+    for (const [name, [x, y]] of Object.entries(pins)) {
+      if (x % 5 !== 0 || y % 5 !== 0) off.push(`${type}.${name}=(${x},${y})`);
+    }
+  }
+  assertTrue('Every pin offset lands on the 5 mm grid' + (off.length ? ' — ' + off.join(', ') : ''), off.length === 0);
+}
+
+// Все пресеты: связи ортогональны и лежат на сетке 5 мм.
+{
+  let ortho = true, onGrid = true;
+  for (const p of PRESETS) {
+    for (const w of p.create().wires) {
+      for (const pt of w.points) if (pt[0] % 5 || pt[1] % 5) onGrid = false;
+      for (let i = 1; i < w.points.length; i++) {
+        const [x1, y1] = w.points[i - 1], [x2, y2] = w.points[i];
+        if (x1 !== x2 && y1 !== y2) ortho = false;
+      }
+    }
+  }
+  assertTrue('All preset wires are orthogonal', ortho);
+  assertTrue('All preset wire points are on the 5 mm grid', onGrid);
+}
+
+// Каждый пресет решается без ошибок.
+{
+  let all = true;
+  for (const p of PRESETS) if (!solveDC(p.create()).ok) all = false;
+  assertTrue('Every preset solves successfully', all);
+}
+
+// Сериализация — круговой обход.
+{
+  const a = loadPreset('wheatstone');
+  const b = SchematicModel.fromJSON(a.toJSON());
+  assertTrue('JSON round-trip preserves the model', a.toJSON() === b.toJSON());
+  assertTrue('Round-trip preserves results',
+    JSON.stringify(solveDC(a).branches) === JSON.stringify(solveDC(b).branches));
+}
+
+// Отвод, упирающийся в СЕРЕДИНУ провода, обязан соединяться (тройник),
+// а простое пересечение без вершины — нет.
+{
+  const m = new SchematicModel();
+  const gb  = put(m, 'vsource', 30, 60, { id: 'GB1', value: 10, rotate: 90 });
+  const r1  = put(m, 'resistor', 80, 40, { id: 'R1', value: 1000, rotate: 90 });
+  const gnd = put(m, 'ground', 55, 95, { id: 'GND1' });
+  m.addWire([[20, 90], [120, 90]]);          // шина нуля
+  m.addWire([gnd.g, [55, 90]]);
+  m.addWire([gb.p, [30, 20], [80, 20], r1.a]);
+  m.addWire([r1.b, [80, 90]]);               // конец падает на СЕРЕДИНУ шины
+  m.addWire([gb.n, [30, 90]]);               // тоже на середину шины
+  const r = solveDC(m);
+  assertTrue('T-junction on a wire segment connects', r.ok);
+  assert('T-junction: current flows through R1', r.branches.R1.i, 10 / 1000, 1e-9);
+}
+
+// Идентификаторы проводов уникальны после удаления.
+{
+  const m = loadPreset('voltage-divider');
+  m.removeWire('w2');
+  m.addWire([[0, 0], [10, 0]]);
+  const ids = m.wires.map(w => w.id);
+  assertTrue('Wire ids stay unique after delete + add', new Set(ids).size === ids.length);
+}
+
+// Форматирование с приставками СИ.
+{
+  assertTrue('formatSI 4700 Ω → "4.7 кОм"', formatSI(4700, 'ohm') === '4.7 кОм');
+  assertTrue('formatSI 0.0130 A → "13.04 мА"', formatSI(0.013043, 'amp') === '13.04 мА');
+  assertTrue('formatSI 0 → "0 В"', formatSI(0, 'volt') === '0 В');
+  assertTrue('formatSI 1e-6 F → "1 мкФ"', formatSI(1e-6, 'farad') === '1 мкФ');
+}
+
+// ==================== SUMMARY ====================
+summary.innerHTML = `<div class="summary ${failed === 0 ? 'ok' : 'err'}">${passed} passed, ${failed} failed (total: ${passed + failed})</div>`;
+</script>
+</body>
+</html>
