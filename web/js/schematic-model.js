@@ -21,6 +21,7 @@ export const UNITS = {
   volt:  { ru: 'В',  en: 'V' },
   amp:   { ru: 'А',  en: 'A' },
   watt:  { ru: 'Вт', en: 'W' },
+  sec:   { ru: 'с',  en: 's' },
   none:  { ru: '',   en: '' },
 };
 

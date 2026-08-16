@@ -40,7 +40,15 @@ export function solveDC(model) {
   }
 }
 
-function solveInternal(model) {
+/**
+ * Сборка и решение системы.
+ * @param {object|null} ctx Контекст шага по времени:
+ *   null — статический расчёт (конденсатор разрыв, катушка перемычка);
+ *   { h, capV, indI } — шаг неявным методом Эйлера с шагом h;
+ *   { ic: true, capV, indI } — начальные условия: конденсаторы держатся
+ *   источниками напряжения, катушки — источниками тока.
+ */
+function solveInternal(model, ctx = null) {
   const net = model.buildNetlist();
   const warnings = [];
 
@@ -85,12 +93,21 @@ function solveInternal(model) {
   /* ---------- дополнительные неизвестные (токи ветвей) ---------- */
   // Идеальные ветви с нулевым сопротивлением нельзя вносить проводимостью 1e6 —
   // это разрушает обусловленность матрицы. Вводим ток ветви как неизвестное.
-  const vBranches = [];   // { comp, e (В), pins:[p,n] }
+  const vBranches = [];   // { comp, e (В), req (Ом, для катушки во времени), pins:[p,n] }
   for (const comp of active) {
     if (comp.type === 'vsource') {
       vBranches.push({ comp, e: numOr(comp.value, 9), pins: ['p', 'n'] });
-    } else if (comp.type === 'inductor') {
-      vBranches.push({ comp, e: 0, pins: ['a', 'b'] });               // в статике — перемычка
+    } else if (comp.type === 'inductor' && !ctx?.ic) {
+      if (ctx) {
+        // Схема замещения по Эйлеру назад: v = (L/h)·i − (L/h)·i(t−h)
+        const req = indReq(comp, ctx.h);
+        vBranches.push({ comp, e: -req * (ctx.indI.get(comp.id) || 0), req, pins: ['a', 'b'] });
+      } else {
+        vBranches.push({ comp, e: 0, pins: ['a', 'b'] });             // в статике — перемычка
+      }
+    } else if (comp.type === 'capacitor' && ctx?.ic) {
+      // Начальные условия: заряд задан, значит конденсатор держит напряжение
+      vBranches.push({ comp, e: ctx.capV.get(comp.id) || 0, pins: ['a', 'b'] });
     } else if (comp.type === 'switch' && isClosed(comp)) {
       vBranches.push({ comp, e: 0, pins: ['a', 'b'] });               // замкнутый ключ — перемычка
     }
@@ -174,9 +191,24 @@ function solveInternal(model) {
           stampG(G, a, b, 1 / R);
           break;
         }
-        case 'capacitor':
-          stampG(G, a, b, G_OPEN);              // в статике конденсатор — разрыв
+        case 'capacitor': {
+          if (!ctx) { stampG(G, a, b, G_OPEN); break; }   // в статике — разрыв
+          if (ctx.ic) break;                              // держится ветвью напряжения
+          // Схема замещения по Эйлеру назад: i = (C/h)·(v − v(t−h))
+          const geq = capGeq(comp, ctx.h);
+          stampDiode(G, rhs, a, b, geq, ctx.capV.get(comp.id) || 0);
           break;
+        }
+        case 'inductor': {
+          // Ветвью катушка описана везде, кроме режима начальных условий:
+          // там ток задан, поэтому она ведёт себя источником тока.
+          if (!ctx?.ic) break;
+          const i0 = ctx.indI.get(comp.id) || 0;
+          if (a >= 0) rhs[a] -= i0;
+          if (b >= 0) rhs[b] += i0;
+          stampG(G, a, b, G_OPEN);
+          break;
+        }
         case 'isource': {
           const J = numOr(comp.value, 0);       // ток течёт внутри источника p→n
           if (a >= 0) rhs[a] -= J;
@@ -317,6 +349,8 @@ function solveInternal(model) {
       const b = idx(br.comp, br.pins[1]);
       if (a >= 0) { G[a][k] += 1; G[k][a] += 1; }
       if (b >= 0) { G[b][k] -= 1; G[k][b] -= 1; }
+      // Для катушки во времени ветвь не идеальная: Va − Vb − Req·i = −Req·i(t−h)
+      if (br.req) G[k][k] -= br.req;
       rhs[k] = br.e;
     });
 
@@ -576,12 +610,18 @@ function solveInternal(model) {
         i = u / (Math.abs(numOr(comp.value, 1000)) || 1e-6);
         break;
       case 'capacitor':
-        i = 0;                                  // в установившемся режиме тока нет
+        // В статике тока нет; во времени i = (C/h)·(v − v(t−h))
+        i = (ctx && !ctx.ic)
+          ? capGeq(comp, ctx.h) * (u - (ctx.capV.get(comp.id) || 0))
+          : (ctx?.ic ? (x[branchIndex.get(comp.id)] || 0) : 0);
         break;
       case 'isource':
         i = numOr(comp.value, 0);
         break;
       case 'inductor':
+        // В режиме начальных условий катушка описана источником тока, ветви нет
+        i = ctx?.ic ? (ctx.indI.get(comp.id) || 0) : (x[branchIndex.get(comp.id)] || 0);
+        break;
       case 'vsource':
         i = x[branchIndex.get(comp.id)] || 0;   // ток ветви — прямое решение системы
         break;
@@ -619,7 +659,21 @@ function solveInternal(model) {
   /* ---------- токи проводов (для анимации направления) ---------- */
   const wireCurrents = computeWireCurrents(model, pinCurrents);
 
-  return { ok: true, nodeVoltages, branches, pinCurrents, wireCurrents, warnings, nodeCoords: net.nodeCoords };
+  // Состояние реактивных элементов для следующего шага по времени
+  const state = { caps: new Map(), inds: new Map() };
+  for (const comp of active) {
+    if (comp.type === 'capacitor') {
+      const a = idx(comp, 'a'), b = idx(comp, 'b');
+      state.caps.set(comp.id, (a >= 0 ? x[a] : 0) - (b >= 0 ? x[b] : 0));
+    } else if (comp.type === 'inductor') {
+      const k = branchIndex.get(comp.id);
+      state.inds.set(comp.id, k === undefined
+        ? (ctx?.indI.get(comp.id) || 0)          // в режиме начальных условий ток задан
+        : (x[k] || 0));
+    }
+  }
+
+  return { ok: true, nodeVoltages, branches, pinCurrents, wireCurrents, warnings, state, nodeCoords: net.nodeCoords };
 }
 
 /**
@@ -701,6 +755,88 @@ function stampDiode(G, rhs, pos, neg, g, vf) {
   stampG(G, pos, neg, g);
   if (pos >= 0) rhs[pos] += g * vf;
   if (neg >= 0) rhs[neg] -= g * vf;
+}
+
+/* ===================== ПЕРЕХОДНЫЙ ПРОЦЕСС ===================== */
+
+/** Проводимость схемы замещения конденсатора на шаге h. */
+function capGeq(comp, h) {
+  const C = Math.abs(numOr(comp.value, 1e-6)) || 1e-15;
+  return C / h;
+}
+
+/** Сопротивление схемы замещения катушки на шаге h. */
+function indReq(comp, h) {
+  const L = Math.abs(numOr(comp.value, 1e-3)) || 1e-15;
+  return L / h;
+}
+
+/**
+ * Расчёт переходного процесса неявным методом Эйлера.
+ *
+ * Реактивные элементы заменяются сопутствующими схемами: конденсатор —
+ * проводимость C/h с источником тока по напряжению предыдущего шага, катушка —
+ * сопротивление L/h с источником напряжения по её предыдущему току. Метод
+ * неявный, поэтому устойчив при любом шаге: слишком крупный шаг огрубит фронт,
+ * но не даст разболтки, как явные схемы.
+ *
+ * @param {object} model
+ * @param {{tStop:number, tStep:number, maxPoints?:number}} opts
+ * @returns {{ok:boolean, t?:number[], nodes?:Object, branches?:Object, ...}}
+ */
+export function solveTransient(model, opts = {}) {
+  try {
+    const tStop = Math.abs(numOr(opts.tStop, 0.01)) || 0.01;
+    let h = Math.abs(numOr(opts.tStep, tStop / 200)) || tStop / 200;
+    const maxPoints = Math.max(10, Math.min(20000, numOr(opts.maxPoints, 2000)));
+    if (tStop / h > maxPoints) h = tStop / maxPoints;   // не даём раздуть расчёт
+
+    const reactive = model.components.filter(c => c.type === 'capacitor' || c.type === 'inductor');
+    if (!reactive.length) {
+      return { ok: false, error: 'no-reactive', messageKey: 'editor.err_no_reactive' };
+    }
+
+    // Начальные условия: по умолчанию конденсаторы разряжены, катушки обесточены
+    const capV = new Map(), indI = new Map();
+    for (const c of reactive) {
+      if (c.type === 'capacitor') capV.set(c.id, numOr(c.props?.v0, 0));
+      else indI.set(c.id, numOr(c.props?.i0, 0));
+    }
+
+    const t = [], nodes = {}, branches = {};
+    const push = (time, res) => {
+      t.push(time);
+      for (const [name, v] of Object.entries(res.nodeVoltages)) {
+        (nodes[name] ||= []).push(v);
+      }
+      for (const [id, br] of Object.entries(res.branches)) {
+        const dst = (branches[id] ||= { u: [], i: [] });
+        dst.u.push(br.u); dst.i.push(br.i);
+      }
+    };
+
+    // Точка t = 0 считается с зафиксированными начальными условиями
+    const first = solveInternal(model, { ic: true, capV, indI });
+    if (!first.ok) return first;
+    push(0, first);
+
+    let warnings = first.warnings || [];
+    let last = first;
+    const steps = Math.max(1, Math.round(tStop / h));
+    for (let k = 1; k <= steps; k++) {
+      const res = solveInternal(model, { h, capV, indI });
+      if (!res.ok) return res;
+      push(k * h, res);
+      for (const [id, v] of res.state.caps) capV.set(id, v);
+      for (const [id, i] of res.state.inds) indI.set(id, i);
+      last = res;
+    }
+    if (last.warnings?.length) warnings = last.warnings;
+
+    return { ok: true, t, nodes, branches, tStep: h, tStop: steps * h, warnings };
+  } catch (err) {
+    return { ok: false, error: 'exception', messageKey: 'editor.err_internal', detail: err.message };
+  }
 }
 
 /* ===================== ОПТОПАРА ===================== */
