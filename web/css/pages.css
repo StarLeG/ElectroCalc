@@ -130,7 +130,10 @@
   .tr-sig { min-height: 36px; }
 }
 
-@media (max-width: 900px) {
+/* Три колонки требуют примерно 150 (палитра) + 400 (канва) + 210 (свойства)
+   плюс боковое меню. Ниже этого порога канва вырождается в узкую полосу —
+   на планшете в альбоме она была уже, чем на телефоне, — поэтому стопкой. */
+@media (max-width: 1100px) {
   .editor-body { flex-direction: column; }
   .editor-panel, .editor-props-panel { width: 100%; max-height: none; }
   .editor-palette { flex-direction: row; flex-wrap: wrap; }
@@ -139,4 +142,18 @@
   .editor-toolbar .btn { min-height: 44px; }
   .editor-toolbar #editor-preset { min-height: 44px; font-size: 16px; flex: 1 1 100%; }
   .props-actions .btn { min-height: 44px; flex: 1; }
+}
+
+@media (max-width: 1024px), (pointer: coarse) {
+  .tr-sig { min-height: 44px; }
+  /* Результаты эмуляции: ужимаем, чтобы четыре колонки влезли без
+     горизонтальной прокрутки на телефоне. min-width сбрасываем — общее
+     мобильное правило table{min-width:500px} рассчитано на строковые
+     калькуляторы и этой компактной таблице только мешает. */
+  .sim-table { font-size: 11px; min-width: 0; }
+  .sim-table th, .sim-table td { padding: 3px 4px; }
+  .sim-table th:first-child { white-space: normal; }
+  /* Пометку режима уводим под обозначение, иначе первая колонка распирает таблицу */
+  .sim-note { display: block; margin-left: 0; }
+  .sim-table tr.sim-sub th { padding-left: 10px; }
 }

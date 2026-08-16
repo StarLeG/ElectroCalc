@@ -43,6 +43,9 @@
   padding:8px 24px;font-weight:600;font-size:14px;
   cursor:pointer;transition:all .15s;
   display:inline-flex;align-items:center;gap:6px;
+  /* На узком экране подпись рвалась посреди слова: «RU / EN» вставало
+     в три строки. Кнопка должна сжиматься целиком, а не переноситься. */
+  white-space:nowrap;
 }
 .btn-primary{background:var(--accent);color:var(--text-on-accent);transition:background .15s,transform .1s}
 .btn-primary:hover{background:var(--accent-hover)}
@@ -169,4 +172,14 @@ select.tbl-input{padding:4px 6px}
   .btn{padding:10px 20px;min-height:44px;font-size:15px}
   .field input,.field select{padding:10px 12px;min-height:44px;font-size:16px}
   .detail .lbl{font-size:12px}
+}
+
+/* Тач-устройства. Ширина сама по себе не признак пальца: планшет в альбоме —
+   это 1024 px и при этом тач, поэтому условие продублировано через pointer.
+   Поля ввода получают 16 px, иначе iOS зумит страницу при фокусе. */
+@media (max-width:1024px),(pointer:coarse){
+  .btn,.btn-sm{min-height:44px}
+  .nav-item{min-height:44px}
+  .tbl-input{min-height:44px;font-size:16px}
+  select.tbl-input{padding:8px 6px}
 }
