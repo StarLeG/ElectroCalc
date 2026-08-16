@@ -1,0 +1,113 @@
+/* EngiCalc — Page-specific styles */
+
+/* Converter page */
+#page-converter .card{max-width:600px}
+#page-converter optgroup{font-weight:700;color:var(--accent)}
+#page-converter option{font-weight:400;color:var(--text)}
+
+/* About / Developer page */
+.about-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.about-card { background: var(--bg-input); border-radius: var(--r-input); padding: 16px 20px; display: flex; gap: 16px; align-items: flex-start; }
+.about-card .about-icon { font-size: 28px; flex-shrink: 0; width: 40px; text-align: center; }
+.about-card .about-info { flex: 1; }
+.about-card .about-info h4 { color: var(--text); font-size: 14px; margin-bottom: 4px; }
+.about-card .about-info p { color: var(--text-muted); font-size: 13px; line-height: 1.5; margin: 0; }
+.about-card .about-info a { color: var(--accent); text-decoration: none; }
+.about-card .about-info a:hover { text-decoration: underline; }
+.about-future { background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(59,130,246,0.1)); border: 1px solid rgba(139,92,246,0.3); border-radius: var(--r-input); padding: 20px; margin-top: 8px; }
+.about-future h4 { color: var(--accent); font-size: 15px; margin-bottom: 8px; }
+.about-future p { color: var(--text-muted); font-size: 13px; line-height: 1.6; margin: 0; }
+.about-future .platforms { display: flex; gap: 12px; margin-top: 12px; }
+.about-future .platform-badge { background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 6px 14px; font-size: 13px; color: var(--text); font-weight: 600; }
+
+/* ===================== SCHEMATIC EDITOR ===================== */
+.editor-card { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+.editor-toolbar { display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center; margin-bottom: var(--sp-4); }
+.editor-toolbar #editor-preset { width: auto; min-width: 200px; }
+.editor-sep { width: 1px; align-self: stretch; min-height: 24px; background: var(--border); }
+.editor-toolbar .btn.active { background: var(--accent); color: var(--text-on-accent); border-color: var(--accent); }
+
+.editor-body { display: flex; gap: var(--sp-4); flex: 1; min-height: 0; }
+
+.editor-panel { width: 150px; flex-shrink: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.editor-panel-title { font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: var(--sp-2); text-transform: uppercase; letter-spacing: .04em; }
+.editor-props-panel { width: 210px; }
+
+.editor-palette { display: flex; flex-direction: column; gap: var(--sp-1); }
+.palette-item {
+  display: block; width: 100%; text-align: left; cursor: pointer;
+  padding: 9px 10px; font-size: 12px; font-family: var(--font-ui);
+  color: var(--text); background: var(--bg-input);
+  border: 1px solid var(--border); border-radius: var(--r-input);
+}
+.palette-item:hover { border-color: var(--accent); }
+.palette-item.active { border-color: var(--accent); background: var(--accent); color: var(--text-on-accent); font-weight: 600; }
+
+.editor-canvas {
+  flex: 1; min-width: 0; overflow: auto; -webkit-overflow-scrolling: touch;
+  display: flex; justify-content: flex-start; align-items: flex-start;
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: var(--r-input); touch-action: none;
+}
+/* Ширину в px проставляет редактор (постоянный масштаб мм→px); здесь только
+   потолок, чтобы на узком экране чертёж ужимался, а не резался. */
+.editor-canvas-svg { display: block; height: auto; max-width: 100%; flex: none; }
+.editor-empty { padding: var(--sp-4); color: var(--error); font-size: 13px; }
+
+.editor-grid line { stroke: var(--border); stroke-width: .12; opacity: .55; }
+.editor-selection { fill: none; stroke: var(--accent); stroke-width: .5; stroke-dasharray: 2 1.5; }
+.editor-selection-wire { fill: none; stroke: var(--accent); stroke-width: 1.4; opacity: .5; stroke-linecap: round; }
+
+/* Режим эмуляции: канва только для чтения */
+#page-editor.sim-mode .editor-palette-panel { opacity: .45; pointer-events: none; }
+#page-editor.sim-mode .editor-canvas { cursor: crosshair; }
+
+/* Поток тока: бегущие штрихи по направлению тока */
+.editor-flow {
+  fill: none; stroke: var(--accent); stroke-width: .9;
+  stroke-dasharray: 2 3; stroke-linecap: round;
+  animation: editor-flow-run linear infinite;
+}
+@keyframes editor-flow-run { to { stroke-dashoffset: -5; } }
+.editor-flow-arrow { fill: var(--accent); stroke: none; }
+.editor-sim-label { fill: var(--accent); font-size: 2.7px; font-family: var(--font-mono); }
+.editor-probe-dot { fill: var(--accent-2); }
+.editor-probe-label { fill: var(--accent-2); font-size: 3.2px; font-family: var(--font-mono); font-weight: 700; }
+
+@media (prefers-reduced-motion: reduce) {
+  .editor-flow { animation: none; }
+}
+
+/* Панель свойств */
+.props-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.props-head strong { font-family: var(--font-mono); color: var(--accent); font-size: 15px; }
+.props-head span { font-size: 12px; color: var(--text-muted); }
+.props-actions { display: flex; gap: var(--sp-1); margin-top: var(--sp-3); flex-wrap: wrap; }
+.props-hint { font-size: 11px; color: var(--text-muted); line-height: 1.6; margin-top: var(--sp-3); }
+
+/* Отчёт эмуляции */
+.editor-sim-results { margin-top: var(--sp-4); border-top: 1px solid var(--border); padding-top: var(--sp-3); max-height: 34vh; overflow-y: auto; }
+.editor-sim-results .sim-block { margin-bottom: var(--sp-4); }
+.editor-sim-results h4 { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: var(--sp-2); }
+.sim-table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 12px; }
+.sim-table th, .sim-table td { padding: 3px 8px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.sim-table th:first-child { text-align: left; color: var(--accent); }
+.sim-table thead th { color: var(--text-muted); text-align: right; }
+.sim-note { color: var(--text-muted); font-weight: 400; margin-left: 6px; font-size: 11px; }
+.sim-table tr.sim-sub th { color: var(--text-muted); font-weight: 400; padding-left: 18px; }
+.sim-table tr.sim-sub td { color: var(--text-muted); }
+.sim-warn { list-style: none; font-size: 12px; color: var(--warn); line-height: 1.7; }
+.sim-warn li::before { content: '⚠ '; }
+.sim-error { color: var(--error); font-size: 13px; }
+
+@media (max-width: 900px) {
+  .editor-body { flex-direction: column; }
+  .editor-panel, .editor-props-panel { width: 100%; max-height: none; }
+  .editor-palette { flex-direction: row; flex-wrap: wrap; }
+  .palette-item { width: auto; min-height: 44px; font-size: 14px; padding: 11px 14px; }
+  .editor-canvas { min-height: 46vh; }
+  .editor-toolbar .btn { min-height: 44px; }
+  .editor-toolbar #editor-preset { min-height: 44px; font-size: 16px; flex: 1 1 100%; }
+  .props-actions .btn { min-height: 44px; flex: 1; }
+}
