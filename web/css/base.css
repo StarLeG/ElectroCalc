@@ -8,7 +8,7 @@ body{
   line-height:1.5;
   display:flex;
   height:100vh;
-  overflow:hidden;
+  overflow-x:hidden;
 }
 a{color:var(--accent-2);text-decoration:none}
 a:hover{text-decoration:underline}
@@ -36,4 +36,19 @@ tr:nth-child(even){background:var(--bg-input)}
 /* Reduced motion */
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:0.01ms!important;transition-duration:0.01ms!important}
+}
+
+/* Print */
+@media print {
+  .sidebar, .topbar, .statusbar, .nav-toggle, .nav-overlay, .btns, .export-btns, .btn-help, .btn-print, .sub-tabs { display: none !important; }
+  .main { margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
+  .content.page { display: none !important; }
+  .content.page.active { display: flex !important; }
+  body { background: #fff !important; color: #000 !important; }
+  .card { border: 1px solid #ccc !important; box-shadow: none !important; break-inside: avoid; }
+  .result-val, .result-unit, .val { color: #000 !important; }
+  .lbl { color: #666 !important; }
+  .formula { color: #333 !important; }
+  .card-title { color: #222 !important; }
+  a { color: #000 !important; text-decoration: underline; }
 }

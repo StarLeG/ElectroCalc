@@ -7,7 +7,10 @@
   border-radius:var(--r-card);
   padding:var(--sp-5);
   box-shadow:var(--shadow);
+  animation:cardIn .25s ease both;
 }
+@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.card:nth-child(2){animation-delay:.05s}
 .card-title{font-size:16px;font-weight:600;margin-bottom:var(--sp-4)}
 .input-card{width:380px;min-width:380px;display:flex;flex-direction:column;gap:var(--sp-3)}
 .result-card{flex:1;display:flex;flex-direction:column;gap:var(--sp-4)}
@@ -41,8 +44,9 @@
   cursor:pointer;transition:all .15s;
   display:inline-flex;align-items:center;gap:6px;
 }
-.btn-primary{background:var(--accent);color:var(--text-on-accent)}
+.btn-primary{background:var(--accent);color:var(--text-on-accent);transition:background .15s,transform .1s}
 .btn-primary:hover{background:var(--accent-hover)}
+.btn-primary:active{transform:scale(.97)}
 .btn-secondary{background:transparent;color:var(--accent);border:1px solid var(--accent)}
 .btn-secondary:hover{background:var(--accent);color:var(--text-on-accent)}
 .btn-ghost{background:transparent;color:var(--text-muted)}
@@ -54,6 +58,7 @@
   font-size:48px;font-weight:700;
   color:var(--result);
   text-align:center;line-height:1;
+  transition:color .3s;
 }
 .result-unit{font-size:16px;color:var(--text-muted);text-align:center;margin-top:var(--sp-1)}
 .result-desc{font-size:13px;color:var(--text-muted);text-align:center;margin-top:2px}
@@ -90,10 +95,35 @@
 .sub-tab.active{color:var(--accent);background:var(--bg-elevated);border-color:var(--accent)}
 .sub-tab:not(.active){background:transparent}
 .sub-tab:hover{color:var(--text)}
-.sub-page{display:none}.sub-page.active{display:flex}
+.sub-page{display:none}.sub-page.active{display:flex;gap:24px;flex:1}
 
 /* Export buttons */
 .export-btns{display:flex;gap:var(--sp-3);margin-top:auto;padding-top:var(--sp-2)}
+
+/* Dynamic list (R/C/L calculator) */
+.dynamic-list{display:flex;flex-direction:column;gap:var(--sp-2)}
+.dynamic-item{display:flex;align-items:center;gap:var(--sp-2)}
+.dynamic-item label{min-width:70px;font-size:13px;font-weight:600;color:var(--text-muted);white-space:nowrap}
+.dynamic-item input{flex:1}
+.btn-sm{padding:4px 12px;font-size:12px;min-height:32px}
+
+/* Radio toggle (wirecab mode switch) */
+.wc-radio{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--text);cursor:pointer;padding:8px 16px;border:1px solid var(--border);border-radius:var(--r-input);transition:all .15s}
+.wc-radio:has(input:checked){background:var(--accent);color:var(--text-on-accent);border-color:var(--accent)}
+.wc-radio input{display:none}
+
+/* Table inputs (load panel) */
+.tbl-input{
+  width:100%;background:var(--bg-input);border:1px solid var(--border);
+  border-radius:var(--r-input);padding:6px 8px;color:var(--text);
+  font-size:13px;font-family:var(--font-mono);outline:none;
+  transition:border-color .15s;
+}
+.tbl-input:focus{border-color:var(--accent)}
+select.tbl-input{padding:4px 6px}
+
+/* Table scroll wrapper */
+.table-scroll{overflow-x:auto;margin-bottom:16px}
 
 /* Toast */
 .toast{
@@ -114,6 +144,14 @@
 /* Check mark */
 .check{color:var(--result);font-weight:600}
 
+/* Theme toggle */
+.btn-theme{position:relative;width:44px;height:44px;overflow:hidden}
+.theme-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transition:transform .3s ease,opacity .3s ease}
+.theme-icon-sun{opacity:1;transform:rotate(0)}
+.theme-icon-moon{opacity:0;transform:rotate(-90deg)}
+[data-theme="light"] .theme-icon-sun{opacity:0;transform:rotate(90deg)}
+[data-theme="light"] .theme-icon-moon{opacity:1;transform:rotate(0)}
+
 /* Responsive */
 @media(max-width:768px){
   .input-card{width:100%;min-width:0}
@@ -121,5 +159,14 @@
   .grid{grid-template-columns:1fr}
   .row{flex-direction:column;gap:0}
   .sub-tabs{gap:4px}
-  .sub-tab{padding:6px 10px;font-size:11px}
+  .sub-tab{padding:8px 12px;font-size:12px;min-height:44px;display:flex;align-items:center}
+  .sub-page.active{flex-direction:column}
+  .sub-page .card{min-width:0;width:100%}
+  .sub-page .input-card{min-width:0;width:100%}
+  .card{overflow-x:hidden}
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:16px;max-width:100%}
+  table{min-width:500px}
+  .btn{padding:10px 20px;min-height:44px;font-size:15px}
+  .field input,.field select{padding:10px 12px;min-height:44px;font-size:16px}
+  .detail .lbl{font-size:12px}
 }

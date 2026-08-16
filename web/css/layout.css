@@ -37,7 +37,9 @@
   background:var(--bg-elevated);
   color:var(--accent);
   border-left:3px solid var(--accent);
+  animation:navActive .15s ease;
 }
+@keyframes navActive{from{opacity:.7}to{opacity:1}}
 .nav-item svg{
   width:18px;height:18px;
   stroke:currentColor;fill:none;stroke-width:2;
@@ -52,8 +54,10 @@
   background:var(--bg-surface);
   border:1px solid var(--border);
   border-radius:var(--r-input);
-  padding:var(--sp-2);
+  padding:10px;
   color:var(--text);
+  width:44px;height:44px;
+  align-items:center;justify-content:center;
 }
 .nav-toggle svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2}
 .nav-overlay{
@@ -62,7 +66,7 @@
 }
 
 /* Main area */
-.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
 
 /* Topbar */
 .topbar{
@@ -82,6 +86,7 @@
 .content{
   flex:1;padding:var(--sp-5);
   overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
   display:flex;gap:var(--sp-5);
 }
 
@@ -98,16 +103,28 @@
 .statusbar-right{margin-left:auto;display:flex;gap:var(--sp-4)}
 
 /* Page visibility */
-.page{display:none}.page.active{display:flex}
+.page{display:none}.page.active{display:flex;animation:fadeIn .2s ease}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:768px){
+  .page.active{display:block}
+}
 
 /* Mobile */
 @media(max-width:768px){
+  body{display:block;height:auto;min-height:100vh}
   .sidebar{position:fixed;left:-260px;top:0;bottom:0;z-index:1000;width:260px}
   .sidebar.open{left:0}
   .nav-overlay.show{display:block}
   .nav-toggle{display:block}
-  .topbar{padding-left:52px}
-  .content{padding:var(--sp-4);gap:var(--sp-4);flex-direction:column}
+  .topbar{position:sticky;top:0;z-index:100;padding-left:52px;min-width:0}
+  .topbar-right{gap:var(--sp-1);flex-shrink:1;min-width:0}
+  .topbar-right .btn{padding:8px 10px;font-size:13px;min-height:44px;min-width:44px;display:flex;align-items:center;justify-content:center}
+  .breadcrumb{display:none}
+  .main{min-height:auto}
+  .content{padding:var(--sp-4);gap:var(--sp-4);flex-direction:column;overflow:visible}
+  .nav-item{padding:10px var(--sp-3);min-height:44px;font-size:14px}
 }
 @media(max-width:1024px){
   .content{flex-direction:column}
