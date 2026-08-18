@@ -157,3 +157,113 @@
   .sim-note { display: block; margin-left: 0; }
   .sim-table tr.sim-sub th { padding-left: 10px; }
 }
+
+/* ============ Подбор кабеля (страница #cable) ============ */
+
+/* Дополнительные параметры прячутся в раскрывающиеся блоки: обязательных
+   полей на форме шесть, остальные четырнадцать нужны не в каждом расчёте. */
+details.adv {
+  border: 1px solid var(--border);
+  border-radius: var(--r-input);
+  background: var(--bg-input);
+  margin-bottom: var(--sp-3);
+}
+details.adv > summary {
+  cursor: pointer;
+  padding: 11px var(--sp-3);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-2);
+  list-style: none;
+  user-select: none;
+}
+details.adv > summary::-webkit-details-marker { display: none; }
+details.adv > summary::before {
+  content: '▸';
+  display: inline-block;
+  width: 14px;
+  transition: transform .15s ease;
+}
+details.adv[open] > summary::before { transform: rotate(90deg); }
+details.adv > summary:hover { color: var(--accent-hover); }
+details.adv > .field,
+details.adv > .row { padding: 0 var(--sp-3); }
+details.adv > :last-child { padding-bottom: var(--sp-3); }
+
+/* Таблица проверок по критериям */
+.check-table {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border);
+  border-radius: var(--r-input);
+  overflow: hidden;
+  margin-bottom: var(--sp-3);
+}
+.check-table:empty { display: none; }
+.check-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 9px var(--sp-3);
+  background: var(--bg-input);
+  font-size: 13px;
+}
+/* Критерий, продиктовавший итоговое сечение, — главный вывод расчёта */
+.check-row.limiting {
+  background: var(--bg-elevated);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.check-name { color: var(--text); }
+.check-req {
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.check-verdict { white-space: nowrap; }
+.fail { color: var(--error); font-weight: 600; }
+
+/* Предупреждения */
+.warn-list { display: flex; flex-direction: column; gap: var(--sp-2); }
+.warn-list:empty { display: none; }
+.warn-item {
+  padding: 10px var(--sp-3);
+  border-left: 3px solid var(--warn);
+  border-radius: var(--r-input);
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+@media (max-width: 1024px), (pointer: coarse) {
+  details.adv > summary { min-height: 44px; display: flex; align-items: center; }
+  .check-row { grid-template-columns: 1fr auto; row-gap: var(--sp-1); }
+  .check-verdict { grid-column: 2; }
+  .check-req { grid-column: 1 / -1; }
+}
+
+/* ============ Дополнения к графикам (chart.js) ============ */
+
+/* Линия-ориентир: граница допуска на эпюре. Пунктир, чтобы не путалась
+   с кривыми сигналов, и цветом предупреждения, а не сетки. */
+.tr-ref {
+  stroke: var(--warn);
+  stroke-width: 1;
+  stroke-dasharray: 5 4;
+  opacity: .85;
+}
+
+/* Вертикальная отметка: точка питания вдоль трассы. */
+.tr-marker {
+  stroke: var(--accent-2);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+  opacity: .7;
+}
+
+/* Легенда эпюры ленты только подписывает кривые и ничего не переключает,
+   поэтому курсор не намекает на клик — в отличие от легенды переходного
+   процесса, где щелчком гасятся отдельные сигналы. */
+#lst-legend .tr-sig { cursor: default; }

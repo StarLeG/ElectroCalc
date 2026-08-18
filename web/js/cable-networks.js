@@ -1,13 +1,20 @@
 /* EngiCalc — Cable networks: derating, diameter→section, converter */
 'use strict';
 import { $, num, round, toast, validate, T } from './core.js';
+import {
+  ALL_SECTIONS, K_TEMP_AIR, K_TEMP_GROUND, K_GROUP, K_LAYING,
+  GROUND_LAYINGS, interpolateK
+} from './data/cable-data.js';
 
 export function calcDerating() {
   if(!validate('dr-I','dr-T','dr-N'))return;
   const Ibase=num('dr-I'),temp=num('dr-T'),N=num('dr-N');
-  const kt=temp<=20?1.0:temp<=25?0.97:temp<=30?0.94:temp<=35?0.91:temp<=40?0.87:temp<=45?0.83:temp<=50?0.79:temp<=55?0.75:0.71;
-  const kg=N<=1?1.0:N<=2?0.95:N<=3?0.80:N<=4?0.72:N<=6?0.65:N<=9?0.57:0.50;
-  const ktotal=kt*kg,Iallow=Ibase*ktotal,reduction=(1-ktotal)*100;
+  const method=$('#dr-method')?.value||'air';
+  const inGround=GROUND_LAYINGS.includes(method);
+  const kt=interpolateK(inGround?K_TEMP_GROUND:K_TEMP_AIR,temp);
+  const kg=interpolateK(K_GROUP,N);
+  const klay=K_LAYING[method]??1;
+  const ktotal=kt*kg*klay,Iallow=Ibase*ktotal,reduction=(1-ktotal)*100;
   $('#dr-result-val').textContent=round(Iallow,1);
   $('#dr-kt').textContent=round(kt,2);
   $('#dr-kg').textContent=round(kg,2);
@@ -21,8 +28,7 @@ export function calcDiam2Sec() {
   const S=Math.PI*d*d/4;
   const Stotal=S*n;
   const circ=Math.PI*d;
-  const std=[0.5,0.75,1,1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240];
-  const nearest=std.reduce((a,b)=>Math.abs(b-Stotal)<Math.abs(a-Stotal)?b:a);
+  const nearest=ALL_SECTIONS.reduce((a,b)=>Math.abs(b-Stotal)<Math.abs(a-Stotal)?b:a);
   $('#ds-result-val').textContent=round(Stotal,2);
   $('#ds-S').textContent=round(S,2)+' мм²';
   $('#ds-Circ').textContent=round(circ,2)+' мм';

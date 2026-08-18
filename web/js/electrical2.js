@@ -1,6 +1,7 @@
 /* EngiCalc — New electrical calculators */
 'use strict';
 import { $, $$, num, round, toast, validate, validateRange } from './core.js';
+import { RESISTIVITY, K_THERMAL } from './data/cable-data.js';
 
 /* ===================== GROUND CIRCUIT ===================== */
 export function calcGroundCircuit() {
@@ -44,8 +45,11 @@ export function calcKZCableCheck() {
   const S = num('kz-S');
   const mat = $('#kz-mat')?.value || 'Cu';
 
-  // Thermal coefficient k (A*sqrt(s)/mm²)
-  const k = mat === 'Cu' ? 143 : 95;
+  // Коэффициент термической стойкости, А·с^0.5/мм².
+  // Страница не спрашивает тип изоляции, поэтому берётся сшитый полиэтилен —
+  // как было и раньше (143/95). Для ПВХ коэффициент почти на четверть ниже,
+  // см. K_THERMAL в data/cable-data.js.
+  const k = K_THERMAL[mat].xlpe;
 
   // Minimum section for KZ thermal stability
   const Smin = Ikz * Math.sqrt(t) / k;
@@ -83,7 +87,7 @@ export function calcBusbar() {
   const Iderated = Imax * kt;
 
   // Voltage drop per meter (approximate)
-  const rho = mat === 'Cu' ? 0.0175 : 0.028;
+  const rho = RESISTIVITY[mat];
   const Rm = rho / S * 1000;
   const dU = I * Rm / 1000;
 

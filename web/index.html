@@ -114,10 +114,15 @@
   <div class="nav-item" data-page="motorstart"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>Пуск двигателя</span></div>
   <div class="nav-item" data-page="transformer"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4"/><path d="M12 19v4"/></svg><span data-i18n="nav.transformer">Трансформатор</span></div>
   <div class="nav-item" data-page="compensation"><svg viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg><span data-i18n="nav.compensation">Компенсация</span></div>
-  <div class="nav-item" data-page="lighting"><svg viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg><span data-i18n="nav.lighting">Освещение</span></div>
-  <div class="nav-item" data-page="emergency"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg><span>Аварийное освещ.</span></div>
   <div class="nav-item" data-page="ups"><svg viewBox="0 0 24 24"><rect x="1" y="6" width="22" height="12" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg><span data-i18n="nav.ups">ИБП / АКБ</span></div>
   <div class="nav-item" data-page="loadpanel"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg><span data-i18n="nav.loadpanel">Щит нагрузок</span></div>
+
+  <!-- 💡 ОСВЕЩЕНИЕ -->
+  <div class="sep"></div>
+  <div class="group" data-i18n="nav.lighting_group">ОСВЕЩЕНИЕ</div>
+  <div class="nav-item" data-page="lighting"><svg viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg><span data-i18n="nav.lighting">Освещение</span></div>
+  <div class="nav-item" data-page="emergency"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg><span>Аварийное освещ.</span></div>
+  <div class="nav-item" data-page="ledstrip"><svg viewBox="0 0 24 24"><rect x="2" y="9" width="20" height="6" rx="1"/><circle cx="7" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="17" cy="12" r="1.2"/></svg><span data-i18n="nav.ledstrip">Светодиодные ленты</span></div>
 
   <!-- 🔌 КАБЕЛЬНЫЕ СЕТИ -->
   <div class="sep"></div>
@@ -248,29 +253,172 @@
   <main class="content page" id="page-cable">
     <div class="card input-card">
       <div class="card-title" data-i18n="common.input_data">Исходные данные</div>
-      <div class="field"><label data-i18n="cable.current">Расчётный ток (А)</label><input type="number" value="25" id="c-I"></div>
-      <div class="field"><label data-i18n="cable.material">Материал</label><select id="c-mat"><option value="Cu" data-i18n="cable.copper">Медь (Cu)</option><option value="Al" data-i18n="cable.aluminum">Алюминий (Al)</option></select></div>
+      <div class="field"><label data-i18n="cable.net">Тип сети</label><select id="c-net"><option value="ac3" data-i18n="cable.net_3ph">Трёхфазная 380 В</option><option value="ac1" data-i18n="cable.net_1ph">Однофазная 220 В</option><option value="dc" data-i18n="cable.net_dc">Постоянный ток</option></select></div>
       <div class="row">
-        <div class="field"><label data-i18n="cable.length">Длина линии (м)</label><input type="number" value="50" id="c-L"></div>
         <div class="field"><label data-i18n="cable.voltage">Напряжение (В)</label><input type="number" value="380" id="c-U"></div>
+        <div class="field"><label data-i18n="cable.length">Длина линии (м)</label><input type="number" value="50" id="c-L"></div>
       </div>
+      <div class="field"><label data-i18n="cable.load_mode">Нагрузка задана</label><select id="c-mode"><option value="power" data-i18n="cable.mode_power">Мощностью</option><option value="current" data-i18n="cable.mode_current">Током</option></select></div>
+      <div class="row">
+        <div class="field" id="c-field-P"><label data-i18n="cable.power">Мощность (кВт)</label><input type="number" step="0.1" value="15" id="c-P"></div>
+        <div class="field" id="c-field-I" hidden><label data-i18n="cable.current">Ток нагрузки (А)</label><input type="number" step="0.1" value="25" id="c-I"></div>
+        <div class="field" id="c-field-cos"><label data-i18n="cable.cos_phi">cos φ</label><input type="number" step="0.01" value="0.9" id="c-cos"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label data-i18n="cable.efficiency">КПД</label><input type="number" step="0.01" value="1" id="c-eta"></div>
+        <div class="field"><label data-i18n="cable.max_drop">Допустимое ΔU (%)</label><input type="number" step="0.1" value="5" id="c-drop"></div>
+      </div>
+      <details class="adv">
+        <summary data-i18n="cable.group_cable">Кабель и прокладка</summary>
+        <div class="row">
+          <div class="field"><label data-i18n="cable.material">Материал</label><select id="c-mat"><option value="Cu" data-i18n="cable.copper">Медь (Cu)</option><option value="Al" data-i18n="cable.aluminum">Алюминий (Al)</option></select></div>
+          <div class="field"><label data-i18n="cable.cores">Нагруженных жил</label><select id="c-cores"><option value="3" data-i18n="cable.cores_3">3 жилы</option><option value="1" data-i18n="cable.cores_1">1 жила</option><option value="2" data-i18n="cable.cores_2">2 жилы</option><option value="4" data-i18n="cable.cores_4">4 жилы</option><option value="5" data-i18n="cable.cores_5">5 жил</option></select></div>
+        </div>
+        <div class="row">
+          <div class="field"><label data-i18n="cable.insulation">Изоляция</label><select id="c-ins"><option value="pvc" data-i18n="cable.ins_pvc">ПВХ (70 °C)</option><option value="rubber" data-i18n="cable.ins_rubber">Резина (65 °C)</option><option value="paper" data-i18n="cable.ins_paper">Бумажная (80 °C)</option><option value="xlpe" data-i18n="cable.ins_xlpe">Сшитый ПЭ (90 °C)</option></select></div>
+          <div class="field"><label data-i18n="cable.laying">Способ прокладки</label><select id="c-lay"><option value="air" data-i18n="cable.lay_air">Открыто в воздухе</option><option value="tray" data-i18n="cable.lay_tray">В лотке</option><option value="duct" data-i18n="cable.lay_duct">В кабель-канале</option><option value="pipe" data-i18n="cable.lay_pipe">В трубе</option><option value="wall" data-i18n="cable.lay_wall">Скрыто в стене</option><option value="ground" data-i18n="cable.lay_ground">В земле</option></select></div>
+        </div>
+        <div class="row">
+          <div class="field"><label data-i18n="cable.bundle">Кабелей в пучке</label><input type="number" min="1" value="1" id="c-bundle"></div>
+          <div class="field"><label data-i18n="cable.ambient">Температура среды (°C)</label><input type="number" value="25" id="c-temp"></div>
+        </div>
+        <div class="field"><label data-i18n="cable.parallel">Кабелей на фазу</label><input type="number" min="1" value="1" id="c-par"></div>
+      </details>
+      <details class="adv">
+        <summary data-i18n="cable.group_check">Проверка по КЗ и пуску</summary>
+        <div class="row">
+          <div class="field"><label data-i18n="cable.ikz">Ток КЗ (А)</label><input type="number" value="0" id="c-ikz"></div>
+          <div class="field"><label data-i18n="cable.sc_time">Время отключения (с)</label><input type="number" step="0.01" value="0" id="c-t"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label data-i18n="cable.start_mult">Кратность пуска</label><input type="number" step="0.1" value="0" id="c-kstart"></div>
+          <div class="field"><label data-i18n="cable.breaker_char">Характеристика</label><select id="c-char"><option value="C">C</option><option value="B">B</option><option value="D">D</option></select></div>
+        </div>
+      </details>
       <div class="btns"><button class="btn btn-primary" id="btn-cable-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-cable-reset" data-i18n="common.reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
       <div class="card-title" data-i18n="common.result">Результат</div>
-      <div class="result-val" id="cable-result-val">2.5</div>
+      <div class="result-val" id="cable-result-val">—</div>
       <div class="result-unit">мм²</div>
       <div class="result-desc" data-i18n="cable.section">Рекомендуемое сечение</div>
+      <div class="check-table" id="cable-checks"></div>
       <div class="grid">
-        <div class="detail"><div class="lbl" data-i18n="cable.diameter">ДИАМЕТР</div><div class="val" id="cable-d">1.78 мм</div></div>
-        <div class="detail"><div class="lbl" data-i18n="cable.by_heating">ПО НАГРЕВУ</div><div class="val"><span class="check" id="cable-heat">✓ Проходит</span></div></div>
-        <div class="detail"><div class="lbl" data-i18n="cable.by_density">ПО ПЛОТНОСТИ</div><div class="val"><span class="check" id="cable-density">✓ Проходит</span></div></div>
-        <div class="detail"><div class="lbl" data-i18n="cable.by_losses">ПО ПОТЕРЯМ</div><div class="val"><span class="check" id="cable-loss">✓ Проходит</span></div></div>
+        <div class="detail"><div class="lbl" data-i18n="cable.limiting">ЛИМИТИРУЮЩИЙ КРИТЕРИЙ</div><div class="val" id="cable-limiting">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="cable.calc_current">РАСЧЁТНЫЙ ТОК</div><div class="val" id="cable-I">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="cable.allowed_current">ДОПУСТИМЫЙ ТОК</div><div class="val" id="cable-Iallow">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="cable.reserve">ЗАПАС</div><div class="val" id="cable-reserve">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="cable.drop_v">ПАДЕНИЕ (В)</div><div class="val" id="cable-dropV">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="cable.drop_pct">ПАДЕНИЕ (%)</div><div class="val" id="cable-dropPct">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="cable.power_loss">ПОТЕРИ МОЩНОСТИ</div><div class="val" id="cable-loss">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="cable.resistance">СОПРОТИВЛЕНИЕ R</div><div class="val" id="cable-R">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="cable.reactance">РЕАКТАНС X</div><div class="val" id="cable-X">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="cable.cond_temp">ТЕМПЕРАТУРА ЖИЛЫ</div><div class="val" id="cable-temp">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="cable.diameter">ДИАМЕТР ЖИЛЫ</div><div class="val" id="cable-d">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="cable.breaker">АВТОМАТ</div><div class="val" id="cable-breaker">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="cable.k_total">СУММАРНАЯ ПОПРАВКА</div><div class="val" id="cable-k">—</div></div>
       </div>
+      <div class="warn-list" id="cable-warnings"></div>
       <div class="formula-panel">
         <div class="title" data-i18n="common.formula_norm">Формула и норматив</div>
-        <div class="formula" data-i18n="cable.formula">S = I / j_эк</div>
-        <div class="ref" data-i18n="cable.ref">ПУЭ табл. 1.3.4 — допустимый длительный ток</div>
+        <div class="formula" data-i18n="cable.formula">S = max(S_нагрев, S_ΔU, S_КЗ)</div>
+        <div class="ref" data-i18n="cable.ref">ПУЭ табл. 1.3.4, п. 1.3.10; ГОСТ Р 50571.5.54</div>
+        <div class="ref" data-i18n="cable.method_note">Метод: базовая таблица допустимых токов с поправками на изоляцию, способ прокладки, число жил, температуру среды и группу кабелей.</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ====== PAGE: LED STRIP ====== -->
+  <main class="content page" id="page-ledstrip">
+    <div class="card input-card">
+      <div class="card-title" data-i18n="common.input_data">Исходные данные</div>
+      <div class="field"><label data-i18n="ledstrip.mode">Схема монтажа</label><select id="lst-mode"><option value="single" data-i18n="ledstrip.mode_single">Одна лента</option><option value="multi-strip" data-i18n="ledstrip.mode_multi">Несколько лент от одной точки</option></select></div>
+      <div class="row">
+        <div class="field"><label data-i18n="ledstrip.voltage">Напряжение ленты (В)</label><input type="number" step="1" value="24" id="lst-U"></div>
+        <div class="field"><label data-i18n="ledstrip.max_drop">Допустимое ΔU (%)</label><input type="number" step="0.1" value="5" id="lst-drop"></div>
+      </div>
+
+      <div id="lst-block-single">
+        <div class="field"><label data-i18n="ledstrip.strip_type">Тип ленты</label><select id="lst-type"><option value="standard" data-i18n="ledstrip.type_standard">Стандартная 10 мм (SMD 5050)</option><option value="narrow" data-i18n="ledstrip.type_narrow">Узкая 8 мм (SMD 3528)</option><option value="wide" data-i18n="ledstrip.type_wide">Широкая 12 мм (SMD 2835)</option><option value="power" data-i18n="ledstrip.type_power">Мощная 15 мм (COB / 5630)</option><option value="custom" data-i18n="ledstrip.type_custom">Задать вручную</option></select></div>
+        <div class="row">
+          <div class="field"><label data-i18n="ledstrip.watt_per_meter">Мощность (Вт/м)</label><input type="number" step="0.1" value="14.4" id="lst-wpm"></div>
+          <div class="field"><label data-i18n="ledstrip.length">Длина ленты (м)</label><input type="number" step="0.1" value="10" id="lst-L"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label data-i18n="ledstrip.scheme">Схема питания</label><select id="lst-scheme"><option value="one" data-i18n="ledstrip.scheme_one">С одного конца</option><option value="both" data-i18n="ledstrip.scheme_both">С двух концов</option><option value="multi" data-i18n="ledstrip.scheme_multi">Несколько точек</option><option value="ring" data-i18n="ledstrip.scheme_ring">Кольцевое</option></select></div>
+          <div class="field" id="lst-field-points" hidden><label data-i18n="ledstrip.feed_points">Точек питания</label><input type="number" min="2" value="2" id="lst-points"></div>
+        </div>
+        <div class="field"><label data-i18n="ledstrip.wire_length">Провод от БП до ленты (м)</label><input type="number" step="0.1" value="5" id="lst-wire"></div>
+      </div>
+
+      <div id="lst-block-multi" hidden>
+        <div class="field"><label data-i18n="ledstrip.common_wire">Общий провод от БП до точки распределения (м)</label><input type="number" step="0.1" value="5" id="lst-common"></div>
+        <div style="overflow-x:auto;margin-bottom:12px">
+          <table id="lst-table">
+            <thead><tr><th data-i18n="ledstrip.th_label">Лента</th><th data-i18n="ledstrip.th_len">Длина, м</th><th data-i18n="ledstrip.th_wpm">Вт/м</th><th data-i18n="ledstrip.th_r">r, Ом/м</th><th data-i18n="ledstrip.th_branch">Ответвление, м</th><th data-i18n="ledstrip.th_scheme">Питание</th></tr></thead>
+            <tbody>
+              <tr><td><input type="text" value="Лента 1" class="tbl-input lst-label"></td><td><input type="number" step="0.1" min="0" value="5" class="tbl-input lst-len"></td><td><input type="number" step="0.1" min="0" value="14.4" class="tbl-input lst-wpm"></td><td><input type="number" step="0.01" min="0" value="0.6" class="tbl-input lst-r"></td><td><input type="number" step="0.1" min="0" value="2" class="tbl-input lst-branch"></td><td><select class="tbl-input lst-scheme"><option value="one">С одного конца</option><option value="both">С двух концов</option></select></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="btns" style="margin-bottom:12px">
+          <button class="btn btn-secondary" id="btn-lst-add" data-i18n="ledstrip.add_strip">+ Лента</button>
+          <button class="btn btn-ghost" id="btn-lst-remove" data-i18n="ledstrip.remove_strip">− Убрать</button>
+        </div>
+      </div>
+
+      <details class="adv">
+        <summary data-i18n="ledstrip.group_wire">Лента и провод</summary>
+        <div class="row">
+          <div class="field"><label data-i18n="ledstrip.track_resistance">Сопротивление дорожек (Ом/м)</label><input type="number" step="0.01" min="0" value="0.6" id="lst-r"></div>
+          <div class="field"><label data-i18n="ledstrip.material">Материал жилы</label><select id="lst-mat"><option value="Cu" data-i18n="ledstrip.copper">Медь (Cu)</option><option value="Al" data-i18n="ledstrip.aluminum">Алюминий (Al)</option></select></div>
+        </div>
+        <div class="row">
+          <div class="field"><label data-i18n="ledstrip.parallel">Параллельных проводов</label><input type="number" min="1" value="1" id="lst-par"></div>
+          <div class="field"><label data-i18n="ledstrip.ambient">Температура среды (°C)</label><input type="number" value="25" id="lst-temp"></div>
+        </div>
+        <div class="field"><label data-i18n="ledstrip.laying">Способ прокладки</label><select id="lst-lay"><option value="air" data-i18n="ledstrip.lay_air">Открыто в воздухе</option><option value="tray" data-i18n="ledstrip.lay_tray">В лотке</option><option value="duct" data-i18n="ledstrip.lay_duct">В кабель-канале</option><option value="pipe" data-i18n="ledstrip.lay_pipe">В трубе</option><option value="wall" data-i18n="ledstrip.lay_wall">Скрыто в стене</option></select></div>
+      </details>
+
+      <details class="adv">
+        <summary data-i18n="ledstrip.group_psu">Блок питания</summary>
+        <div class="row">
+          <div class="field"><label data-i18n="ledstrip.psu_reserve">Запас мощности</label><input type="number" step="0.05" min="1" value="1.25" id="lst-reserve"></div>
+          <div class="field"><label data-i18n="ledstrip.psu_have">Имеющийся БП (Вт)</label><input type="number" min="0" value="0" id="lst-psu-have"></div>
+        </div>
+      </details>
+
+      <div class="btns"><button class="btn btn-primary" id="btn-lst-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-lst-reset" data-i18n="common.reset">Сбросить</button></div>
+    </div>
+
+    <div class="card result-card">
+      <div class="card-title" data-i18n="common.result">Результат</div>
+      <div class="result-val" id="lst-result-val">—</div>
+      <div class="result-unit">мм²</div>
+      <div class="result-desc" data-i18n="ledstrip.section">Рекомендуемое сечение провода</div>
+      <div class="check-table" id="lst-branches"></div>
+      <div class="grid">
+        <div class="detail"><div class="lbl" data-i18n="ledstrip.worst">ХУДШАЯ ВЕТКА</div><div class="val" id="lst-worst">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="ledstrip.total_current">СУММАРНЫЙ ТОК</div><div class="val" id="lst-Itotal">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="ledstrip.total_power">СУММАРНАЯ МОЩНОСТЬ</div><div class="val" id="lst-Ptotal">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="ledstrip.psu">БЛОК ПИТАНИЯ</div><div class="val" id="lst-psu">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="ledstrip.drop_v">ПРОСАДКА (В)</div><div class="val" id="lst-dropV">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="ledstrip.drop_pct">ПРОСАДКА (%)</div><div class="val" id="lst-dropPct">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="ledstrip.drop_wire">ИЗ НИХ НА ПРОВОДЕ</div><div class="val" id="lst-dropWire">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="ledstrip.drop_strip">ИЗ НИХ НА ЛЕНТЕ</div><div class="val" id="lst-dropStrip">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="ledstrip.min_voltage">НА ДАЛЬНЕМ СВЕТОДИОДЕ</div><div class="val" id="lst-Umin">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="ledstrip.power_loss">ПОТЕРИ В ПРОВОДАХ</div><div class="val" id="lst-loss">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="ledstrip.common_section">ОБЩИЙ ПРОВОД</div><div class="val" id="lst-common-section">—</div></div>
+        <div class="detail"><div class="lbl" data-i18n="ledstrip.opt_points">ОПТИМУМ ТОЧЕК ПИТАНИЯ</div><div class="val" id="lst-points-opt">—</div></div>
+      </div>
+      <div class="tr-chart" id="lst-chart"></div>
+      <div class="tr-legend" id="lst-legend"></div>
+      <div class="warn-list" id="lst-warnings"></div>
+      <div class="formula-panel">
+        <div class="title" data-i18n="common.formula_norm">Формула и норматив</div>
+        <div class="formula" data-i18n="ledstrip.formula">ΔU_ленты = r · i · L² / k,  k = 2 (один конец) · 8 (два конца) · 8(N−1)²</div>
+        <div class="ref" data-i18n="ledstrip.ref">ПУЭ табл. 1.3.4 — допустимый ток провода; просадка на дорожках — интеграл распределённой нагрузки</div>
+        <div class="ref" data-i18n="ledstrip.method_note">Сопротивление дорожек по умолчанию — типовое для указанной ширины ленты. Для ответственного монтажа измерьте его омметром на отрезке 1 м.</div>
       </div>
     </div>
   </main>
@@ -2284,7 +2432,7 @@ COM2 = пин 1
       </div>
       <div class="formula-panel">
         <div class="title" data-i18n="common.formula_norm">Формула и норматив</div>
-        <div class="formula">I_доп = I_баз × k_t × k_g</div>
+        <div class="formula">I_доп = I_баз × k_t × k_g × k_прокладки</div>
         <div class="ref">ПУЭ табл. 1.3.23–1.3.26 — коэффициенты дерейтинга</div>
       </div>
     </div>
@@ -2532,7 +2680,7 @@ COM2 = пин 1
           </div>
           <div style="background:var(--bg-input);border-radius:var(--r-input);padding:16px">
             <strong style="color:var(--text)">Кабели (подбор сечения)</strong>
-            <p style="color:var(--text-muted);font-size:13px;margin-top:6px;line-height:1.5">Определяет минимальное сечение кабеля по допустимой плотности тока. Чем больше ток — тем толще провод нужен. Показывает сечение и диаметр.</p>
+            <p style="color:var(--text-muted);font-size:13px;margin-top:6px;line-height:1.5">Подбирает сечение перебором стандартного ряда: каждое сечение проверяется по нагреву, падению напряжения и термической стойкости к КЗ, выбирается наибольшее из требуемых. Учитывает изоляцию, способ прокладки, число жил, температуру среды и соседние кабели в пучке. Показывает лимитирующий критерий, потери, температуру жилы и номинал автомата.</p>
           </div>
           <div style="background:var(--bg-input);border-radius:var(--r-input);padding:16px">
             <strong style="color:var(--text)">Потери напряжения</strong>
@@ -2571,6 +2719,10 @@ COM2 = пин 1
           <div style="background:var(--bg-input);border-radius:var(--r-input);padding:16px">
             <strong style="color:var(--text)">Освещение</strong>
             <p style="color:var(--text-muted);font-size:13px;margin-top:6px;line-height:1.5">Сколько светильников нужно для помещения. Учитывает площадь, требуемую освещённость (по нормам), световой поток лампы и коэффициент использования.</p>
+          </div>
+          <div style="background:var(--bg-input);border-radius:var(--r-input);padding:16px">
+            <strong style="color:var(--text)">Светодиодные ленты</strong>
+            <p style="color:var(--text-muted);font-size:13px;margin-top:6px;line-height:1.5">Сечение провода, точки питания и блок питания для лент 12/24/36/48 В. У ленты нагрузка распределённая, поэтому просадка на дорожках растёт квадратично по длине: питание с двух концов снижает её вчетверо. Считает одну ленту или несколько разной длины от общего блока, строит эпюру напряжения вдоль трассы и подсказывает, сколько точек питания нужно.</p>
           </div>
           <div style="background:var(--bg-input);border-radius:var(--r-input);padding:16px">
             <strong style="color:var(--text)">ИБП / АКБ / Генератор</strong>
@@ -2779,7 +2931,7 @@ COM2 = пин 1
   </footer>
 </div>
 
-<script type="module" src="js/app.js?v=3"></script>
+<script type="module" src="js/app.js?v=5"></script>
 <script src="js/gost-schematic.js?v=2"></script>
 <script>
   if ('serviceWorker' in navigator) {

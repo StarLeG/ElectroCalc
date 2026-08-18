@@ -18,16 +18,70 @@ const HELP_RU = {
 <p><strong>Норматив:</strong> ПУЭ п. 1.3.10.</p>`
   },
   cable: {
-    title: 'Кабели и провода (подбор сечения)',
-    body: `<p>Электрический провод имеет определённую толщину — сечение. Чем больше ток нужно пропустить, тем толще должен быть провод. Тонкий провод при большой нагрузке будет греться и может стать причиной пожара.</p>
+    title: 'Подбор сечения кабеля',
+    body: `<p>Сечение кабеля нельзя подобрать одной формулой. Кабель должен одновременно выдержать нагрев рабочим током, уложиться в допустимое падение напряжения и пережить короткое замыкание до срабатывания защиты. Каждое условие даёт своё требуемое сечение, а выбирают из них наибольшее.</p>
+
+<p><strong>Что нужно ввести обязательно:</strong></p>
+<ul>
+<li><strong>Тип сети</strong> — трёхфазная, однофазная или постоянный ток. От этого зависит формула тока и множитель в падении напряжения: √3 для трёх фаз и 2 для остальных, потому что там ток идёт по двум проводникам.</li>
+<li><strong>Нагрузка</strong> — либо мощность в кВт, либо ток в амперах. Если известна мощность, ток считается сам.</li>
+<li><strong>cos φ</strong> — для ламп накаливания и нагревателей близок к 1, для двигателей 0,8–0,9. Чем он ниже, тем больший ток нужен для той же мощности.</li>
+<li><strong>Длина линии</strong> — от щита до потребителя, по факту прокладки, а не по прямой.</li>
+<li><strong>Допустимое падение ΔU</strong> — обычно 3 % для освещения и 5 % для силовых цепей.</li>
+</ul>
+
+<p><strong>Блок «Кабель и прокладка».</strong> Табличный допустимый ток относится к базовым условиям: ПВХ-изоляция, открытая прокладка в воздухе, +25 °C, одна-две нагруженные жилы. Всё, что отличается, учитывается поправками, которые перемножаются:</p>
+<ul>
+<li><strong>Изоляция</strong> — сшитый полиэтилен держит +90 °C против +70 °C у ПВХ, поэтому тот же кабель пропускает примерно на четверть больший ток.</li>
+<li><strong>Способ прокладки</strong> — в трубе и в стене тепло отводится хуже, чем в воздухе; в земле, наоборот, лучше.</li>
+<li><strong>Число нагруженных жил</strong> — три жилы в общей оболочке греют друг друга сильнее, чем две.</li>
+<li><strong>Кабелей в пучке</strong> — соседние кабели мешают друг другу остывать. Десяток кабелей в одном лотке снижает допустимый ток почти на треть.</li>
+<li><strong>Температура среды</strong> — в котельной или на солнце кабель везёт заметно меньше, чем при +25 °C.</li>
+<li><strong>Кабелей на фазу</strong> — параллельная прокладка делит ток между кабелями. Они обязаны быть одной марки, длины и сечения, иначе ток распределится неравномерно.</li>
+</ul>
+
+<p><strong>Блок «Проверка по КЗ и пуску».</strong> Заполняйте, если знаете ток короткого замыкания и время срабатывания защиты. Кабель должен выдержать этот ток, не расплавив изоляцию: Smin = Iкз·√t / k, где k зависит от материала жилы и изоляции (медь с ПВХ — 115, со сшитым полиэтиленом — 143). Кратность пускового тока нужна для двигателей: при пуске ток вырастает в 5–7 раз, и просадка напряжения не должна превышать 15 %.</p>
+
+<p><strong>Что в результате.</strong> Главное число — рекомендуемое стандартное сечение. Под ним таблица проверок: сколько требует каждый критерий и какой из них оказался лимитирующим. Дальше расчётный и допустимый токи, запас, падение напряжения в вольтах и процентах, потери мощности, сопротивление линии, температура жилы под нагрузкой и номинал автомата.</p>
+
+<p><strong>Про автомат.</strong> Он должен быть больше рабочего тока, но не больше допустимого тока кабеля — иначе кабель сгорит раньше, чем автомат отключится. Если такое сочетание не набирается, появляется предупреждение.</p>
+
+<p><strong>Метод расчёта.</strong> Используется базовая таблица допустимых токов с поправочными коэффициентами, а не отдельные таблицы ПУЭ под каждое сочетание условий. Для проектной документации результат следует сверять с таблицами ПУЭ 1.3.4–1.3.11 напрямую.</p>
+
+<p><strong>Норматив:</strong> ПУЭ табл. 1.3.4 и 1.3.22–1.3.26, п. 1.3.10 (падение напряжения), п. 7.1.34 и 7.1.45 (минимальные сечения), ГОСТ Р 50571.5.54 (термическая стойкость).</p>`
+  },
+  ledstrip: {
+    title: 'Светодиодные ленты: провод, точки питания, блок питания',
+    body: `<p>У светодиодной ленты нагрузка распределена по всей длине: светодиоды разбирают ток по пути, и до дальнего конца доходит всё меньше. Из-за этого падение напряжения на дорожках самой ленты растёт <strong>квадратично по длине</strong>, а не пропорционально:</p>
+
+<p><strong>ΔU = r · i · L² / 2</strong> — при питании с одного конца, где r — сопротивление пары дорожек (Ом/м), i — ток на метр (А/м), L — длина.</p>
+
+<p>Практический вывод, ради которого калькулятор и нужен: питание с двух концов снижает просадку <strong>вчетверо</strong>, а не вдвое. Середина ленты становится точкой нулевого тока, и каждая половина ведёт себя как отрезок вдвое короче. Поэтому на длинных трассах вторая точка питания даёт больше, чем любое утолщение провода — сопротивление дорожек от сечения питающего кабеля не зависит вообще.</p>
+
+<p><strong>Два режима расчёта.</strong> «Одна лента» — трасса заданной длины с выбранной схемой питания. «Несколько лент от одной точки» — типовой монтаж, когда от блока питания идёт один провод до точки распределения, а оттуда ответвления к лентам разной длины. Во втором режиме худшую ветку ищет калькулятор: короткая лента на длинном ответвлении легко проигрывает длинной ленте на коротком, и на глаз это не угадывается.</p>
+
 <p><strong>Что нужно ввести:</strong></p>
 <ul>
-<li><strong>Расчётный ток (А)</strong> — его можно узнать из калькулятора «Мощность».</li>
-<li><strong>Материал:</strong> медь (Cu) или алюминий (Al). Медь лучше проводит ток, поэтому медный провод тоньше при том же токе.</li>
+<li><strong>Напряжение ленты</strong> — 12, 24, 36 или 48 В. При той же мощности переход с 12 на 24 В вдвое снижает ток и вчетверо просадку.</li>
+<li><strong>Мощность Вт/м</strong> — из паспорта ленты. Ток на метр считается сам: i = P / U.</li>
+<li><strong>Длина</strong> — одного непрерывного отрезка, а не суммарная по объекту.</li>
+<li><strong>Схема питания</strong> — с одного конца, с двух, несколько равномерных точек или кольцевое.</li>
+<li><strong>Допустимое ΔU</strong> — для лент обычно 5 %, максимум 8–10 %. Чем меньше, тем равномернее яркость.</li>
 </ul>
-<p><strong>Как это работает:</strong> существует понятие «допустимая плотность тока» — сколько ампер можно пропустить через 1 мм2 провода. Для меди это примерно 10 А/мм2, для алюминия — 6 А/мм2.</p>
-<p><strong>Формула:</strong> S = I / j, где S — сечение в мм2, I — ток в амперах, j — плотность тока.</p>
-<p><strong>Норматив:</strong> ПУЭ таблица 1.3.4.</p>`
+
+<p><strong>Сопротивление дорожек.</strong> Главный параметр и одновременно самый неудобный: производители его почти никогда не публикуют. Поле заполняется типовым значением по ширине ленты — от 1.2 Ом/м для узкой 8 мм до 0.25 Ом/м для мощной 15 мм. Это ориентир, разброс у реальных лент большой. Для ответственного монтажа померьте омметром отрезок 1 м при отключённом питании и введите своё значение.</p>
+
+<p>Обратите внимание: указывается сопротивление <strong>пары</strong> дорожек, плюсовой и минусовой вместе. Ток идёт туда и обратно, и значение для одной дорожки занизило бы просадку вдвое.</p>
+
+<p><strong>Что в результате.</strong> Рекомендуемое сечение провода, таблица по веткам с током, сечением, просадкой и напряжением на дальнем конце. Отдельно показано, сколько вольт потеряно на проводе и сколько на самой ленте — по этой паре сразу видно, куда вкладываться. Плюс оптимальное число точек питания, мощность блока питания с запасом и эпюра напряжения вдоль трассы.</p>
+
+<p><strong>Про блок питания.</strong> Мощность берётся с запасом 20–30 %: работающий на пределе импульсный БП греется и быстро деградирует. Номинал подбирается из стандартного ряда до 600 Вт; если нужно больше — нагрузку делят на несколько блоков.</p>
+
+<p><strong>Практическое правило:</strong> без дополнительного питания не стоит вести больше 5 м при 12 В и 10 м при 24 В. Точный ответ даёт расчёт, но этот ориентир полезно держать в голове.</p>
+
+<p><strong>Для бани и сауны:</strong> термостойкая лента в силиконе требует и термостойкого провода — РКГМ, ПВКВ. На сечение это не влияет, но допустимый ток при высокой температуре среды снижается, и калькулятор это учитывает через поле «Температура среды».</p>
+
+<p><strong>Норматив:</strong> ПУЭ табл. 1.3.4 для допустимого тока провода. Просадка на дорожках нормативом не описана — это интеграл распределённой нагрузки.</p>`
   },
   voltage: {
     title: 'Потери напряжения в линии',
@@ -438,7 +492,40 @@ const HELP_RU = {
 
 const HELP_EN = {
   power: { title: 'Power and Load Current', body: `<p>Formula: I = P / (1.732 x U x cos phi x eta)</p><p>Standard: PUE cl. 1.3.10.</p>` },
-  cable: { title: 'Cables and Wires', body: `<p>Formula: S = I / j</p><p>Standard: PUE table 1.3.4.</p>` },
+  cable: {
+    title: 'Cable Sizing',
+    body: `<p>A cable section cannot be found with a single formula. The cable must survive heating by the operating current, stay within the permissible voltage drop, and withstand a short circuit until the protection trips. Each condition yields its own required section, and the largest one wins.</p>
+
+<p><strong>Required inputs:</strong> network type (three-phase, single-phase or DC), load given either as power or as current, cos φ, line length as actually routed, and the permissible voltage drop — typically 3 % for lighting and 5 % for power circuits.</p>
+
+<p><strong>Cable and installation.</strong> The tabulated ampacity applies to base conditions: PVC insulation, open installation in air, +25 °C, one or two loaded cores. Anything else is handled by correction factors that multiply together — insulation type, installation method, number of loaded cores, cables in the bundle, ambient temperature and cables per phase.</p>
+
+<p><strong>Short-circuit and starting checks.</strong> Fill these in when the fault current and the protection clearing time are known: Smin = Ifault·√t / k, where k depends on conductor material and insulation (copper with PVC 115, with XLPE 143). The starting multiple matters for motors — inrush current runs 5 to 7 times rated, and the resulting dip must stay under 15 %.</p>
+
+<p><strong>Results.</strong> The recommended standard section, a table showing what each criterion requires and which one is limiting, then design and permissible currents, margin, voltage drop in volts and percent, power loss, line impedance, conductor temperature under load, and the breaker rating.</p>
+
+<p><strong>Method.</strong> A base ampacity table with correction factors is used rather than separate tables for every combination of conditions. For design documentation, verify results against PUE tables 1.3.4–1.3.11 directly.</p>
+
+<p><strong>Standards:</strong> PUE tables 1.3.4 and 1.3.22–1.3.26, cl. 1.3.10, cl. 7.1.34 and 7.1.45; GOST R 50571.5.54.</p>`
+  },
+  ledstrip: {
+    title: 'LED Strips',
+    body: `<p>An LED strip is a distributed load: the LEDs draw current along the way, so less and less reaches the far end. Because of that the drop on the strip's own tracks grows <strong>with the square of the length</strong>:</p>
+
+<p><strong>ΔU = r · i · L² / 2</strong> when fed from one end, where r is the resistance of the track pair (Ohm/m), i the current per metre (A/m), L the length.</p>
+
+<p>Hence the point of this calculator: feeding from both ends cuts the drop <strong>fourfold</strong>, not twofold — the midpoint becomes a zero-current node and each half behaves as a run of half the length. On long runs a second feed point beats any wire upgrade, because track resistance does not depend on the supply cable section at all.</p>
+
+<p><strong>Two modes.</strong> A single strip with a chosen feed scheme, or several strips fed from one split point — the usual case, where one wire runs from the power supply to a junction and branches out to strips of different lengths. In the second mode the calculator finds the worst branch: a short strip on a long branch easily loses to a long strip on a short one.</p>
+
+<p><strong>Track resistance</strong> is the key parameter and the awkward one — manufacturers rarely publish it. The field is prefilled with a typical value for the strip width, from 1.2 Ohm/m for a narrow 8 mm strip down to 0.25 Ohm/m for a high-power 15 mm one. Real strips vary widely, so for critical work measure a 1 m piece with an ohmmeter. Note that the value is for the <strong>pair</strong> of tracks, plus and minus together.</p>
+
+<p><strong>Results:</strong> recommended wire section, a per-branch table with current, section, drop and far-end voltage, the split between wire loss and strip loss, the optimal number of feed points, the power supply rating with reserve, and a voltage profile along the run.</p>
+
+<p><strong>Rule of thumb:</strong> do not run more than 5 m at 12 V or 10 m at 24 V without additional feed points.</p>
+
+<p><strong>Standards:</strong> PUE table 1.3.4 for wire ampacity. The strip drop is not covered by any standard — it is the integral of a distributed load.</p>`
+  },
   voltage: { title: 'Voltage Drop', body: `<p>Formula: dU = 1.732 x I x L x (R x cos phi + X x sin phi) / 1000</p><p>Max 5% drop.</p>` },
   shortcircuit: { title: 'Short Circuit Current', body: `<p>Formula: Ikz = U / (1.732 x Z)</p><p>Standard: PUE cl. 1.4.1.</p>` },
   grounding: { title: 'Grounding', body: `<p>Formula: R = rho/(2 x pi x L) x ln(4L/d)</p><p>Standard: PUE cl. 1.7.16.</p>` },

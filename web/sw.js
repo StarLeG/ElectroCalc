@@ -1,6 +1,6 @@
 /* EngiCalc Service Worker — offline support */
 /* Updated: 2026-08-16 — адаптация под телефоны и планшеты */
-const CACHE_NAME = 'engicalc-v18';
+const CACHE_NAME = 'engicalc-v20';
 /* Список обязан содержать ВСЕ модули из графа импортов app.js: любой
    пропущенный файл офлайн отдаётся как 503 и роняет загрузку приложения целиком. */
 const STATIC_ASSETS = [
@@ -18,6 +18,11 @@ const STATIC_ASSETS = [
   '/css/pages.css',
   '/js/app.js',
   '/js/core.js',
+  '/js/data/cable-data.js',
+  '/js/data/led-strip-data.js',
+  '/js/chart.js',
+  '/js/led-strip.js',
+  '/js/cable-select.js',
   '/js/electrical.js',
   '/js/electrical2.js',
   '/js/electrical3.js',

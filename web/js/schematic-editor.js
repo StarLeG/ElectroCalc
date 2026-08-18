@@ -16,6 +16,7 @@ import {
 } from './schematic-model.js';
 import { solveDC, solveTransient } from './circuit-sim.js';
 import { PRESETS, loadPreset } from './schematic-presets.js';
+import { niceScale } from './chart.js';
 
 /* ===================== КОНСТАНТЫ ===================== */
 const GRID = 5;                 // шаг сетки, мм
@@ -581,23 +582,6 @@ function renderTransient() {
       renderTransient();
     });
   });
-}
-
-/** Округление шага шкалы к 1, 2, 5 × 10ⁿ. */
-function niceNum(range, round) {
-  if (!(range > 0)) return 1;
-  const exp = Math.floor(Math.log10(range));
-  const f = range / 10 ** exp;
-  const nf = round
-    ? (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10)
-    : (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10);
-  return nf * 10 ** exp;
-}
-
-/** Границы и шаг шкалы, охватывающие [lo, hi] круглыми значениями. */
-function niceScale(lo, hi, ticks) {
-  const step = niceNum(niceNum(hi - lo, false) / Math.max(1, ticks - 1), true);
-  return { lo: Math.floor(lo / step) * step, hi: Math.ceil(hi / step) * step, step };
 }
 
 /** Один график: оси, подписи и ломаные выбранных сигналов. */

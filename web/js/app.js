@@ -2,7 +2,9 @@
 'use strict';
 
 import { $, $$, lang, loadLang, showPage, showSubTab, toggleTheme, printPage, copyText } from './core.js';
-import { calcPower, calcCable, calcVoltage, calcShortCircuit, calcGrounding, calcProtection } from './electrical.js';
+import { calcPower, calcVoltage, calcShortCircuit, calcGrounding, calcProtection } from './electrical.js';
+import { calcCable, initCableForm } from './cable-select.js';
+import { calcLedStrip, initStripForm, addStripRow, removeStripRow } from './led-strip.js';
 import { calcCompensation, calcMotor, calcTransformer, calcLighting, calcUPS, calcLoadPanel, addLoadRow } from './equipment.js';
 import { calcDerating, calcDiam2Sec, calcConverter } from './cable-networks.js';
 import { calcResSeries, calcResParallel, calcCapSeries, calcCapParallel, calcIndSeries, calcIndParallel, calcVoltageDivider, calcRCTau, calcRLTau, calcLCResonance, calcMotorCap, calcCapCode, calcCapUnit, calcLED, calcZener, calcRLC, calcBridge } from './electronics.js';
@@ -62,6 +64,7 @@ function bindAll() {
   // Calculator buttons
   const binds = [
     ['btn-power-calc', calcPower], ['btn-cable-calc', calcCable], ['btn-voltage-calc', calcVoltage],
+    ['btn-lst-calc', calcLedStrip], ['btn-lst-add', addStripRow], ['btn-lst-remove', removeStripRow],
     ['btn-sc-calc', calcShortCircuit], ['btn-g-calc', calcGrounding], ['btn-pr-calc', calcProtection],
     ['btn-comp-calc', calcCompensation], ['btn-m-calc', calcMotor], ['btn-t-calc', calcTransformer],
     ['btn-l-calc', calcLighting], ['btn-u-calc', calcUPS], ['btn-conv-calc', calcConverter],
@@ -142,6 +145,9 @@ function bindAll() {
   }
 
   // Init wire cabinet calculator
+  initCableForm();
+  initStripForm();
+
   initWirecab();
 
   // Init schematic editor

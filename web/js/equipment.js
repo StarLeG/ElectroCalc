@@ -1,6 +1,7 @@
 /* EngiCalc — Equipment calculations */
 'use strict';
 import { $, $$, num, round, toast, validate, validateRange, T } from './core.js';
+import { BREAKER_RATINGS, nextStandard } from './data/cable-data.js';
 
 export function calcCompensation() {
   if(!validate('comp-P','comp-step')||!validateRange('comp-cos1',0.01,1)||!validateRange('comp-cos2',0.01,1))return;
@@ -20,7 +21,7 @@ export function calcMotor() {
   const I=P*1000/(Math.sqrt(3)*U*cos*eta);
   $('#m-result-val').textContent=round(I,1)+' А';
   $('#m-Istart').textContent=Math.round(I*k)+' А';
-  $('#m-breaker').textContent=Math.ceil(I*1.25/5)*5+' А';
+  $('#m-breaker').textContent=(nextStandard(BREAKER_RATINGS,I*1.25)??'—')+' А';
   $('#m-section').textContent=round(I/6,1)+' мм²';
 }
 

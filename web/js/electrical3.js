@@ -1,6 +1,7 @@
 /* EngiCalc — Electrical installation & engineering calculators */
 'use strict';
 import { $, $$, num, round, toast, validate, validateRange } from './core.js';
+import { RESISTIVITY, BREAKER_RATINGS, nextStandard } from './data/cable-data.js';
 
 /* ===================== THREE-PHASE POWER ===================== */
 export function calc3PhasePower() {
@@ -23,7 +24,7 @@ export function calcDCVoltageDrop() {
   if (!validate('dc-I', 'dc-L', 'dc-S', 'dc-U')) return;
   const I = num('dc-I'), L = num('dc-L'), S = num('dc-S'), U = num('dc-U');
   const mat = $('#dc-mat')?.value || 'Cu';
-  const rho = mat === 'Cu' ? 0.0175 : 0.028;
+  const rho = RESISTIVITY[mat];
   const R = 2 * rho * L / S;
   const dU = I * R;
   const pct = dU / U * 100;
@@ -99,8 +100,8 @@ export function calcMotorStart() {
   const Ustart = U * Zmotor / Ztotal;
   const dip = (U - Ustart) / U * 100;
 
-  // Circuit breaker selection
-  const breaker = Math.ceil(Istart * 1.2 / 5) * 5;
+  // Подбор автомата из стандартного ряда, а не округлением до кратного 5 А
+  const breaker = nextStandard(BREAKER_RATINGS, Istart * 1.2) ?? 0;
 
   // Cable section (by starting current, short duration)
   const cableByStart = Math.ceil(Istart / 8);
@@ -157,7 +158,7 @@ export function calcCableLoss() {
   const I = num('cl-I'), L = num('cl-L'), S = num('cl-S'), U = num('cl-U');
   const mat = $('#cl-mat')?.value || 'Cu';
   const phase = parseInt($('#cl-phase')?.value) || 3;
-  const rho = mat === 'Cu' ? 0.0175 : 0.028;
+  const rho = RESISTIVITY[mat];
 
   const R = phase === 1 ? 2 * rho * L / S : rho * L / S;
   const Ploss = phase === 1 ? I * I * R : 3 * I * I * R;

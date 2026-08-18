@@ -1,6 +1,7 @@
 /* EngiCalc — Electrical calculations */
 'use strict';
 import { $, num, round, toast, validate, validateRange, T } from './core.js';
+import { RCD_RATINGS, nextStandard } from './data/cable-data.js';
 
 export function calcPower() {
   if(!validate('p-power','p-u','p-eta')||!validateRange('p-cos',0.01,1))return;
@@ -12,33 +13,6 @@ export function calcPower() {
   $('#power-result-desc').textContent=T('power.desc');
   $('#power-I').textContent=round(I,2)+' А';
   $('#power-S').textContent=round(S,2)+' кВА';
-}
-
-export function calcCable() {
-  const I=num('c-I'),mat=$('#c-mat').value,L=num('c-L'),U=num('c-U');
-  if(!I||!L||!U){toast(T('common.check_data'));return;}
-  const j=mat==='Cu'?10:6,S=I/j,d=2*Math.sqrt(S/Math.PI);
-  $('#cable-result-val').textContent=round(S,2);
-  $('#cable-d').textContent=round(d,2)+' мм';
-  const std=[0.5,0.75,1,1.5,2.5,4,6,10,16,25,35,50,70,95,120];
-  const Sactual=std.find(s=>s>=S)||std[std.length-1];
-  const jActual=I/Sactual;
-  const jMax=mat==='Cu'?10:6;
-  const heatOk=jActual<=jMax;
-  $('#cable-heat').textContent=heatOk?'✓ Проходит':'✗ '+round(jActual,1)+' А/мм² > '+jMax;
-  $('#cable-heat').className=heatOk?'check':'';
-  if(!heatOk)$('#cable-heat').style.color='var(--error)';
-  const densityOk=Sactual>=S;
-  $('#cable-density').textContent=densityOk?'✓ Проходит':'✗ Малое сечение';
-  $('#cable-density').className=densityOk?'check':'';
-  if(!densityOk)$('#cable-density').style.color='var(--error)';
-  const R=mat==='Cu'?0.0175:0.028;
-  const dU=2*I*L*R/Sactual;
-  const pct=dU/U*100;
-  const lossOk=pct<=5;
-  $('#cable-loss').textContent=lossOk?'✓ '+round(pct,1)+'%':'✗ '+round(pct,1)+'% > 5%';
-  $('#cable-loss').className=lossOk?'check':'';
-  if(!lossOk)$('#cable-loss').style.color='var(--error)';
 }
 
 export function calcVoltage() {
@@ -67,6 +41,5 @@ export function calcGrounding() {
 export function calcProtection() {
   if(!validate('pr-leak'))return;
   const leak=num('pr-leak');
-  const std=[10,30,100,300,500];
-  $('#pr-result-val').textContent=std.find(v=>v>=leak*3)||std[std.length-1];
+  $('#pr-result-val').textContent=nextStandard(RCD_RATINGS,leak*3)||RCD_RATINGS[RCD_RATINGS.length-1];
 }

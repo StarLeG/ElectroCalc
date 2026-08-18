@@ -1,6 +1,7 @@
 /* EngiCalc — New KIPIA & industrial calculators */
 'use strict';
 import { $, num, round, toast, validate } from './core.js';
+import { RESISTIVITY } from './data/cable-data.js';
 
 /* ===================== FUSE SELECTION ===================== */
 export function calcFuse() {
@@ -47,7 +48,7 @@ export function calc420Cable() {
   // Max cable length (2-wire, per conductor)
   // R = rho * L / S => L = R * S / rho
   const S = num('cl2-S') || 1.5;
-  const rho = 0.0175; // copper
+  const rho = RESISTIVITY.Cu;
   const Lmax = Rcable * S / (2 * rho) / 1000; // meters
 
   const ok = Rtotal <= Rmax;

@@ -36,6 +36,9 @@ function assert(name, actual, expected, tolerance = 0.01) {
 
 // Import calculation functions from modules
 import { round } from './js/core.js';
+import { selectCable } from './js/cable-select.js';
+import { calcStripSystem } from './js/led-strip.js';
+import { plotXY, niceNum, niceScale } from './js/chart.js';
 
 // ==================== POWER ====================
 function calcPower(P, U, phase, cos, eta) {
@@ -47,14 +50,186 @@ assert('Power: 15kW/400V/3ph/0.85/0.92', calcPower(15, 400, 3, 0.85, 0.92), 27.6
 assert('Power: 1kW/220V/1ph/1.0/1.0', calcPower(1, 220, 1, 1.0, 1.0), 4.55, 0.05);
 assert('Power: 7.5kW/380V/3ph/0.85/0.9', calcPower(7.5, 380, 3, 0.85, 0.9), 14.98, 0.1);
 
-// ==================== CABLE ====================
-function calcCableSection(I, mat) {
-  const j = mat === 'Cu' ? 10 : 6;
-  return I / j;
-}
+// ==================== CABLE SELECTION ====================
+// Тесты зовут боевую selectCable(), а не копию формулы: копия разошлась бы
+// с модулем при первой же правке методики и перестала бы что-либо доказывать.
 
-assert('Cable: 25A Cu', calcCableSection(25, 'Cu'), 2.5, 0.01);
-assert('Cable: 40A Al', calcCableSection(40, 'Al'), 6.67, 0.05);
+// Контрольный пример: 3 фазы 380 В, 15 кВт, cos φ 0.9, 50 м, медь, лоток,
+// 3 нагруженные жилы, ПВХ, +25 °C, допустимое падение 3 %.
+const cableBase = {
+  netType: 'ac3', voltage: 380, loadMode: 'power', power: 15, cosPhi: 0.9, efficiency: 1,
+  material: 'Cu', cores: 3, insulation: 'pvc', laying: 'tray',
+  bundleCount: 1, ambientTemp: 25, length: 50, maxDropPercent: 3, parallelCount: 1
+};
+const cableRef = selectCable(cableBase);
+
+assert('Cable: расчётный ток 15 кВт / 380 В / cos 0.9', cableRef.current, 25.32, 0.05);
+assert('Cable: суммарная поправка (лоток 0.95 x 3 жилы 0.90)', cableRef.factors.total, 0.855, 0.001);
+assert('Cable: допустимый ток для 4 мм² с поправками', cableRef.allowedCurrent, 32.49, 0.1);
+assert('Cable: итоговое сечение', cableRef.section, 4, 0);
+assert('Cable: падение напряжения, %', cableRef.dropPercent, 2.67, 0.05);
+assert('Cable: номинал автомата', cableRef.breaker, 32, 0);
+assert('Cable: температура жилы под нагрузкой, °C', cableRef.conductorTemp, 52.3, 0.5);
+assertTrue('Cable: 2.5 мм² не проходит, требуется 4 мм² по нагреву',
+  cableRef.criteria.find(c => c.name === 'heating').required === 4);
+assertTrue('Cable: падение напряжения тоже требует 4 мм²',
+  cableRef.criteria.find(c => c.name === 'drop').required === 4);
+assertTrue('Cable: предупреждений нет', cableRef.warnings.length === 0);
+
+// Алюминий проводит хуже — при том же токе нужно большее сечение.
+const cableAl = selectCable({ ...cableBase, material: 'Al' });
+assertTrue('Cable: алюминий требует большего сечения, чем медь', cableAl.section > cableRef.section);
+
+// Жара снижает допустимый ток: при +45 °C поправка падает с 0.855 до 0.641.
+const cableHot = selectCable({ ...cableBase, ambientTemp: 45 });
+assert('Cable: поправка при +45 °C', cableHot.factors.total, 0.641, 0.002);
+assertTrue('Cable: жара не уменьшает сечение', cableHot.section >= cableRef.section);
+
+// Термическая стойкость: Smin = 5000 x sqrt(0.2) / 115 = 19.4 мм² -> ступень 25 мм².
+const cableSC = selectCable({ ...cableBase, scCurrent: 5000, scTime: 0.2 });
+assert('Cable: КЗ 5 кА за 0.2 с диктует сечение', cableSC.section, 25, 0);
+assertTrue('Cable: лимитирующий критерий — термостойкость', cableSC.limiting === 'thermal');
+
+// Параллельная прокладка делит ток между кабелями.
+const cableOne = selectCable({ ...cableBase, maxDropPercent: 5 });
+const cablePar = selectCable({ ...cableBase, maxDropPercent: 5, parallelCount: 2 });
+assertTrue('Cable: два кабеля на фазу тоньше одного', cablePar.section <= cableOne.section);
+
+// Ток за пределами ряда: предупреждение, а не молчаливое обрезание.
+const cableOver = selectCable({ ...cableBase, loadMode: 'current', current: 900, maxDropPercent: 10 });
+assertTrue('Cable: за пределом ряда сечение не выбирается', cableOver.section === null);
+assertTrue('Cable: выдано предупреждение о выходе за ряд',
+  cableOver.warnings.includes('cable.warn_over_range'));
+
+// Однофазная сеть: ток без множителя sqrt(3), падение с множителем 2.
+const cable1ph = selectCable({ ...cableBase, netType: 'ac1', voltage: 220, power: 3, length: 30, maxDropPercent: 5 });
+assert('Cable: ток однофазной нагрузки 3 кВт / 220 В', cable1ph.current, 15.15, 0.05);
+
+// Вырожденные входные данные возвращают ошибку, а не исключение.
+assertTrue('Cable: нулевое напряжение отбито', selectCable({ ...cableBase, voltage: 0 }).error === 'cable.err_voltage');
+assertTrue('Cable: cos φ > 1 отбит', selectCable({ ...cableBase, cosPhi: 1.5 }).error === 'cable.err_cos');
+assertTrue('Cable: нулевая длина отбита', selectCable({ ...cableBase, length: 0 }).error === 'cable.err_length');
+
+
+// ==================== LED STRIP ====================
+// Лента — распределённая нагрузка: ток убывает вдоль трассы, поэтому падение
+// на дорожках растёт квадратично по длине. Проверяем именно это, а не только
+// арифметику провода.
+
+// Контрольный пример ТЗ: 24 В, 14.4 Вт/м, 10 м, питание с одного конца,
+// провод 5 м, сопротивление дорожек 0.2 Ом/м, допуск 5 %.
+const lsBase = {
+  mode: 'single', voltage: 24, wattPerMeter: 14.4, trackResistance: 0.2,
+  length: 10, feedScheme: 'one', wireLength: 5, maxDropPercent: 5,
+  material: 'Cu', parallelWires: 1, ambientTemp: 25, laying: 'air', psuReserve: 1.2
+};
+const lsRef = calcStripSystem(lsBase);
+const lsB = lsRef.branches[0];
+
+assert('LED strip: ток на метр 14.4 Вт/м / 24 В', lsB.currentPerMeter, 0.6, 0.001);
+assert('LED strip: суммарный ток на 10 м', lsB.current, 6, 0.01);
+assert('LED strip: мощность ленты', lsB.power, 144, 0.1);
+assert('LED strip: просадка на дорожках r·i·L²/2', lsB.dropStrip, 6.0, 0.001);
+assert('LED strip: номинал БП со запасом 1.2', lsRef.psu.watts, 200, 0);
+assert('LED strip: оптимум точек питания', lsB.optimalFeedPoints, 5, 0);
+assertTrue('LED strip: просадку создаёт лента, а не провод',
+  lsRef.warnings.includes('ledstrip.warn_strip_dominates'));
+
+// Формула провода из ТЗ: 2·I·L·rho/S при 1.5 мм² даёт ровно 0.7 В.
+assert('LED strip: ΔU провода 6 А / 5 м / 1.5 мм²', 2 * 6 * 5 * 0.0175 / 1.5, 0.7, 0.001);
+
+// Без сопротивления дорожек расчёт вырождается в обычную двухпроводную линию.
+// ТЗ берёт 1.5 мм² как предположение для проверки; калькулятор ищет минимум и
+// находит 1.0 мм² — 1.05 В против бюджета 1.2 В.
+const lsWire = calcStripSystem({ ...lsBase, trackResistance: 0 });
+assert('LED strip: минимальное сечение без дорожек', lsWire.branches[0].section, 1.0, 0);
+assert('LED strip: ΔU при 1.0 мм²', lsWire.branches[0].dropWire, 2 * 6 * 5 * 0.0175 / 1.0, 0.001);
+assertTrue('LED strip: подобранное сечение укладывается в бюджет',
+  lsWire.branches[0].dropTotal <= lsWire.budgetVolts + 1e-9);
+
+// Квадратичная зависимость: два конца дают ровно четверть, четыре точки —
+// девятую часть от двух концов. Это главное свойство модели.
+const lsOne = calcStripSystem({ ...lsBase, feedScheme: 'one', maxDropPercent: 50 });
+const lsBoth = calcStripSystem({ ...lsBase, feedScheme: 'both', maxDropPercent: 50 });
+const lsFour = calcStripSystem({ ...lsBase, feedScheme: 'multi', feedPoints: 4, maxDropPercent: 50 });
+assert('LED strip: два конца вчетверо меньше одного',
+  lsOne.branches[0].dropStrip / lsBoth.branches[0].dropStrip, 4, 1e-9);
+assert('LED strip: четыре точки в девять раз меньше двух',
+  lsBoth.branches[0].dropStrip / lsFour.branches[0].dropStrip, 9, 1e-9);
+
+// 12 В при той же мощности — вдвое больший ток и вчетверо большая просадка.
+const ls12 = calcStripSystem({ ...lsBase, voltage: 12, trackResistance: 0 });
+const ls24 = calcStripSystem({ ...lsBase, voltage: 24, trackResistance: 0 });
+assertTrue('LED strip: 12 В требует большего сечения, чем 24 В',
+  ls12.branches[0].section > ls24.branches[0].section);
+
+// Эпюра: при питании с одного конца монотонно падает, при питании с двух
+// концов симметрична и имеет минимум в середине.
+const lsProfOne = lsOne.profile[0].points;
+assertTrue('LED strip: эпюра при одном конце монотонна',
+  lsProfOne.every((pt, i) => i === 0 || pt[1] <= lsProfOne[i - 1][1] + 1e-9));
+const lsProfBoth = lsBoth.profile[0].points;
+assert('LED strip: при двух концах минимум в середине',
+  lsProfBoth[Math.floor(lsProfBoth.length / 2)][1],
+  Math.min(...lsProfBoth.map(pt => pt[1])), 1e-6);
+assert('LED strip: края при двух концах равны между собой',
+  lsProfBoth[0][1], lsProfBoth[lsProfBoth.length - 1][1], 1e-6);
+
+// Несколько лент от одной точки: общий провод плюс ответвления.
+const lsMulti = calcStripSystem({
+  mode: 'multi-strip', voltage: 24, maxDropPercent: 5, material: 'Cu',
+  parallelWires: 1, ambientTemp: 25, laying: 'air', psuReserve: 1.2,
+  commonWireLength: 5,
+  strips: [
+    { label: 'A', length: 10, wattPerMeter: 14.4, trackResistance: 0.05, branchLength: 1,  feedScheme: 'both' },
+    { label: 'B', length: 3,  wattPerMeter: 14.4, trackResistance: 0.05, branchLength: 15, feedScheme: 'both' }
+  ]
+});
+assert('LED strip: суммарный ток равен сумме веток', lsMulti.totalCurrent,
+  lsMulti.branches.reduce((sum, x) => sum + x.current, 0), 1e-9);
+assert('LED strip: суммарная мощность 13 м', lsMulti.totalPower, 13 * 14.4, 0.01);
+assert('LED strip: худшая ветка — максимум просадки',
+  lsMulti.branches[lsMulti.worstBranch].dropTotal,
+  Math.max(...lsMulti.branches.map(x => x.dropTotal)), 1e-12);
+assertTrue('LED strip: все ветки уложились в допуск',
+  lsMulti.branches.every(x => x.dropPercent <= 5 + 1e-9));
+// Ветка B тянет втрое меньший ток, но её ответвление в пятнадцать раз длиннее,
+// поэтому провод ей нужен толще. На глаз это не угадывается.
+assertTrue('LED strip: меньший ток на длинном ответвлении требует большего сечения',
+  lsMulti.branches[1].current < lsMulti.branches[0].current
+  && lsMulti.branches[1].section > lsMulti.branches[0].section);
+
+// Одна лента в таблице должна дать то же, что режим одной ленты.
+const lsAsTable = calcStripSystem({
+  mode: 'multi-strip', voltage: 24, maxDropPercent: 5, material: 'Cu',
+  parallelWires: 1, ambientTemp: 25, laying: 'air', psuReserve: 1.2, commonWireLength: 0,
+  strips: [{ length: 10, wattPerMeter: 14.4, trackResistance: 0.2, branchLength: 5, feedScheme: 'one' }]
+});
+assert('LED strip: режимы не разъехались', lsAsTable.branches[0].dropTotal, lsB.dropTotal, 1e-9);
+
+// Вырожденные данные возвращают ключ ошибки, а не исключение.
+assertTrue('LED strip: нулевое напряжение отбито',
+  calcStripSystem({ ...lsBase, voltage: 0 }).error === 'ledstrip.err_voltage');
+assertTrue('LED strip: нулевая длина отбита',
+  calcStripSystem({ ...lsBase, length: 0 }).error === 'ledstrip.err_length');
+assertTrue('LED strip: пустая таблица отбита',
+  calcStripSystem({ mode: 'multi-strip', voltage: 24, strips: [] }).error === 'ledstrip.err_no_strips');
+
+// ==================== CHART ====================
+// niceNum и niceScale перенесены из schematic-editor.js в chart.js — проверяем,
+// что перенос ничего не изменил.
+assert('Chart: niceNum(1, true)', niceNum(1, true), 1, 0);
+assert('Chart: niceNum(0, true) не делит на ноль', niceNum(0, true), 1, 0);
+assert('Chart: niceScale(0, 10, 5).step', niceScale(0, 10, 5).step, 2, 0);
+assert('Chart: niceScale(0, 10, 5).hi', niceScale(0, 10, 5).hi, 10, 0);
+assert('Chart: niceScale(-3.7, 8.2, 5).lo кратен шагу',
+  niceScale(-3.7, 8.2, 5).lo % niceScale(-3.7, 8.2, 5).step, 0, 1e-9);
+assertTrue('Chart: plotXY отдаёт SVG с кривой',
+  plotXY({ series: [{ label: 'a', points: [[0, 24], [5, 23], [10, 21]] }] }).includes('<path'));
+assertTrue('Chart: plotXY на пустых данных отдаёт пустую строку',
+  plotXY({ series: [] }) === '');
+assertTrue('Chart: plotXY не падает на вырожденной прямой',
+  plotXY({ series: [{ label: 'flat', points: [[0, 5], [1, 5]] }] }).includes('<svg'));
 
 // ==================== VOLTAGE DROP ====================
 function calcVoltageDrop(I, L, R, X, U, cos) {
