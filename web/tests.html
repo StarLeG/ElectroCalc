@@ -39,6 +39,9 @@ import { round } from './js/core.js';
 import { selectCable } from './js/cable-select.js';
 import { calcStripSystem } from './js/led-strip.js';
 import { plotXY, niceNum, niceScale } from './js/chart.js';
+import { awgArea, awgFromArea } from './js/cable-networks.js';
+import { mvToC, cToMv, TC_COEFFS } from './js/industry.js';
+import { rtdResistance, rtdTemperature, rtdR0 } from './js/data/rtd.js';
 
 // ==================== POWER ====================
 function calcPower(P, U, phase, cos, eta) {
@@ -903,6 +906,92 @@ output.innerHTML += '<h3 style="color:#FFB300;margin-top:16px">Model &amp; geome
   assertTrue('formatSI 0.0130 A → "13.04 мА"', formatSI(0.013043, 'amp') === '13.04 мА');
   assertTrue('formatSI 0 → "0 В"', formatSI(0, 'volt') === '0 В');
   assertTrue('formatSI 1e-6 F → "1 мкФ"', formatSI(1e-6, 'farad') === '1 мкФ');
+}
+
+
+/* ==================== РЕГРЕССИИ ИСПРАВЛЕННЫХ ОШИБОК ====================
+ * Каждая проверка ниже соответствует конкретной найденной ошибке. Если тест
+ * снова покраснеет — ошибка вернулась.
+ */
+
+// AWG: шаг ряда задан как 92^(2/39), а базис — площадь AWG 36.
+// Старая формула давала для 2.5 мм² AWG 21 вместо AWG 13.
+{
+  assert('AWG: 2.5 мм² → 13', awgFromArea(2.5), 13, 0);
+  assert('AWG: 1.5 мм² → 15', awgFromArea(1.5), 15, 0);
+  assert('AWG: 0.0127 мм² → 36', awgFromArea(0.0127), 36, 0);
+  assert('AWG: площадь AWG 36', awgArea(36), 0.012668, 1e-6);
+  assert('AWG: площадь AWG 10', awgArea(10), 5.261, 0.01);
+  assertTrue('AWG: преобразование обратимо',
+    awgFromArea(awgArea(14)) === 14 && awgFromArea(awgArea(22)) === 22);
+}
+
+// Термопара: обратное преобразование раньше подставляло °C в полином мВ→°C
+// и выдавало числа на порядки больше. Теперь оно численно инвертирует прямое.
+{
+  const K = TC_COEFFS.K, J = TC_COEFFS.J;
+  assert('Термопара K: 4.096 мВ → 100 °C', mvToC(K, 4.096), 100, 0.1);
+  assert('Термопара K: 100 °C → 4.096 мВ', cToMv(K, 100), 4.096, 0.002);
+  assert('Термопара J: 5.269 мВ → 100 °C', mvToC(J, 5.269), 100, 0.1);
+  assertTrue('Термопара: прямое и обратное согласованы',
+    Math.abs(mvToC(K, cToMv(K, 250)) - 250) < 0.01);
+  assertTrue('Термопара: 100 °C даёт единицы мВ, а не тысячи', cToMv(K, 100) < 10);
+}
+
+// RTD: ниже нуля нужен член C·(t−100)·t³, иначе на −200 °C ошибка в градусы.
+// Контрольные точки — таблица ГОСТ 6651 для Pt100.
+{
+  const pts = [[-200, 18.52], [-100, 60.26], [0, 100.00], [100, 138.51], [400, 247.09], [850, 390.48]];
+  for (const [t, r] of pts) {
+    assert(`RTD Pt100: ${t} °C → ${r} Ом`, rtdResistance(100, t), r, 0.01);
+    assert(`RTD Pt100: ${r} Ом → ${t} °C`, rtdTemperature(100, r), t, 0.02);
+  }
+  assert('RTD: Pt1000 масштабируется', rtdResistance(rtdR0('Pt1000'), 100), 1385.1, 0.1);
+}
+
+// Подписи осей: регулярка съедала нули целой части, и деление 100 печаталось
+// как «1». Проверяем через готовую разметку графика.
+{
+  const svg = plotXY({
+    series: [{ label: 'x', points: [[0, 0], [1, 100]] }],
+    width: 600, height: 200,
+  });
+  assertTrue('График: подпись 100 не превращается в 1', svg.includes('>100<'));
+  assertTrue('График: подпись 20 не превращается в 2', svg.includes('>20<'));
+  assertTrue('График: подпись 40 не превращается в 4', svg.includes('>40<'));
+  assertTrue('График: ноль остаётся нулём', svg.includes('>0<'));
+}
+
+// Лента: потери считаются по всем питающим ответвлениям, а не по одному.
+{
+  const base = {
+    mode: 'single', voltage: 24, material: 'Cu', parallelWires: 1,
+    maxDropPercent: 5, ambientTemp: 25, laying: 'air',
+    length: 10, wattPerMeter: 14.4, trackResistance: 0.6, wireLength: 5,
+  };
+  const one = calcStripSystem({ ...base, feedScheme: 'one' });
+  const both = calcStripSystem({ ...base, feedScheme: 'both' });
+  assertTrue('Лента: оба расчёта успешны', one.ok && both.ok);
+
+  // Потери обязаны учитывать ВСЕ питающие ответвления. Сравнивать две схемы
+  // напрямую нельзя: сечение подбирается, и при меньшем токе выбирается более
+  // тонкий провод. Поэтому сверяем с формулой n · I² · R для каждой схемы,
+  // где R = 2·L·ρ/S. До исправления множителя n не было.
+  const rOne = one.branches[0], rBoth = both.branches[0];
+  const RHO = 0.0175, LEN = 5;
+  const wireR = section => 2 * LEN * RHO / section;
+
+  assert('Лента: потери с одного конца = 1 × I² × R',
+    rOne.powerLoss, 1 * rOne.feedCurrent ** 2 * wireR(rOne.section), 1e-6);
+  assert('Лента: потери с двух концов = 2 × I² × R',
+    rBoth.powerLoss, 2 * rBoth.feedCurrent ** 2 * wireR(rBoth.section), 1e-6);
+  assertTrue('Лента: ток на провод при двух концах вдвое меньше',
+    Math.abs(rBoth.feedCurrent / rOne.feedCurrent - 0.5) < 1e-9);
+  assertTrue('Лента: потери не нулевые', rBoth.powerLoss > 0);
+
+  // Просадка на дорожках при этом падает именно вчетверо — это свойство схемы.
+  assert('Лента: просадка на дорожках падает вчетверо',
+    rBoth.dropStrip / rOne.dropStrip, 0.25, 0.001);
 }
 
 // ==================== SUMMARY ====================
