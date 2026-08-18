@@ -5,7 +5,7 @@ import { $, $$, lang, loadLang, showPage, showSubTab, toggleTheme, printPage, co
 import { calcPower, calcVoltage, calcShortCircuit, calcGrounding, calcProtection } from './electrical.js';
 import { calcCable, initCableForm } from './cable-select.js';
 import { calcLedStrip, initStripForm, addStripRow, removeStripRow } from './led-strip.js';
-import { calcCompensation, calcMotor, calcTransformer, calcLighting, calcUPS, calcLoadPanel, addLoadRow } from './equipment.js';
+import { calcCompensation, calcMotor, calcTransformer, calcLighting, calcUPS, calcLoadPanel, addLoadRow, removeLoadRow } from './equipment.js';
 import { calcDerating, calcDiam2Sec, calcConverter } from './cable-networks.js';
 import { calcResSeries, calcResParallel, calcCapSeries, calcCapParallel, calcIndSeries, calcIndParallel, calcVoltageDivider, calcRCTau, calcRLTau, calcLCResonance, calcMotorCap, calcCapCode, calcCapUnit, calcLED, calcZener, calcRLC, calcBridge } from './electronics.js';
 import { calcAstable, calcMonostable, calcInvOpamp, calcNonInvOpamp, calcSumOpamp, calcDiffOpamp, calc7segRes, calc7segDec } from './microchips.js';
@@ -16,7 +16,7 @@ import { initEditor, refreshEditorLang } from './schematic-editor.js';
 import { calcGroundCircuit, calcKZCableCheck, calcBusbar, calcDemandFactor, addDemandRow, removeDemandRow } from './electrical2.js';
 import { calcFuse, calc420Cable, calcRTDTable, calcThermocouple, calcPneumLine, calcEnergyAudit, addEnergyRow, removeEnergyRow, calcCableTray, addCableRow, removeCableRow } from './industry.js';
 import { calc3PhasePower, calcDCVoltageDrop, calcConduitFill, addConduitRow, removeConduitRow, calcMotorStart, calcNeutralCurrent, calcCableLoss, calcEmergencyLight, calcSolarPanel, calcArcFlash, calcTHD, addTHDRow, removeTHDRow } from './electrical3.js';
-import { CIRCUITS, renderCircuit } from './circuits.js';
+import { CIRCUITS, renderCircuit, refreshCircuits } from './circuits.js';
 
 /* ===================== BIND ALL ===================== */
 function bindAll() {
@@ -30,7 +30,11 @@ function bindAll() {
   });
 
   // Theme & lang
-  $('.btn-theme')?.addEventListener('click', toggleTheme);
+  $('.btn-theme')?.addEventListener('click', () => {
+    toggleTheme();
+    // Цвета УГО зашиты в SVG при построении — схемы надо собрать заново.
+    refreshCircuits();
+  });
   $('.btn-lang')?.addEventListener('click', () => {
     loadLang(lang === 'ru' ? 'en' : 'ru');
     // Редактор строит подписи в SVG сам — data-i18n его не покрывает.
@@ -71,6 +75,7 @@ function bindAll() {
     ['btn-cl-calc', calcCurrentLoop], ['btn-sc-scale-calc', calcScaling], ['btn-rtd-calc', calcRTD],
     ['btn-pid-calc', calcPID], ['btn-acc-calc', calcAccuracy],
     ['btn-dr-calc', calcDerating], ['btn-lp-calc', calcLoadPanel], ['btn-lp-add', addLoadRow],
+    ['btn-lp-remove', removeLoadRow],
     ['btn-pf-calc', calcPneumFlow], ['btn-pc-calc', calcPneumCyl], ['btn-pcomp-calc', calcPneumComp],
     ['btn-hc-calc', calcHydCyl], ['btn-hp-calc', calcHydPump], ['btn-hpp-calc', calcHydPipe],
     ['btn-rs-calc', calcResSeries], ['btn-rp-calc', calcResParallel],
@@ -112,12 +117,18 @@ function bindAll() {
   ];
   binds.forEach(([id, fn]) => document.getElementById(id)?.addEventListener('click', fn));
 
+  // Кнопки со своим обработчиком из binds не должны попадать ещё и под общий
+  // сброс ниже: btn-wc-reset и btn-wc-adv-reset подходят под [id$="-reset"],
+  // и на один клик отрабатывали оба обработчика.
+  const boundIds = new Set(binds.map(([id]) => id));
+
   // Circuit buttons (SVG circuit renderer)
   $$('.circuit-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.circuit;
       const display = btn.closest('.card')?.querySelector('[id^="circuit-display"]');
       if (display && CIRCUITS[id]) {
+        display.dataset.circuit = id;   // чтобы схему можно было перерисовать при смене темы
         display.innerHTML = renderCircuit(id);
       }
     });
@@ -125,11 +136,17 @@ function bindAll() {
 
   // Reset buttons
   $$('[id$="-reset"]').forEach(btn => {
+    if (boundIds.has(btn.id)) return;
     btn.addEventListener('click', () => {
       const page = btn.closest('.page');
-      page?.querySelectorAll('input[type="number"]').forEach(inp => inp.value = inp.defaultValue);
-      page?.querySelectorAll('select').forEach(sel => sel.selectedIndex = 0);
-      page?.querySelectorAll('input[type="number"]').forEach(inp => inp.classList.remove('err'));
+      if (!page) return;
+      // Текстовые поля тоже возвращаем к исходному: раньше сбрасывались только
+      // числовые, и названия групп в таблицах оставались от прошлого расчёта.
+      page.querySelectorAll('input[type="number"], input[type="text"]').forEach(inp => {
+        inp.value = inp.defaultValue;
+        inp.classList.remove('err');
+      });
+      page.querySelectorAll('select').forEach(sel => sel.selectedIndex = 0);
     });
   });
 

@@ -675,7 +675,8 @@
             <option value="v_mv">В ↔ мВ</option>
             <option value="v_kv">В ↔ кВ</option>
             <option value="ohm_kohm">Ом ↔ кОм</option>
-            <option value="ohm_mohm">Ом ↔ мОм</option>
+            <option value="ohm_mohm">Ом ↔ мОм (милли)</option>
+            <option value="ohm_Mohm">Ом ↔ МОм (мега)</option>
             <option value="w_kw">Вт ↔ кВт</option>
             <option value="kva_kvar">кВА ↔ кВт ↔ квар</option>
             <option value="ah_mah">А·ч ↔ мА·ч</option>
@@ -747,6 +748,7 @@
             <div class="field"><label data-i18n="wirecab.ends">Концов с НШВИ</label><select id="wc-ends"><option value="2" selected>2</option><option value="1">1</option><option value="0">0</option></select></div>
           </div>
           <div class="field"><label data-i18n="wirecab.wire_type">Тип провода</label><select id="wc-type"><option value="multi" data-i18n="wirecab.multi">Многожильный (ПуГВ/ПВ-3)</option><option value="single" data-i18n="wirecab.single">Одножильный</option></select></div>
+          <div class="field"><label>Сдвоенных подключений (шт)</label><input type="number" min="0" value="0" id="wc-nshvi2-count"></div>
           <div class="btns"><button class="btn btn-primary" id="btn-wc-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-wc-reset" data-i18n="common.reset">Сбросить</button></div>
         </div>
         <div class="card result-card">
@@ -836,6 +838,8 @@
       <div class="field"><label>Длина вертикального электрода (м)</label><input type="number" step="0.1" value="3" id="gc-Lv"></div>
       <div class="field"><label>Диаметр электрода (мм)</label><input type="number" value="16" id="gc-dv"></div>
       <div class="field"><label>Длина горизонтальной полосы (м)</label><input type="number" value="10" id="gc-Lh"></div>
+      <div class="field"><label>Ширина полосы (мм)</label><input type="number" value="40" id="gc-bh"></div>
+      <div class="field"><label>Глубина заложения полосы (м)</label><input type="number" step="0.1" value="0.7" id="gc-hh"></div>
       <div class="field"><label>Количество вертикальных электродов</label><input type="number" value="4" id="gc-n"></div>
       <div class="field"><label>Требуемое R (Ом)</label><input type="number" step="0.1" value="4" id="gc-Rreq"></div>
       <div class="btns"><button class="btn btn-primary" id="btn-gc-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-gc-reset">Сбросить</button></div>
@@ -849,10 +853,10 @@
         <div class="detail"><div class="lbl">R ВЕРТИКАЛЬНОГО</div><div class="val" id="gc-Rv">—</div></div>
         <div class="detail"><div class="lbl">R ГОРИЗОНТАЛЬНОГО</div><div class="val" id="gc-Rh">—</div></div>
         <div class="detail"><div class="lbl">R КОНТУРА</div><div class="val" id="gc-Rtotal">—</div></div>
-        <div class="detail"><div class="lbl">КОЭФФ. ИСПОЛЬЗОВАНИЯ</div><div class="val" id="gc-eta">—</div></div>
+        <div class="detail"><div class="lbl">η ВЕРТ. / ГОРИЗ.</div><div class="val" id="gc-eta">—</div></div>
         <div class="detail"><div class="lbl">СТАТУС</div><div class="val" id="gc-status">—</div></div>
       </div>
-      <div class="formula-panel"><div class="title">Формула</div><div class="formula">Rvert = ρ/(2πL)·ln(4L/d), Rcont = 1/(n/(Rv·η) + 1/Rh)</div><div class="ref">ПУЭ п. 1.7.16</div></div>
+      <div class="formula-panel"><div class="title">Формула</div><div class="formula">Rв = ρ/(2πLв)·ln(4Lв/d), Rг = ρ/(2πLг)·ln(2Lг²/(b·h)), Rконт = 1/(n·ηв/Rв + ηг/Rг)</div><div class="ref">ПУЭ п. 1.7.16. Коэффициенты использования ориентировочные — сверяйте со справочными таблицами</div></div>
     </div>
   </main>
 
@@ -1017,7 +1021,7 @@
       <div class="card-title">Результат</div>
       <div class="result-val" id="tc-result-val">—</div>
       <div class="result-unit" id="tc-result-unit">—</div>
-      <div class="formula-panel"><div class="title">Формула</div><div class="formula">Полиномиальная аппроксимация NIST</div><div class="ref">Типы K, J, T, E — стандартные термопары</div></div>
+      <div class="formula-panel"><div class="title">Формула</div><div class="formula">Полином NIST ITS-90, обратное преобразование — численно</div><div class="ref">Диапазоны: K 0…500 °C, J 0…760 °C, T 0…400 °C, E 0…1000 °C. Холодный спай при 0 °C</div></div>
     </div>
   </main>
 
@@ -1342,8 +1346,10 @@
       <div class="field"><label>Ток КЗ (А)</label><input type="number" value="10000" id="af-Ibf"></div>
       <div class="field"><label>Напряжение (В)</label><input type="number" value="400" id="af-V"></div>
       <div class="field"><label>Время отключения (с)</label><input type="number" step="0.01" value="0.1" id="af-t"></div>
-      <div class="field"><label>Зазор между шинами (мм)</label><input type="number" value="32" id="af-gap"></div>
+      <div class="field"><label>Зазор между электродами (мм)</label><input type="number" value="32" id="af-gap"></div>
       <div class="field"><label>Рабочее расстояние (мм)</label><input type="number" value="610" id="af-dist"></div>
+      <div class="field"><label>Конфигурация</label><select id="af-config"><option value="box">В шкафу / КРУ (box)</option><option value="open">Открыто в воздухе</option></select></div>
+      <div class="field"><label>Режим нейтрали</label><select id="af-ground"><option value="ungrounded">Изолированная (консервативно)</option><option value="grounded">Заземлённая</option></select></div>
       <div class="btns"><button class="btn btn-primary" id="btn-af-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-af-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
@@ -1353,10 +1359,11 @@
       <div class="result-desc">ЭНЕРГИЯ ДУГОВОЙ ВСПЫШКИ</div>
       <div class="grid">
         <div class="detail"><div class="lbl">ЭНЕРГИЯ</div><div class="val" id="af-E">—</div></div>
+        <div class="detail"><div class="lbl">ДУГОВОЙ ТОК</div><div class="val" id="af-Ia">—</div></div>
         <div class="detail"><div class="lbl">ГРАНИЦА</div><div class="val" id="af-boundary">—</div></div>
         <div class="detail"><div class="lbl">КАТЕГОРИЯ СИЗ</div><div class="val" id="af-ppe">—</div></div>
       </div>
-      <div class="formula-panel"><div class="title">Формула</div><div class="formula">IEEE 1584: E = 10^k × t/0.2</div><div class="ref">NFPA 70E — категории СИЗ: 1(≤4), 2(≤8), 3(≤25), 4(≤40) кал/см²</div></div>
+      <div class="formula-panel"><div class="title">Формула</div><div class="formula">IEEE 1584-2002: lg Ia → lg En = K1+K2+1.081·lg Ia+0.0011·G → E = 4.184·Cf·En·(t/0.2)·(610/D)^x</div><div class="ref">NFPA 70E — категории СИЗ: 0(≤1.2), 1(≤4), 2(≤8), 3(≤25), 4(≤40) кал/см². Модель действует при 208 В…15 кВ и 700 А…106 кА</div></div>
     </div>
   </main>
 
@@ -1754,8 +1761,8 @@
       <div class="grid">
         <div class="detail"><div class="lbl">V_ДИАГ (В)</div><div class="val" id="wb-Vout">0.000 В</div></div>
         <div class="detail"><div class="lbl">СОСТОЯНИЕ</div><div class="val"><span class="check" id="wb-status">Сбалансирован</span></div></div>
-        <div class="detail"><div class="lbl">R1×R4</div><div class="val" id="wb-prod1">1000000</div></div>
-        <div class="detail"><div class="lbl">R2×R3</div><div class="val" id="wb-prod2">1000000</div></div>
+        <div class="detail"><div class="lbl">R1×R3</div><div class="val" id="wb-prod1">1000000</div></div>
+        <div class="detail"><div class="lbl">R2×R4</div><div class="val" id="wb-prod2">1000000</div></div>
       </div>
       <div class="formula-panel">
         <div class="title">Формула</div>
@@ -2117,8 +2124,8 @@
           <div class="result-desc">ВЫХОДНОЕ НАПРЯЖЕНИЕ</div>
           <div class="formula-panel">
             <div class="title">Формула</div>
-            <div class="formula">Vout = (R2/R1)×(V1 - V2) (при R1=R3, R2=R4)</div>
-            <div class="ref">Дифференциальный усилитель: усиливает разность входов</div>
+            <div class="formula">Vout = V1×R4/(R3+R4)×(R1+R2)/R1 − V2×R2/R1</div>
+            <div class="ref">Разность усиливается чисто только при R3/R4 = R1/R2; иначе часть синфазного сигнала проходит на выход</div>
           </div>
         </div>
       </div>
@@ -2304,7 +2311,7 @@ COM2 = пин 1
         </div>
         <div class="card result-card">
           <div class="card-title" data-i18n="common.result">Результат</div>
-          <div class="result-val" id="cl-result-val" style="color:var(--result)">✓ Петля валидна</div>
+          <div class="result-val" id="cl-loop-result-val" style="color:var(--result)">✓ Петля валидна</div>
           <div class="grid">
             <div class="detail"><div class="lbl" data-i18n="kipia.r_max">МАКС. R</div><div class="val" id="cl-Rmax">700 Ом</div></div>
             <div class="detail"><div class="lbl" data-i18n="kipia.r_total">R СУММАРНОЕ</div><div class="val" id="cl-Rsum">270 Ом</div></div>
@@ -2455,10 +2462,11 @@ COM2 = пин 1
       <div class="btns" style="margin-bottom:16px">
         <button class="btn btn-primary" id="btn-lp-calc" data-i18n="common.calculate">Рассчитать</button>
         <button class="btn btn-secondary" id="btn-lp-add" data-i18n="loadpanel.add_row">+ Группа</button>
+        <button class="btn btn-ghost" id="btn-lp-remove">− Убрать</button>
         <button class="btn btn-ghost" id="btn-lp-reset" data-i18n="common.reset">Сбросить</button>
       </div>
       <div class="row" style="margin-bottom:16px;max-width:400px">
-        <div class="field"><label data-i18n="loadpanel.voltage">Напряжение (В)</label><input type="number" value="380" id="lp-U"></div>
+        <div class="field"><label data-i18n="loadpanel.voltage">Линейное напряжение (В)</label><input type="number" value="380" id="lp-U"></div>
       </div>
       <div class="grid" id="lp-results">
         <div class="detail"><div class="lbl" data-i18n="loadpanel.total_power">ΣP_НОМ</div><div class="val" id="lp-Ptotal">6.5 кВт</div></div>
@@ -2935,19 +2943,13 @@ COM2 = пин 1
 <script src="js/gost-schematic.js?v=2"></script>
 <script>
   if ('serviceWorker' in navigator) {
-    // Force-update: unregister old SW, clear caches, register new
-    navigator.serviceWorker.getRegistrations().then(regs => {
-      regs.forEach(reg => reg.unregister());
-    }).then(() => {
-      if ('caches' in window) {
-        return caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
-      }
-    }).then(() => {
-      return navigator.serviceWorker.register('/sw.js');
-    }).then(reg => {
-      // Force new SW to take control immediately
-      if (reg.installing) reg.installing.postMessage({ type: 'SKIP_WAITING' });
-      if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    // Кэш НЕ чистим: это убивало офлайн-режим на каждой загрузке. Обновление
+    // обеспечивают смена CACHE_NAME в sw.js и stale-while-revalidate внутри него,
+    // а свежий воркер сразу переводится из waiting в active.
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      const activate = sw => sw && sw.postMessage({ type: 'SKIP_WAITING' });
+      if (reg.waiting) activate(reg.waiting);
+      reg.addEventListener('updatefound', () => activate(reg.installing));
     }).catch(() => {});
   }
 </script>

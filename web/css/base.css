@@ -10,6 +10,9 @@ body{
   height:100vh;
   overflow-x:hidden;
 }
+/* Атрибут hidden обязан побеждать классы вроде .field{display:flex}: иначе
+   скрытые через JS поля формы остаются на экране. */
+[hidden]{display:none!important}
 a{color:var(--accent-2);text-decoration:none}
 a:hover{text-decoration:underline}
 img,svg{display:block;max-width:100%}

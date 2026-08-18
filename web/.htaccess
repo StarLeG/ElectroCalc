@@ -4,11 +4,12 @@ AddType text/css .css
 AddType application/json .json
 AddType image/svg+xml .svg
 
-# Enable CORS for module imports
+# Заголовки безопасности.
+# CORS здесь не нужен: ES-модули грузятся с того же источника, а
+# Access-Control-Allow-Origin "*" лишь разрешал любому сайту тянуть ресурсы.
 <IfModule mod_headers.c>
-    Header set Access-Control-Allow-Origin "*"
-    Header set Access-Control-Allow-Methods "GET, OPTIONS"
-    Header set Access-Control-Allow-Headers "Content-Type"
+    Header set X-Content-Type-Options "nosniff"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
 # Proper charset

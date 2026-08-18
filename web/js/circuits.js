@@ -426,17 +426,42 @@ export const CIRCUITS = {
 export function renderCircuit(id) {
   const c = CIRCUITS[id];
   if (!c) return '<p>Схема не найдена</p>';
+
+  // Библиотека УГО грузится отдельным классическим скриптом. Если он не
+  // доехал, s.svg() бросит TypeError прямо в обработчике клика — сообщаем
+  // об этом так же, как это делает редактор схем.
+  let svg;
+  try {
+    if (!Schematic) throw new Error('GostSchematic не загружен');
+    svg = c.svg();
+  } catch {
+    svg = '<p class="editor-empty">Библиотека условных обозначений не загружена</p>';
+  }
+
   return `
     <div style="margin-bottom:16px">
       <h3 style="color:var(--accent);margin-bottom:8px;font-size:18px">${c.title}</h3>
       <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px">${c.desc}</p>
     </div>
     <div style="background:var(--bg-input);border-radius:var(--r-input);padding:24px;margin-bottom:16px;display:flex;justify-content:center;overflow-x:auto">
-      ${c.svg()}
+      ${svg}
     </div>
     <div class="formula-panel" style="margin:0">
       <div class="title">Компоненты</div>
       <div style="font-size:13px;color:var(--text);line-height:1.8">${c.components.join(' · ')}</div>
     </div>
   `;
+}
+
+/**
+ * Перерисовать уже показанные схемы.
+ *
+ * Цвета УГО зашиты в разметку SVG в момент построения, поэтому смена темы
+ * сама по себе их не меняет — схема оставалась с тёмным фоном на светлой теме.
+ */
+export function refreshCircuits() {
+  document.querySelectorAll('[id^="circuit-display"]').forEach(host => {
+    const id = host.dataset.circuit;
+    if (id && CIRCUITS[id]) host.innerHTML = renderCircuit(id);
+  });
 }

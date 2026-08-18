@@ -16,7 +16,7 @@ import {
   STD_SECTIONS, CABLE_TABLE, TEMP_COEF, MAX_TEMP, K_THERMAL,
   K_INSULATION, K_LAYING, K_CORES, K_TEMP_AIR, K_TEMP_GROUND,
   GROUND_LAYINGS, BASE_AMBIENT, K_GROUP, BREAKER_RATINGS, BREAKER_K,
-  MIN_SECTION_PUE, lookupSection, interpolateK, nextStandard
+  MIN_SECTION_PUE, interpolateK, nextStandard
 } from './data/cable-data.js';
 
 const SQRT3 = Math.sqrt(3);

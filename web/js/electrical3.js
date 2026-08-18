@@ -1,12 +1,12 @@
 /* EngiCalc — Electrical installation & engineering calculators */
 'use strict';
 import { $, $$, num, round, toast, validate, validateRange } from './core.js';
-import { RESISTIVITY, BREAKER_RATINGS, nextStandard } from './data/cable-data.js';
+import { RESISTIVITY, BREAKER_RATINGS, STD_SECTIONS, nextStandard } from './data/cable-data.js';
 
 /* ===================== THREE-PHASE POWER ===================== */
 export function calc3PhasePower() {
   if (!validate('tp-U', 'tp-I') || !validateRange('tp-cos', 0.01, 1)) return;
-  const U = num('tp-U'), I = num('tp-I'), cos = num('tp-cos') || 0.85;
+  const U = num('tp-U'), I = num('tp-I'), cos = num('tp-cos');
   const sin = Math.sqrt(1 - cos * cos);
   const P = Math.sqrt(3) * U * I * cos / 1000;
   const Q = Math.sqrt(3) * U * I * sin / 1000;
@@ -94,8 +94,11 @@ export function calcMotorStart() {
   const Imult = method === 'DOL' ? k : method === 'star' ? k / 3 : k * 0.45;
   const Istart = Inom * Imult;
 
-  // Voltage dip during start
-  const Zmotor = U / (Math.sqrt(3) * Inom * k);
+  // Просадка считается от РЕАЛЬНОГО пускового тока: при звезда-треугольнике он
+  // втрое меньше прямого пуска, и сопротивление двигателя соответственно выше.
+  // Раньше здесь стояла полная кратность k, из-за чего мягкий пуск и
+  // переключение обмоток на просадку не влияли вообще.
+  const Zmotor = U / (Math.sqrt(3) * Istart);
   const Ztotal = Zgrid + Zmotor;
   const Ustart = U * Zmotor / Ztotal;
   const dip = (U - Ustart) / U * 100;
@@ -103,10 +106,12 @@ export function calcMotorStart() {
   // Подбор автомата из стандартного ряда, а не округлением до кратного 5 А
   const breaker = nextStandard(BREAKER_RATINGS, Istart * 1.2) ?? 0;
 
-  // Cable section (by starting current, short duration)
-  const cableByStart = Math.ceil(Istart / 8);
-  const cableByNom = Math.ceil(Inom / 6);
-  const cable = Math.max(cableByStart, cableByNom);
+  // Сечение — оценка по плотности тока, приведённая к стандартному ряду:
+  // ceil(I/6) давало нестандартные числа вроде 17 мм².
+  const byStart = Istart / 8;
+  const byNom = Inom / 6;
+  const cable = nextStandard(STD_SECTIONS, Math.max(byStart, byNom))
+    ?? STD_SECTIONS[STD_SECTIONS.length - 1];
 
   $('#ms-Inom').textContent = round(Inom, 1) + ' А';
   $('#ms-Istart').textContent = round(Istart, 0) + ' А';
@@ -228,39 +233,83 @@ export function calcSolarPanel() {
   $('#sp-result-val').textContent = panelCount;
 }
 
-/* ===================== ARC FLASH ===================== */
+/* ===================== ARC FLASH =====================
+ * Модель IEEE 1584-2002, эмпирическая ветвь (208 В…15 кВ, 700 А…106 кА).
+ *
+ * Прежняя реализация не считала ничего осмысленного: логарифм брался от ампер
+ * вместо килоампер (расхождение ~10^3.26), рабочее расстояние входило
+ * СЛАГАЕМЫМ с положительным знаком — энергия росла по мере удаления от дуги, —
+ * а перевода Дж/см² → кал/см² и коэффициента Cf не было вовсе.
+ */
+
+/** Энергия порога ожога второй степени, Дж/см² (1.2 кал/см²). */
+const ARC_EB = 5.0;
+
+/**
+ * Дуговой ток по IEEE 1584.
+ * @param {number} IbfkA ток КЗ, кА
+ * @param {number} VkV напряжение, кВ
+ * @param {number} G зазор между электродами, мм
+ * @param {boolean} inBox прибор в шкафу (иначе открыто в воздухе)
+ * @returns {number} дуговой ток, кА
+ */
+function arcCurrent(IbfkA, VkV, G, inBox) {
+  const lgIbf = Math.log10(IbfkA);
+  if (VkV >= 1) return Math.pow(10, 0.00402 + 0.983 * lgIbf);
+  const K = inBox ? -0.097 : -0.153;
+  const lgIa = K + 0.662 * lgIbf + 0.0966 * VkV + 0.000526 * G
+    + 0.5588 * VkV * lgIbf - 0.00304 * G * lgIbf;
+  return Math.pow(10, lgIa);
+}
+
 export function calcArcFlash() {
   if (!validate('af-Ibf', 'af-V', 'af-t')) return;
   const Ibf = num('af-Ibf');
   const V = num('af-V');
   const t = num('af-t');
-  const gap = num('af-gap') || 32; // mm, typical for 480V
-  const distance = num('af-dist') || 610; // mm, working distance
+  const gap = num('af-gap') || 32;        // мм, типовой зазор для 480 В
+  const distance = num('af-dist') || 610; // мм, рабочее расстояние
+  const inBox = ($('#af-config')?.value || 'box') === 'box';
+  const grounded = ($('#af-ground')?.value || 'ungrounded') === 'grounded';
 
-  // IEEE 1584 simplified (for 208V-15kV, 700A-106kA)
-  // Incident energy (cal/cm²)
-  const k1 = -0.00043;
-  const k2 = 0.159;
-  const k3 = 0.0014;
-  const G = gap;
-  const logIbf = Math.log10(Ibf);
-  const logE = k1 + 1.087 * logIbf + 0.0011 * G + k2 + k3 * distance / 1000;
-  const E = Math.pow(10, logE) * t / 0.2; // normalize to 0.2s
+  if (!(Ibf > 0) || !(V > 0) || !(t > 0) || !(distance > 0)) {
+    toast('Проверьте данные');
+    return;
+  }
 
-  // Arc flash boundary (mm)
-  const Elimit = 1.2; // cal/cm² threshold for 2nd degree burn
-  const Cb = 1000 * Math.pow(Elimit / (Math.pow(10, logE)), 0.5);
+  const IbfkA = Ibf / 1000;               // формулы IEEE работают в килоамперах
+  const VkV = V / 1000;                   // и в киловольтах
+  const Ia = arcCurrent(IbfkA, VkV, gap, inBox);
 
-  // PPE category
+  // Нормализованная энергия для t = 0.2 с и D = 610 мм, кал/см².
+  const K1 = inBox ? -0.555 : -0.792;
+  const K2 = grounded ? -0.113 : 0;
+  const En = Math.pow(10, K1 + K2 + 1.081 * Math.log10(Ia) + 0.0011 * gap);
+
+  // Показатель ослабления с расстоянием и множитель напряжения.
+  const x = inBox ? 1.473 : 2.0;
+  const Cf = VkV <= 1 ? 1.5 : 1.0;
+
+  // Энергия на рабочем расстоянии, кал/см². Множителя 4.184 здесь нет: он
+  // переводит результат в Дж/см², а показываем мы калории.
+  const E = Cf * En * (t / 0.2) * Math.pow(610 / distance, x);
+
+  // Граница вспышки — расстояние, на котором энергия падает до порога ожога
+  // второй степени (5 Дж/см² = 1.2 кал/см²), поэтому здесь перевод нужен.
+  const boundary = Math.pow(4.184 * Cf * En * (t / 0.2) * Math.pow(610, x) / ARC_EB, 1 / x);
+
+  // Категории СИЗ по NFPA 70E.
   let ppeCategory, ppeColor;
-  if (E <= 4) { ppeCategory = '1 (HRC 1)'; ppeColor = 'var(--result)'; }
+  if (E <= 1.2) { ppeCategory = '0 — СИЗ не требуются'; ppeColor = 'var(--result)'; }
+  else if (E <= 4) { ppeCategory = '1 (HRC 1)'; ppeColor = 'var(--result)'; }
   else if (E <= 8) { ppeCategory = '2 (HRC 2)'; ppeColor = 'var(--accent)'; }
   else if (E <= 25) { ppeCategory = '3 (HRC 3)'; ppeColor = 'var(--warn)'; }
   else if (E <= 40) { ppeCategory = '4 (HRC 4)'; ppeColor = 'var(--error)'; }
-  else { ppeCategory = '> 40 cal — запрещено'; ppeColor = 'var(--error)'; }
+  else { ppeCategory = '> 40 кал/см² — работа под напряжением запрещена'; ppeColor = 'var(--error)'; }
 
   $('#af-E').textContent = round(E, 1) + ' кал/см²';
-  $('#af-boundary').textContent = Math.round(Cb) + ' мм';
+  $('#af-Ia').textContent = round(Ia * 1000, 0) + ' А';
+  $('#af-boundary').textContent = Math.round(boundary) + ' мм';
   $('#af-ppe').innerHTML = '<span style="color:' + ppeColor + ';font-weight:700">' + ppeCategory + '</span>';
   $('#af-result-val').textContent = round(E, 1);
 }

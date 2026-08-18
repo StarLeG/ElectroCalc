@@ -16,7 +16,7 @@
  */
 'use strict';
 
-import { $, num, round, toast, T } from './core.js';
+import { $, num, round, toast, T, escapeHtml } from './core.js';
 import {
   CABLE_TABLE, RESISTIVITY, K_LAYING, K_TEMP_AIR, K_CORES,
   interpolateK, nextStandard
@@ -76,6 +76,21 @@ function wireDerating(inp) {
 function stripDrop(strip, currentPerMeter) {
   const divisor = stripDropDivisor(strip.feedScheme, strip.feedPoints);
   return strip.trackResistance * currentPerMeter * strip.length ** 2 / divisor;
+}
+
+/**
+ * Число питающих ответвлений на ленту.
+ *
+ * Согласовано с feedCurrentShare(): та даёт долю тока на ОДИН провод, здесь —
+ * сколько таких проводов. Произведение восстанавливает полный ток ленты.
+ *
+ * @param {object} strip параметры ленты
+ * @returns {number} количество ответвлений
+ */
+function feedWireCount(strip) {
+  if (strip.feedScheme === 'one') return 1;
+  if (strip.feedScheme === 'both' || strip.feedScheme === 'ring') return 2;
+  return Math.max(2, Math.floor(strip.feedPoints) || 2) - 1;
 }
 
 /**
@@ -209,11 +224,10 @@ function voltageProfile(strip, currentPerMeter, feedVoltage) {
 /**
  * Нормализация описания одной ленты.
  * @param {object} raw сырые данные ленты
- * @param {object} inp общие параметры
  * @param {number} index порядковый номер
  * @returns {object}
  */
-function normalizeStrip(raw, inp, index) {
+function normalizeStrip(raw, index) {
   const preset = STRIP_TYPES.find(t => t.id === raw.stripType);
   return {
     label: raw.label || `${index + 1}`,
@@ -276,10 +290,10 @@ export function calcStripSystem(raw) {
       branchLength: raw.wireLength,
       feedScheme: raw.feedScheme,
       feedPoints: raw.feedPoints
-    }, inp, 0)];
+    }, 0)];
     inp.commonWireLength = 0;
   } else {
-    inp.strips = (raw.strips ?? []).map((s, i) => normalizeStrip(s, inp, i));
+    inp.strips = (raw.strips ?? []).map((s, i) => normalizeStrip(s, i));
   }
 
   const error = validateInput(inp);
@@ -385,7 +399,10 @@ export function calcStripSystem(raw) {
       dropTotal,
       dropPercent: dropTotal / inp.voltage * 100,
       minVoltage: inp.voltage - dropTotal,
-      powerLoss: state.feedCurrent ** 2 * wireOhms,
+      // Ответвлений столько же, сколько точек питания: при питании с двух концов
+      // ток делится пополам, но проводов два, и суммарные потери вдвое больше,
+      // чем в одном из них. Раньше считался ровно один провод.
+      powerLoss: feedWireCount(state.strip) * state.feedCurrent ** 2 * wireOhms,
       optimalFeedPoints: optimalFeedPoints(
         state.strip, state.currentPerMeter,
         Math.max(0, budgetVolts - commonDrop - (wire?.drop ?? 0))
@@ -488,7 +505,7 @@ const sel = id => document.getElementById(id)?.value;
 function stripRowHtml(index) {
   const options = ['one', 'both', 'multi']
     .map(v => `<option value="${v}">${T('ledstrip.scheme_' + v)}</option>`).join('');
-  return `<td><input type="text" value="${T('ledstrip.strip')} ${index}" class="tbl-input lst-label"></td>`
+  return `<td><input type="text" value="${escapeHtml(T('ledstrip.strip') + ' ' + index)}" class="tbl-input lst-label"></td>`
     + `<td><input type="number" step="0.1" min="0" value="5" class="tbl-input lst-len"></td>`
     + `<td><input type="number" step="0.1" min="0" value="14.4" class="tbl-input lst-wpm"></td>`
     + `<td><input type="number" step="0.01" min="0" value="0.6" class="tbl-input lst-r"></td>`
@@ -592,7 +609,7 @@ function renderBranch(branch, isWorst) {
   const section = branch.section === null ? dash : branch.section + ' ' + T('ledstrip.mm2');
   const points = branch.optimalFeedPoints === null ? dash : branch.optimalFeedPoints;
   return `<div class="check-row${isWorst ? ' limiting' : ''}">
-    <span class="check-name">${branch.label}</span>
+    <span class="check-name">${escapeHtml(branch.label)}</span>
     <span class="check-req">${round(branch.current, 2)} ${T('ledstrip.unit_a')} · ${section}</span>
     <span class="check-verdict">${round(branch.dropPercent, 2)} % · ${round(branch.minVoltage, 2)} ${T('ledstrip.unit_v')} · ${T('ledstrip.pts')} ${points}</span>
   </div>`;

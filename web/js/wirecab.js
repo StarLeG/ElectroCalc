@@ -1,6 +1,6 @@
 /* EngiCalc — Wire Cabinet Calculator: wire length + НШВИ */
 'use strict';
-import { $, $$, num, round, toast, validate, lang } from './core.js';
+import { $, $$, num, round, toast, validate, escapeHtml } from './core.js';
 
 /* ===================== НШВИ REFERENCE ===================== */
 const NSHVI_MAP = [
@@ -46,7 +46,10 @@ export function calcWirecabQuick() {
   const Lavg = (H + W) / 2000 + 0.4; // meters
   const Ltotal = N * Lavg * (1 + reserve / 100);
   const nshvi = multi ? Math.ceil(N * ends * (1 + reserve / 100)) : 0;
-  const nshvi2 = 0;
+  // Двойные НШВИ считаются по числу сдвоенных подключений — раньше здесь
+  // стоял жёсткий ноль, и поле результата всегда показывало «0 шт».
+  const nshvi2count = num('wc-nshvi2-count') || 0;
+  const nshvi2 = multi ? Math.ceil(nshvi2count * (1 + reserve / 100)) : 0;
   const marking = Math.ceil(N * 2 * (1 + reserve / 100));
 
   renderQuickResults(Lavg, Ltotal, nshvi, nshvi2, marking);
@@ -113,7 +116,9 @@ export function calcWirecabAdvanced() {
     const section = parseFloat(row.querySelector('.wc-g-section')?.value) || 1.0;
     const length = parseFloat(row.querySelector('.wc-g-length')?.value) || 1.5;
     const multi = row.querySelector('.wc-g-type')?.value === 'multi';
-    const ends = parseInt(row.querySelector('.wc-g-ends')?.value) ?? 2;
+    // parseInt даёт NaN, а не undefined, поэтому здесь нужен ||, а не ??:
+    // с ?? отсутствующий select протаскивал NaN во все счётчики НШВИ.
+    const ends = parseInt(row.querySelector('.wc-g-ends')?.value) || 0;
     const nshvi2count = parseInt(row.querySelector('.wc-g-nshvi2')?.value) || 0;
     const ringCount = parseInt(row.querySelector('.wc-g-ring')?.value) || 0;
 
@@ -158,7 +163,7 @@ function renderAdvancedResults(results, bySection, totalLength, totalNshvi, tota
     Object.keys(bySection).sort((a, b) => a - b).forEach(sec => {
       const s = bySection[sec];
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${sec} мм²</td><td>${s.nshviSize.nshvi}</td><td>${round(s.length, 1)} м</td><td>${s.nshvi} шт</td><td>${s.nshvi2} шт</td><td>${s.ring} шт</td>`;
+      tr.innerHTML = `<td>${escapeHtml(sec)} мм²</td><td>${escapeHtml(s.nshviSize.nshvi)}</td><td>${round(s.length, 1)} м</td><td>${s.nshvi} шт</td><td>${s.nshvi2} шт</td><td>${s.ring} шт</td>`;
       summaryBody.appendChild(tr);
     });
   }
@@ -203,13 +208,17 @@ export function downloadWirecabCSV() {
   const a = document.createElement('a');
   a.href = url;
   a.download = 'engicalc-wirecab.csv';
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  a.remove();
+  // Отзыв ссылки откладываем: часть браузеров начинает скачивание асинхронно,
+  // и немедленный revokeObjectURL обрывает его. Так же сделано в редакторе схем.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /* ===================== RESET ===================== */
 export function resetWirecabQuick() {
-  ['#wc-H', '#wc-W', '#wc-N', '#wc-reserve', '#wc-ends'].forEach(sel => {
+  ['#wc-H', '#wc-W', '#wc-N', '#wc-reserve', '#wc-ends', '#wc-nshvi2-count'].forEach(sel => {
     const el = $(sel);
     if (el) el.value = el.defaultValue;
   });

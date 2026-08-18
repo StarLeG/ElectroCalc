@@ -1,10 +1,10 @@
 /* EngiCalc — Equipment calculations */
 'use strict';
-import { $, $$, num, round, toast, validate, validateRange, T } from './core.js';
+import { $, $$, num, round, toast, validate, validatePositive, validateRange, T } from './core.js';
 import { BREAKER_RATINGS, nextStandard } from './data/cable-data.js';
 
 export function calcCompensation() {
-  if(!validate('comp-P','comp-step')||!validateRange('comp-cos1',0.01,1)||!validateRange('comp-cos2',0.01,1))return;
+  if(!validatePositive('comp-P','comp-step')||!validateRange('comp-cos1',0.01,1)||!validateRange('comp-cos2',0.01,1))return;
   const P=num('comp-P'),cos1=num('comp-cos1'),cos2=num('comp-cos2'),step=num('comp-step');
   const tg1=Math.sqrt(1-cos1*cos1)/cos1,tg2=Math.sqrt(1-cos2*cos2)/cos2;
   const Qc=P*(tg1-tg2),Q1=P*tg1,Q2=P*tg2;
@@ -12,11 +12,12 @@ export function calcCompensation() {
   $('#comp-steps').textContent=Math.ceil(Qc/step);
   $('#comp-Q1').textContent=round(Q1,1);
   $('#comp-Q2').textContent=round(Q2,1);
-  $('#comp-save').textContent=round((1-Q2/Q1)*100,1)+' %';
+  // При cos φ = 1 реактивной мощности изначально нет — делить не на что.
+  $('#comp-save').textContent=Q1>0?round((1-Q2/Q1)*100,1)+' %':'—';
 }
 
 export function calcMotor() {
-  if(!validate('m-P','m-U','m-k')||!validateRange('m-cos',0.01,1)||!validateRange('m-eta',0.01,1))return;
+  if(!validate('m-P','m-k')||!validatePositive('m-U')||!validateRange('m-cos',0.01,1)||!validateRange('m-eta',0.01,1))return;
   const P=num('m-P'),U=num('m-U'),cos=num('m-cos'),eta=num('m-eta'),k=num('m-k');
   const I=P*1000/(Math.sqrt(3)*U*cos*eta);
   $('#m-result-val').textContent=round(I,1)+' А';
@@ -26,7 +27,7 @@ export function calcMotor() {
 }
 
 export function calcTransformer() {
-  if(!validate('t-P','t-Uvn','t-unn','t-uk')||!validateRange('t-cos',0.01,1))return;
+  if(!validate('t-P')||!validatePositive('t-Uvn','t-unn','t-uk')||!validateRange('t-cos',0.01,1))return;
   const P=num('t-P'),cos=num('t-cos'),Uvn=num('t-Uvn'),unn=num('t-unn'),uk=num('t-uk');
   const S=P/cos;
   $('#t-result-val').textContent=round(S,0)+' кВА';
@@ -37,7 +38,7 @@ export function calcTransformer() {
 }
 
 export function calcLighting() {
-  if(!validate('l-S','l-E','l-phi','l-W','l-eta'))return;
+  if(!validate('l-S','l-E','l-W')||!validatePositive('l-phi','l-eta'))return;
   const S=num('l-S'),E=num('l-E'),phi=num('l-phi'),W=num('l-W'),eta=num('l-eta');
   const N=Math.ceil(E*S/(phi*eta));
   $('#l-result-val').textContent=N;
@@ -46,7 +47,7 @@ export function calcLighting() {
 }
 
 export function calcUPS() {
-  if(!validate('u-P','u-t','u-U','u-eta'))return;
+  if(!validate('u-P','u-t')||!validatePositive('u-U','u-eta'))return;
   const P=num('u-P'),t=num('u-t'),U=num('u-U'),eta=num('u-eta');
   const Ah=P*1000*t/(60*U*eta*0.8);
   $('#u-result-val').textContent=Math.round(Ah);
@@ -77,7 +78,11 @@ export function calcLoadPanel() {
     return pSum/pcSum;
   }
   const cos1=avgCos(phaseCos[1]),cos2=avgCos(phaseCos[2]),cos3=avgCos(phaseCos[3]);
-  const IL1=phaseP[1]/(U/1000*cos1),IL2=phaseP[2]/(U/1000*cos2),IL3=phaseP[3]/(U/1000*cos3);
+  // Группа висит между фазой и нулём, поэтому ток считается по ФАЗНОМУ напряжению.
+  // В поле вводится линейное (380 В), фазное меньше в √3 — раньше делили на
+  // линейное и занижали все три тока в 1.73 раза.
+  const Uph=U/Math.sqrt(3);
+  const IL1=phaseP[1]/(Uph/1000*cos1),IL2=phaseP[2]/(Uph/1000*cos2),IL3=phaseP[3]/(Uph/1000*cos3);
   const Imax=Math.max(IL1,IL2,IL3),Imin=Math.min(IL1,IL2,IL3);
   const imbalance=Imax>0?((Imax-Imin)/Imax*100):0;
   $('#lp-Ptotal').textContent=round(Ptotal,1)+' кВт';
@@ -90,7 +95,14 @@ export function calcLoadPanel() {
 
 export function addLoadRow() {
   const tbody=document.querySelector('#load-table tbody');
+  if(!tbody)return;
   const tr=document.createElement('tr');
   tr.innerHTML='<td><input type="text" value="Новая группа" class="tbl-input"></td><td><input type="number" value="1.0" step="0.1" class="tbl-input tbl-p"></td><td><input type="number" value="0.85" step="0.01" class="tbl-input tbl-cos"></td><td><input type="number" value="0.8" step="0.1" class="tbl-input tbl-ks"></td><td><select class="tbl-input tbl-phase"><option value="1">L1</option><option value="2">L2</option><option value="3">L3</option></select></td>';
   tbody.appendChild(tr);
+}
+
+/** Убирает последнюю группу, не давая опустошить таблицу. */
+export function removeLoadRow() {
+  const tbody=document.querySelector('#load-table tbody');
+  if(tbody&&tbody.children.length>1)tbody.removeChild(tbody.lastElementChild);
 }

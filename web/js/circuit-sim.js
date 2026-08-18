@@ -48,8 +48,12 @@ export function solveDC(model) {
  *   { ic: true, capV, indI } — начальные условия: конденсаторы держатся
  *   источниками напряжения, катушки — источниками тока.
  */
-function solveInternal(model, ctx = null) {
-  const net = model.buildNetlist();
+function solveInternal(model, ctx = null, netCache = null) {
+  // Топология между шагами по времени не меняется, а buildNetlist() проходит по
+  // всем проводам и выводам. Пересборка на каждом из тысяч шагов была самой
+  // дорогой частью расчёта переходного процесса, поэтому нетлист можно передать
+  // готовым. При обычном вызове (netCache === null) поведение прежнее.
+  const net = netCache ?? model.buildNetlist();
   const warnings = [];
 
   if (net.gndNode === null) {
@@ -815,8 +819,12 @@ export function solveTransient(model, opts = {}) {
       }
     };
 
+    // Нетлист строится один раз на весь расчёт: схема во время интегрирования
+    // не меняется.
+    const net = model.buildNetlist();
+
     // Точка t = 0 считается с зафиксированными начальными условиями
-    const first = solveInternal(model, { ic: true, capV, indI });
+    const first = solveInternal(model, { ic: true, capV, indI }, net);
     if (!first.ok) return first;
     push(0, first);
 
@@ -824,7 +832,7 @@ export function solveTransient(model, opts = {}) {
     let last = first;
     const steps = Math.max(1, Math.round(tStop / h));
     for (let k = 1; k <= steps; k++) {
-      const res = solveInternal(model, { h, capV, indI });
+      const res = solveInternal(model, { h, capV, indI }, net);
       if (!res.ok) return res;
       push(k * h, res);
       for (const [id, v] of res.state.caps) capV.set(id, v);

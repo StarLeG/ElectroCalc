@@ -19,11 +19,45 @@ export async function copyText(text) {
   catch { toast('Error'); }
 }
 
+/**
+ * Экранирование текста, который попадает в innerHTML.
+ * Названия групп и лент пользователь вводит сам, и без экранирования они
+ * подставляются в разметку как есть.
+ * @param {*} value исходное значение
+ * @returns {string} безопасная для вставки строка
+ */
+export function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, ch => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+  ));
+}
+
 export function validate(...ids) {
   for (const id of ids) {
     const el = document.getElementById(id);
     const v = parseFloat(el?.value);
     if (isNaN(v) || v < 0) {
+      el?.classList.add('err');
+      toast(T('common.check_data'));
+      return false;
+    }
+    el?.classList.remove('err');
+  }
+  return true;
+}
+
+/**
+ * Проверка величин, которые обязаны быть строго больше нуля.
+ * validate() пропускает 0, а он в знаменателе даёт Infinity, и это Infinity
+ * попадает прямо в разметку результата.
+ * @param {...string} ids идентификаторы полей
+ * @returns {boolean} true — все значения положительны
+ */
+export function validatePositive(...ids) {
+  for (const id of ids) {
+    const el = document.getElementById(id);
+    const v = parseFloat(el?.value);
+    if (!(v > 0)) {
       el?.classList.add('err');
       toast(T('common.check_data'));
       return false;
@@ -52,6 +86,10 @@ export let i18nData = {};
 export const I18N = {
   ru: {
     nav: {electrical:"ЭЛЕКТРИКА",power:"Мощность",cable:"Кабели",voltage:"Потери",shortcircuit:"КЗ",grounding:"Заземление",protection:"Защита",equipment:"ОБОРУДОВАНИЕ",compensation:"Компенсация",motor:"Двигатели",transformer:"Трансформатор",lighting:"Освещение",lighting_group:"ОСВЕЩЕНИЕ",ledstrip:"Светодиодные ленты",ups:"ИБП / АКБ",loadpanel:"Щит нагрузок",cable_networks:"КАБЕЛЬНЫЕ СЕТИ",derating:"Дерейтинг",diam2sec:"Диаметр→Сечение",converter:"Конвертер",cabinet:"МОНТАЖ ШКАФОВ",wirecab:"Провод и НШВИ",electronics:"ЭЛЕКТРОНИКА",rccalc:"R/C соединение",capval:"Значения конд.",motorcap:"Конденсатор Дв.",led:"Светодиод",zener:"Стабилитрон",rlc:"Импеданс RLC",bridge:"Мост Уитстона",microchips:"МИКРОСХЕМЫ",ne555:"NE555",opamp:"Опер. усилитель","7seg":"7-сегмент",kipia_group:"КИПиА",kipia:"КИПиА",pneumatics:"Пневматика",hydraulics:"Гидравлика"},
+    crumb: {
+      group: {electrical:"ЭЛЕКТРИКА",equipment:"ОБОРУДОВАНИЕ",lighting:"ОСВЕЩЕНИЕ",cablenet:"КАБЕЛЬНЫЕ СЕТИ",cabinet:"МОНТАЖ ШКАФОВ",energy:"ЭНЕРГЕТИКА",electronics:"ЭЛЕКТРОНИКА",chips:"МИКРОСХЕМЫ",kipia:"КИПиА",safety:"БЕЗОПАСНОСТЬ",system:"СИСТЕМА"},
+      page: {power:"Мощность",cable:"Кабели",voltage:"Потери",shortcircuit:"КЗ",grounding:"Заземление",protection:"Защита",groundcircuit:"Заземл. контур",kzcable:"КЗ-кабель",motor:"Двигатели",motorstart:"Пуск двигателя",transformer:"Трансформатор",compensation:"Компенсация",lighting:"Освещение",emergency:"Аварийное освещ.",ledstrip:"Светодиодные ленты",ups:"ИБП / АКБ",loadpanel:"Щит нагрузок",derating:"Дерейтинг",diam2sec:"Диаметр→Сечение",cableloss:"Потери в кабеле",busbar:"Шины",cabletray:"Кабель-лоток",conduitfill:"Заполнение труб",converter:"Конвертер",wirecab:"Провод и НШВИ",demandfactor:"Коэфф. спроса",fuse:"Предохранитель",dcvdrop:"DC потери",threephase:"Три фазы",energyaudit:"Энергоаудит",solar:"Солнечная энергия",rccalc:"R/C соединение",capval:"Значения конд.",motorcap:"Конденсатор Дв.",led:"Светодиод",zener:"Стабилитрон",rlc:"Импеданс RLC",bridge:"Мост Уитстона",ne555:"NE555",opamp:"Опер. усилитель","7seg":"7-сегмент",kipia:"КИПиА",pneumatics:"Пневматика",pneumline:"Пневмо-трасса",hydraulics:"Гидравлика",rtdtable:"Таблица RTD",tcouple:"Термопара",cablelength:"Длина каб. 4-20",neutral:"Ток нейтрали",arcflash:"Дуговая вспышка",thd:"THD гармоники",help:"Справка",developer:"О программе",donate:"Поддержать"}
+    },
     common: {input_data:"Исходные данные",result:"Результат",calculate:"Рассчитать",reset:"Сбросить",export_pdf:"Экспорт PDF",copy:"Копировать",formula_norm:"Формула и норматив",ready:"Готово",copied:"Скопировано",check_data:"Проверьте данные"},
     power: {p_power:"Мощность (кВт)",u_voltage:"Напряжение (В)",phase:"Фазность",phase1:"1 фаза",phase3:"3 фазы",cos_phi:"cos φ",efficiency:"КПД",current:"ТОК",total_power:"ПОЛНАЯ МОЩНОСТЬ",desc:"Расчётный ток нагрузки",ref:"ПУЭ п. 1.3.10"},
     cable: {
@@ -151,7 +189,7 @@ export const I18N = {
     ups: {title:"ИБП / АКБ / Генератор",load:"Нагрузка (кВт)",reserve_time:"Время резерва (мин)",battery_voltage:"Напряжение АКБ (В)",ups_efficiency:"КПД ИБП",capacity:"ЁМКОСТЬ",generator:"ГЕНЕРАТОР",formula:"Ah = (P·t) / (U·η·DoD)"},
     converter: {title:"Конвертер единиц",type:"Тип конвертации",value:"Значение",result:"Результат",convert:"Конвертировать"},
     derating: {title:"Кабельный дерейтинг",base_current:"Базовый ток кабеля (А)",ambient_temp:"Температура окружения (°C)",cable_count:"Число кабелей в пучке",install_method:"Способ прокладки",in_air:"На воздухе",in_ground:"В земле",desc:"ДОПУСТИМЫЙ ТОК",k_temp:"k_ТЕМПЕРАТУРА",k_group:"k_ГРУППА",total_k:"ИТОГО k",reduction:"СНИЖЕНИЕ"},
-    loadpanel: {title:"Щит нагрузок",group:"Группа",power_kW:"P (кВт)",cos_phi:"cos φ",demand:"Kс",phase:"Фаза",voltage:"Напряжение (В)",add_row:"+ Группа",total_power:"ΣP_НОМ",calc_power:"P_РАСЧ",current_L1:"ТОК L1",current_L2:"ТОК L2",current_L3:"ТОК L3",imbalance:"ДИСБАЛАНС"},
+    loadpanel: {title:"Щит нагрузок",group:"Группа",power_kW:"P (кВт)",cos_phi:"cos φ",demand:"Kс",phase:"Фаза",voltage:"Линейное напряжение (В)",add_row:"+ Группа",total_power:"ΣP_НОМ",calc_power:"P_РАСЧ",current_L1:"ТОК L1",current_L2:"ТОК L2",current_L3:"ТОК L3",imbalance:"ДИСБАЛАНС"},
     pneumatics: {title:"Пневматика",tab_flow:"Расход воздуха",tab_cylinder:"Пневмоцилиндр",tab_compressor:"Компрессор",flow_title:"Расход сжатого воздуха",devices_count:"Число потребителей",device_flow:"Расход 1 потребителя (л/мин)",duty_cycle:"Коэфф. использования (0–1)",leak_factor:"Коэфф. утечек",total_flow:"СУММАРНЫЙ РАСХОД",peak_flow:"ПИКОВЫЙ",with_leaks:"С УТЕЧКАМИ",cyl_title:"Пневмоцилиндр",bore_diameter:"Диаметр поршня (мм)",rod_diameter:"Диаметр штока (мм)",stroke:"Ход (мм)",working_pressure:"Рабочее давление (бар)",air_flow_cyl:"Расход воздуха (л/мин)",force_forward:"СИЛА (ВПЕРЁД)",force_backward:"СИЛА (НАЗАД)",speed:"СКОРОСТЬ",time:"ВРЕМЯ ХОДА",volume:"ОБЪЁМ",comp_title:"Подбор компрессора",required_flow:"Требуемый расход (л/мин)",required_pressure:"Требуемое давление (бар)",reserve_factor:"Коэфф. запаса",tank_time:"Время заполнения ресивера (с)",comp_flow:"РАСХОД КОМПРЕССОРА",comp_power:"МОЩНОСТЬ",tank_volume:"ОБЪЁМ РЕСИВЕРА"},
     hydraulics: {title:"Гидравлика",tab_cylinder:"Гидроцилиндр",tab_pump:"Гидронасос",tab_pipe:"Потери в трубе",cyl_title:"Гидроцилиндр",bore:"Диаметр поршня (мм)",rod:"Диаметр штока (мм)",stroke:"Ход (мм)",pressure:"Рабочее давление (бар)",flow:"Расход насоса (л/мин)",efficiency:"КПД",force_push:"СИЛА (ТОЛКАНИЕ)",force_pull:"СИЛА (ТЯГА)",speed:"СКОРОСТЬ",time:"ВРЕМЯ ХОДА",power:"МОЩНОСТЬ",pump_title:"Подбор гидронасоса",required_flow:"Требуемый расход (л/мин)",required_pressure:"Рабочее давление (бар)",pump_efficiency:"КПД насоса",motor_efficiency:"КПД двигателя",motor_power:"МОЩНОСТЬ ДВИГАТЕЛЯ",pump_type:"ТИП НАСОСА",displacement:"ОБЪЁМ НА ОБОРОТ",pipe_title:"Потери давления в трубе",pipe_length:"Длина трубы (м)",pipe_diameter:"Диаметр трубы (мм)",oil_flow:"Расход масла (л/мин)",oil_viscosity:"Вязкость масла (сСт)",pressure_loss:"ПОТЕРЯ ДАВЛЕНИЯ",velocity:"СКОРОСТЬ",flow_type:"РЕЖИМ",lambda:"λ"},
     kipia: {title:"КИПиА — Расчёты",tab_loop:"Токовая петля",tab_scaling:"Масштабирование",tab_rtd:"RTD",tab_pid:"ПИД",tab_accuracy:"Погрешности",loop_title:"Токовая петля 4–20 мА",supply_voltage:"Напряжение питания (В)",min_voltage:"Мин. напряжение прибора (В)",r_wires:"R проводов (Ом)",r_instrument:"R прибора (Ом)",r_barrier:"R барьера (Ом)",loop_valid:"✓ Петля валидна",loop_invalid:"✗ Петля невалидна",r_max:"МАКС. R",r_total:"R СУММАРНОЕ",v_drop:"ПАДЕНИЕ",status:"СТАТУС",scaling_title:"Масштабирование сигнала",signal:"Сигнал (мА)",sig_min:"Мин. сигнал (мА)",sig_max:"Макс. сигнал (мА)",process_units:"единиц процесса",formula_scaling:"PV = LRV + (S−Smin)/(Smax−Smin) × (URV−LRV)",ref_scaling:"IEC 61131-3",rtd_title:"RTD Pt100 / Pt500 / Pt1000",mode:"Режим",temp_to_res:"Температура → Сопротивление",res_to_temp:"Сопротивление → Температура",value:"Значение",sensor_type:"Тип датчика",formula_rtd:"R = R₀ × (1 + A·t + B·t²)",ref_rtd:"IEC 60751",pid_title:"Настройка ПИД",ku:"Критическое усиление Ku",tu:"Критический период Tu (с)",formula_pid:"Kp=0.6·Ku, Ti=0.5·Tu, Td=0.125·Tu",ref_pid:"Циглер-Никольс",accuracy_title:"Погрешности и разрядность",accuracy_class:"Класс точности (%)",range:"Диапазон",adc_bits:"Разрядность АЦП",abs_error:"АБС. ПОГРЕШНОСТЬ",lsb_adc:"LSB АЦП"},
@@ -224,6 +262,10 @@ export const I18N = {
   },
   en: {
     nav: {electrical:"ELECTRICAL",power:"Power",cable:"Cables",voltage:"Voltage Drop",shortcircuit:"Short Circuit",grounding:"Grounding",protection:"Protection",equipment:"EQUIPMENT",compensation:"Compensation",motor:"Motors",transformer:"Transformer",lighting:"Lighting",lighting_group:"LIGHTING",ledstrip:"LED strips",ups:"UPS / Battery",loadpanel:"Load Panel",cable_networks:"CABLE NETWORKS",derating:"Derating",diam2sec:"Diameter→Section",converter:"Converter",cabinet:"CABINET WIRING",wirecab:"Wire & Ferrules",electronics:"ELECTRONICS",rccalc:"R/C Connection",capval:"Capacitor Codes",motorcap:"Motor Capacitor",led:"LED",zener:"Zener Diode",rlc:"RLC Impedance",bridge:"Wheatstone Bridge",microchips:"IC CHIPS",ne555:"NE555",opamp:"Op-Amp","7seg":"7-Segment",kipia_group:"I&C",kipia:"I&C",pneumatics:"Pneumatics",hydraulics:"Hydraulics"},
+    crumb: {
+      group: {electrical:"ELECTRICAL",equipment:"EQUIPMENT",lighting:"LIGHTING",cablenet:"CABLE NETWORKS",cabinet:"CABINET WIRING",energy:"POWER ENGINEERING",electronics:"ELECTRONICS",chips:"IC CHIPS",kipia:"I&C",safety:"SAFETY",system:"SYSTEM"},
+      page: {power:"Power",cable:"Cables",voltage:"Voltage Drop",shortcircuit:"Short Circuit",grounding:"Grounding",protection:"Protection",groundcircuit:"Ground Loop",kzcable:"SC Cable Check",motor:"Motors",motorstart:"Motor Starting",transformer:"Transformer",compensation:"Compensation",lighting:"Lighting",emergency:"Emergency Lighting",ledstrip:"LED strips",ups:"UPS / Battery",loadpanel:"Load Panel",derating:"Derating",diam2sec:"Diameter→Section",cableloss:"Cable Losses",busbar:"Busbars",cabletray:"Cable Tray",conduitfill:"Conduit Fill",converter:"Converter",wirecab:"Wire & Ferrules",demandfactor:"Demand Factor",fuse:"Fuse",dcvdrop:"DC Voltage Drop",threephase:"Three-Phase",energyaudit:"Energy Audit",solar:"Solar Power",rccalc:"R/C Connection",capval:"Capacitor Codes",motorcap:"Motor Capacitor",led:"LED",zener:"Zener Diode",rlc:"RLC Impedance",bridge:"Wheatstone Bridge",ne555:"NE555",opamp:"Op-Amp","7seg":"7-Segment",kipia:"I&C",pneumatics:"Pneumatics",pneumline:"Pneumatic Line",hydraulics:"Hydraulics",rtdtable:"RTD Table",tcouple:"Thermocouple",cablelength:"4-20 mA Cable",neutral:"Neutral Current",arcflash:"Arc Flash",thd:"THD Harmonics",help:"Help",developer:"About",donate:"Support"}
+    },
     common: {input_data:"Input Data",result:"Result",calculate:"Calculate",reset:"Reset",export_pdf:"Export PDF",copy:"Copy",formula_norm:"Formula & Standard",ready:"Ready",copied:"Copied to clipboard",check_data:"Please check input data"},
     power: {p_power:"Power (kW)",u_voltage:"Voltage (V)",phase:"Phase",phase1:"Single phase",phase3:"Three phase",cos_phi:"cos φ",efficiency:"Efficiency",current:"CURRENT",total_power:"TOTAL POWER",desc:"Calculated load current",ref:"PUE cl. 1.3.10"},
     cable: {
@@ -323,7 +365,7 @@ export const I18N = {
     ups: {title:"UPS / Battery / Generator",load:"Load (kW)",reserve_time:"Reserve time (min)",battery_voltage:"Battery voltage (V)",ups_efficiency:"UPS efficiency",capacity:"CAPACITY",generator:"GENERATOR",formula:"Ah = (P·t) / (U·η·DoD)"},
     converter: {title:"Unit Converter",type:"Conversion type",value:"Value",result:"Result",convert:"Convert"},
     derating: {title:"Cable Derating",base_current:"Base cable current (A)",ambient_temp:"Ambient temperature (°C)",cable_count:"Number of cables in bundle",install_method:"Installation method",in_air:"In air",in_ground:"In ground",desc:"ALLOWABLE CURRENT",k_temp:"k_TEMPERATURE",k_group:"k_GROUP",total_k:"TOTAL k",reduction:"REDUCTION"},
-    loadpanel: {title:"Load Panel",group:"Group",power_kW:"P (kW)",cos_phi:"cos φ",demand:"Kd",phase:"Phase",voltage:"Voltage (V)",add_row:"+ Group",total_power:"ΣP_RATED",calc_power:"P_CALC",current_L1:"CURRENT L1",current_L2:"CURRENT L2",current_L3:"CURRENT L3",imbalance:"IMBALANCE"},
+    loadpanel: {title:"Load Panel",group:"Group",power_kW:"P (kW)",cos_phi:"cos φ",demand:"Kd",phase:"Phase",voltage:"Line voltage (V)",add_row:"+ Group",total_power:"ΣP_RATED",calc_power:"P_CALC",current_L1:"CURRENT L1",current_L2:"CURRENT L2",current_L3:"CURRENT L3",imbalance:"IMBALANCE"},
     pneumatics: {title:"Pneumatics",tab_flow:"Air Flow",tab_cylinder:"Pneumatic Cylinder",tab_compressor:"Compressor",flow_title:"Compressed Air Flow",devices_count:"Number of consumers",device_flow:"Flow per consumer (L/min)",duty_cycle:"Duty factor (0–1)",leak_factor:"Leak factor",total_flow:"TOTAL FLOW",peak_flow:"PEAK",with_leaks:"WITH LEAKS",cyl_title:"Pneumatic Cylinder",bore_diameter:"Bore diameter (mm)",rod_diameter:"Rod diameter (mm)",stroke:"Stroke (mm)",working_pressure:"Working pressure (bar)",air_flow_cyl:"Air flow (L/min)",force_forward:"FORCE (FORWARD)",force_backward:"FORCE (BACKWARD)",speed:"SPEED",time:"STROKE TIME",volume:"VOLUME",comp_title:"Compressor Selection",required_flow:"Required flow (L/min)",required_pressure:"Required pressure (bar)",reserve_factor:"Reserve factor",tank_time:"Tank fill time (s)",comp_flow:"COMPRESSOR FLOW",comp_power:"POWER",tank_volume:"TANK VOLUME"},
     hydraulics: {title:"Hydraulics",tab_cylinder:"Hydraulic Cylinder",tab_pump:"Hydraulic Pump",tab_pipe:"Pipe Pressure Drop",cyl_title:"Hydraulic Cylinder",bore:"Bore diameter (mm)",rod:"Rod diameter (mm)",stroke:"Stroke (mm)",pressure:"Working pressure (bar)",flow:"Pump flow (L/min)",efficiency:"Efficiency",force_push:"FORCE (PUSH)",force_pull:"FORCE (PULL)",speed:"SPEED",time:"STROKE TIME",power:"POWER",pump_title:"Hydraulic Pump Selection",required_flow:"Required flow (L/min)",required_pressure:"Working pressure (bar)",pump_efficiency:"Pump efficiency",motor_efficiency:"Motor efficiency",motor_power:"MOTOR POWER",pump_type:"PUMP TYPE",displacement:"DISPLACEMENT",pipe_title:"Pipe Pressure Drop",pipe_length:"Pipe length (m)",pipe_diameter:"Pipe diameter (mm)",oil_flow:"Oil flow (L/min)",oil_viscosity:"Oil viscosity (cSt)",pressure_loss:"PRESSURE LOSS",velocity:"VELOCITY",flow_type:"FLOW TYPE",lambda:"λ"},
     kipia: {title:"I&C — Calculations",tab_loop:"Current Loop",tab_scaling:"Scaling",tab_rtd:"RTD",tab_pid:"PID",tab_accuracy:"Accuracy",loop_title:"Current Loop 4–20 mA",supply_voltage:"Supply voltage (V)",min_voltage:"Min instrument voltage (V)",r_wires:"R wires (Ohm)",r_instrument:"R instrument (Ohm)",r_barrier:"R barrier (Ohm)",loop_valid:"✓ Loop valid",loop_invalid:"✗ Loop invalid",r_max:"MAX R",r_total:"R TOTAL",v_drop:"V DROP",status:"STATUS",scaling_title:"Signal Scaling",signal:"Signal (mA)",sig_min:"Min signal (mA)",sig_max:"Max signal (mA)",process_units:"process units",formula_scaling:"PV = LRV + (S−Smin)/(Smax−Smin) × (URV−LRV)",ref_scaling:"IEC 61131-3",rtd_title:"RTD Pt100 / Pt500 / Pt1000",mode:"Mode",temp_to_res:"Temperature → Resistance",res_to_temp:"Resistance → Temperature",value:"Value",sensor_type:"Sensor type",formula_rtd:"R = R₀ × (1 + A·t + B·t²)",ref_rtd:"IEC 60751",pid_title:"PID Tuning",ku:"Critical gain Ku",tu:"Critical period Tu (s)",formula_pid:"Kp=0.6·Ku, Ti=0.5·Tu, Td=0.125·Tu",ref_pid:"Ziegler-Nichols",accuracy_title:"Accuracy & Resolution",accuracy_class:"Accuracy class (%)",range:"Range",adc_bits:"ADC resolution (bits)",abs_error:"ABS. ERROR",lsb_adc:"ADC LSB"},
@@ -418,51 +460,62 @@ export function applyI18n() {
   });
   const page = $('.page.active')?.id?.replace('page-', '');
   if (page) updateBreadcrumb(page);
-  $('.btn-lang').textContent = lang === 'ru' ? 'RU / EN' : 'EN / RU';
+  const langBtn = $('.btn-lang');
+  if (langBtn) langBtn.textContent = lang === 'ru' ? 'RU / EN' : 'EN / RU';
 }
 
 /* ===================== BREADCRUMB ===================== */
+
+/**
+ * К какой группе меню относится страница.
+ *
+ * Здесь лежит только СТРУКТУРА — сами названия берутся из словаря crumb.
+ * Раньше в этих картах хранились готовые русские строки, они уходили в T()
+ * как ключи, не находились и возвращались как есть: в английском режиме
+ * навигация оставалась русской.
+ */
+const CRUMB_GROUP = {
+  power:'electrical', cable:'electrical', voltage:'electrical',
+  shortcircuit:'electrical', grounding:'electrical', protection:'electrical',
+  groundcircuit:'electrical', kzcable:'electrical',
+  motor:'equipment', motorstart:'equipment', transformer:'equipment',
+  compensation:'equipment', ups:'equipment', loadpanel:'equipment',
+  lighting:'lighting', emergency:'lighting', ledstrip:'lighting',
+  derating:'cablenet', diam2sec:'cablenet', cableloss:'cablenet',
+  busbar:'cablenet', cabletray:'cablenet', conduitfill:'cablenet', converter:'cablenet',
+  wirecab:'cabinet', demandfactor:'cabinet', fuse:'cabinet', dcvdrop:'cabinet',
+  threephase:'energy', energyaudit:'energy', solar:'energy',
+  rccalc:'electronics', capval:'electronics', motorcap:'electronics',
+  led:'electronics', zener:'electronics', rlc:'electronics', bridge:'electronics',
+  ne555:'chips', opamp:'chips', '7seg':'chips',
+  kipia:'kipia', pneumatics:'kipia', pneumline:'kipia', hydraulics:'kipia',
+  rtdtable:'kipia', tcouple:'kipia', cablelength:'kipia',
+  neutral:'safety', arcflash:'safety', thd:'safety',
+  help:'system', developer:'system', donate:'system'
+};
+
+/**
+ * Обновляет строку навигации над страницей.
+ * @param {string} page идентификатор страницы без префикса page-
+ */
 export function updateBreadcrumb(page) {
-  const map = {
-    power:'Мощность',cable:'Кабели',voltage:'Потери',shortcircuit:'КЗ',
-    grounding:'Заземление',protection:'Защита',groundcircuit:'Заземл. контур',kzcable:'КЗ-кабель',
-    motor:'Двигатели',motorstart:'Пуск двигателя',transformer:'Трансформатор',compensation:'Компенсация',
-    lighting:'Освещение',emergency:'Аварийное освещ.',ledstrip:'Светодиодные ленты',ups:'ИБП / АКБ',loadpanel:'Щит нагрузок',
-    derating:'Дерейтинг',diam2sec:'Диаметр→Сечение',cableloss:'Потери в кабеле',
-    busbar:'Шины',cabletray:'Кабель-лоток',conduitfill:'Заполнение труб',converter:'Конвертер',
-    wirecab:'Провод и НШВИ',demandfactor:'Коэфф. спроса',fuse:'Предохранитель',dcvdrop:'DC потери',
-    threephase:'Три фазы',energyaudit:'Энергоаудит',solar:'Солнечная энергия',
-    rccalc:'R/C соединение',capval:'Значения конд.',motorcap:'Конденсатор Дв.',
-    led:'Светодиод',zener:'Стабилитрон',rlc:'Импеданс RLC',bridge:'Мост Уитстона',
-    ne555:'NE555',opamp:'Опер. усилитель','7seg':'7-сегмент',
-    kipia:'КИПиА',pneumatics:'Пневматика',pneumline:'Пневмо-трасса',hydraulics:'Гидравлика',
-    rtdtable:'Таблица RTD',tcouple:'Термопара',cablelength:'Длина каб. 4-20',
-    neutral:'Ток нейтрали',arcflash:'Дуговая вспышка',thd:'THD гармоники',
-    editor:'editor.nav',
-    help:'Справка',developer:'О программе',donate:'Поддержать'
+  const crumb = $('#breadcrumb');
+  if (!crumb) return;
+
+  // Редактор схем держит свои подписи в собственной секции словаря.
+  const groupKey = page === 'editor' ? 'editor.group' : 'crumb.group.' + CRUMB_GROUP[page];
+  const pageKey = page === 'editor' ? 'editor.nav' : 'crumb.page.' + page;
+
+  // T() возвращает сам ключ, если перевода нет, — такую подстановку не показываем.
+  const resolve = key => {
+    const value = T(key);
+    return value === key ? '' : value;
   };
-  const group = {
-    power:'ЭЛЕКТРИКА',cable:'ЭЛЕКТРИКА',voltage:'ЭЛЕКТРИКА',
-    shortcircuit:'ЭЛЕКТРИКА',grounding:'ЭЛЕКТРИКА',protection:'ЭЛЕКТРИКА',
-    groundcircuit:'ЭЛЕКТРИКА',kzcable:'ЭЛЕКТРИКА',
-    motor:'ОБОРУДОВАНИЕ',motorstart:'ОБОРУДОВАНИЕ',transformer:'ОБОРУДОВАНИЕ',compensation:'ОБОРУДОВАНИЕ',
-    lighting:'ОСВЕЩЕНИЕ',emergency:'ОСВЕЩЕНИЕ',ledstrip:'ОСВЕЩЕНИЕ',ups:'ОБОРУДОВАНИЕ',loadpanel:'ОБОРУДОВАНИЕ',
-    derating:'КАБЕЛЬНЫЕ СЕТИ',diam2sec:'КАБЕЛЬНЫЕ СЕТИ',cableloss:'КАБЕЛЬНЫЕ СЕТИ',
-    busbar:'КАБЕЛЬНЫЕ СЕТИ',cabletray:'КАБЕЛЬНЫЕ СЕТИ',conduitfill:'КАБЕЛЬНЫЕ СЕТИ',converter:'КАБЕЛЬНЫЕ СЕТИ',
-    wirecab:'МОНТАЖ ШКАФОВ',demandfactor:'МОНТАЖ ШКАФОВ',fuse:'МОНТАЖ ШКАФОВ',dcvdrop:'МОНТАЖ ШКАФОВ',
-    threephase:'ЭНЕРГЕТИКА',energyaudit:'ЭНЕРГЕТИКА',solar:'ЭНЕРГЕТИКА',
-    rccalc:'ЭЛЕКТРОНИКА',capval:'ЭЛЕКТРОНИКА',motorcap:'ЭЛЕКТРОНИКА',
-    led:'ЭЛЕКТРОНИКА',zener:'ЭЛЕКТРОНИКА',rlc:'ЭЛЕКТРОНИКА',bridge:'ЭЛЕКТРОНИКА',
-    ne555:'МИКРОСХЕМЫ',opamp:'МИКРОСХЕМЫ','7seg':'МИКРОСХЕМЫ',
-    kipia:'КИПиА',pneumatics:'КИПиА',pneumline:'КИПиА',hydraulics:'КИПиА',
-    rtdtable:'КИПиА',tcouple:'КИПиА',cablelength:'КИПиА',
-    neutral:'БЕЗОПАСНОСТЬ',arcflash:'БЕЗОПАСНОСТЬ',thd:'БЕЗОПАСНОСТЬ',
-    editor:'editor.group',
-    help:'СИСТЕМА',developer:'СИСТЕМА',donate:'СИСТЕМА'
-  };
-  const g = T(group[page] || '');
-  const p = T(map[page] || '');
-  $('#breadcrumb').textContent = g && p ? `${g} / ${p}` : p || '';
+
+  const hasGroup = Boolean(CRUMB_GROUP[page]) || page === 'editor';
+  const g = hasGroup ? resolve(groupKey) : '';
+  const p = resolve(pageKey);
+  crumb.textContent = g && p ? `${g} / ${p}` : p || '';
 }
 
 /* ===================== NAVIGATION ===================== */

@@ -35,8 +35,6 @@ const SI_SCALES = [1e12, 1e9, 1e6, 1e3, 1, 1e-3, 1e-6, 1e-9, 1e-12];
 let locale = 'ru';
 /** Задать локаль форматирования (вызывается при смене языка приложения). */
 export function setLocale(l) { locale = (l === 'en') ? 'en' : 'ru'; }
-/** Текущая локаль форматирования. */
-export function getLocale() { return locale; }
 
 /** Символ единицы измерения по ключу в текущей локали. */
 export function unitSymbol(key) {

@@ -1,6 +1,6 @@
 /* EngiCalc Service Worker — offline support */
 /* Updated: 2026-08-16 — адаптация под телефоны и планшеты */
-const CACHE_NAME = 'engicalc-v20';
+const CACHE_NAME = 'engicalc-v21';
 /* Список обязан содержать ВСЕ модули из графа импортов app.js: любой
    пропущенный файл офлайн отдаётся как 503 и роняет загрузку приложения целиком. */
 const STATIC_ASSETS = [
@@ -10,6 +10,7 @@ const STATIC_ASSETS = [
   '/assets/favicon.svg',
   '/assets/icon-192.png',
   '/assets/icon-512.png',
+  '/assets/epos_12316-1-3.png',
   '/css/tokens.css',
   '/css/base.css',
   '/css/layout.css',
@@ -20,6 +21,7 @@ const STATIC_ASSETS = [
   '/js/core.js',
   '/js/data/cable-data.js',
   '/js/data/led-strip-data.js',
+  '/js/data/rtd.js',
   '/js/chart.js',
   '/js/led-strip.js',
   '/js/cable-select.js',
@@ -99,15 +101,20 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Ключ кэша — URL без строки запроса. Страница просит js/app.js?v=5, а в
+  // прекэше лежит /js/app.js: без нормализации эти записи не совпадают и
+  // офлайн при первом заходе не работает.
+  const key = url.origin + url.pathname;
+
   // Stale-while-revalidate: отдаём из кэша сразу (быстро и работает офлайн),
   // но параллельно тянем свежую копию в кэш. Чистый cache-first оставлял
   // пользователя на старом JS до самой смены имени кэша.
   event.respondWith(
-    caches.match(request).then(cached => {
+    caches.match(key).then(cached => {
       const network = fetch(request).then(response => {
         if (response.ok) {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+          caches.open(CACHE_NAME).then(cache => cache.put(key, clone));
         }
         return response;
       }).catch(() => {

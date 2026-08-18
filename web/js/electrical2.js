@@ -10,27 +10,40 @@ export function calcGroundCircuit() {
   const Lv = num('gc-Lv');
   const dv = num('gc-dv') / 1000;
   const Lh = num('gc-Lh');
+  const bh = (num('gc-bh') || 40) / 1000;   // ширина полосы, м
+  const hh = num('gc-hh') || 0.7;           // глубина заложения, м
   const n = num('gc-n');
   const Rreq = num('gc-Rreq');
 
-  // Single vertical electrode resistance
+  if (!(Lv > 0) || !(dv > 0) || !(Lh > 0) || !(bh > 0) || !(hh > 0) || !(n >= 1)) {
+    toast('Проверьте данные');
+    return;
+  }
+
+  // Сопротивление одного вертикального электрода.
   const Rv = rho / (2 * Math.PI * Lv) * Math.log(4 * Lv / dv);
 
-  // Horizontal strip resistance (simplified)
-  const Rh = rho / (2 * Math.PI * Lh) * (Math.log(2 * Lh * Lh / (0.01 * Lh)) - 1);
+  // Горизонтальная полоса в траншее: Rг = ρ/(2πL)·ln(2L²/(b·h)),
+  // где b — ширина полосы, h — глубина заложения. Раньше под логарифмом стояло
+  // 2L²/(0.01·L), то есть просто 200·L — величина без физического смысла,
+  // и вдобавок вычиталась единица, которой в формуле полосы нет.
+  const Rh = rho / (2 * Math.PI * Lh) * Math.log(2 * Lh * Lh / (bh * hh));
 
-  // Utilization coefficient for vertical electrodes
+  // Коэффициенты использования: вертикальных электродов и соединяющей полосы.
+  // ВНИМАНИЕ: значения ориентировочные, подлежат сверке со справочными таблицами.
   const eta = n <= 3 ? 0.7 : n <= 6 ? 0.65 : n <= 10 ? 0.6 : n <= 20 ? 0.55 : 0.5;
+  const etaH = n <= 4 ? 0.45 : n <= 6 ? 0.40 : n <= 10 ? 0.34 : n <= 20 ? 0.27 : 0.22;
 
-  // Combined resistance
-  const Rtotal = 1 / (n / (Rv * eta) + 1 / Rh);
+  // Проводимости складываются, каждая — со своим коэффициентом использования.
+  // Раньше полоса входила с η = 1, что занижало итоговое сопротивление.
+  const Rtotal = 1 / (n * eta / Rv + etaH / Rh);
 
   const ok = Rtotal <= Rreq;
 
   $('#gc-Rv').textContent = round(Rv, 2) + ' Ом';
   $('#gc-Rh').textContent = round(Rh, 2) + ' Ом';
   $('#gc-Rtotal').textContent = round(Rtotal, 2) + ' Ом';
-  $('#gc-eta').textContent = round(eta, 2);
+  $('#gc-eta').textContent = round(eta, 2) + ' / ' + round(etaH, 2);
   $('#gc-status').innerHTML = ok
     ? '<span class="check">✓ Достаточно</span>'
     : '<span style="color:var(--error)">✗ Нужно больше электродов</span>';

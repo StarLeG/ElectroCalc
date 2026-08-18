@@ -1,12 +1,14 @@
 /* EngiCalc — KIPIA, pneumatics, hydraulics */
 'use strict';
 import { $, num, round, toast, validate, T } from './core.js';
+import { rtdR0, rtdResistance, rtdTemperature, RTD_RANGE } from './data/rtd.js';
 
 export function calcCurrentLoop() {
   if(!validate('cl-V','cl-Vmin','cl-Rw','cl-Ri'))return;
   const V=num('cl-V'),Vmin=num('cl-Vmin'),Rw=num('cl-Rw'),Ri=num('cl-Ri'),Rb=num('cl-Rb')||0;
   const Rmax=(V-Vmin)/0.02,Rsum=Rw+Ri+Rb,ok=Rsum<=Rmax;
-  const el=$('#cl-result-val');
+  // id намеренно отличается от cl-result-val: тот занят страницей «Потери в кабеле».
+  const el=$('#cl-loop-result-val');
   el.textContent=ok?T('kipia.loop_valid'):T('kipia.loop_invalid');
   el.style.color=ok?'var(--result)':'var(--error)';
   $('#cl-Rmax').textContent=round(Rmax,0)+' Ом';
@@ -25,11 +27,20 @@ export function calcScaling() {
 
 export function calcRTD() {
   const mode=$('#rtd-mode').value,val=num('rtd-val'),type=$('#rtd-type').value;
-  if(isNaN(val)||val<=0){toast(T('common.check_data'));return;}
-  const R0=type==='Pt1000'?1000:type==='Pt500'?500:100;
-  const A=3.9083e-3,B=-5.775e-7;
-  if(mode==='t2r'){$('#rtd-result-val').textContent=round(val,2)+' °C';$('#rtd-result-unit').textContent='→ '+round(R0*(1+A*val+B*val*val),3)+' Ом';}
-  else{const t=(-R0*A+Math.sqrt(R0*R0*A*A-4*R0*B*(R0-val)))/(2*R0*B);$('#rtd-result-val').textContent=round(val,3)+' Ом';$('#rtd-result-unit').textContent='→ '+round(t,2)+' °C';}
+  // Отрицательная температура для термосопротивления — штатный режим, поэтому
+  // здесь нельзя требовать val > 0: ограничение остаётся только для Ом.
+  if(isNaN(val)){toast(T('common.check_data'));return;}
+  const R0=rtdR0(type);
+  if(mode==='t2r'){
+    if(val<RTD_RANGE[0]||val>RTD_RANGE[1]){toast(`Диапазон ${RTD_RANGE[0]}…${RTD_RANGE[1]} °C`);return;}
+    $('#rtd-result-val').textContent=round(val,2)+' °C';
+    $('#rtd-result-unit').textContent='→ '+round(rtdResistance(R0,val),3)+' Ом';
+  } else {
+    if(!(val>0)){toast(T('common.check_data'));return;}
+    const t=rtdTemperature(R0,val);
+    $('#rtd-result-val').textContent=round(val,3)+' Ом';
+    $('#rtd-result-unit').textContent='→ '+round(t,2)+' °C';
+  }
 }
 
 export function calcPID() {

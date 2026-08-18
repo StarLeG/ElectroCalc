@@ -2,6 +2,7 @@
 'use strict';
 import { $, num, round, toast, validate } from './core.js';
 import { RESISTIVITY } from './data/cable-data.js';
+import { rtdR0, rtdResistance, rtdTemperature, RTD_RANGE } from './data/rtd.js';
 
 /* ===================== FUSE SELECTION ===================== */
 export function calcFuse() {
@@ -48,8 +49,9 @@ export function calc420Cable() {
   // Max cable length (2-wire, per conductor)
   // R = rho * L / S => L = R * S / rho
   const S = num('cl2-S') || 1.5;
-  const rho = RESISTIVITY.Cu;
-  const Lmax = Rcable * S / (2 * rho) / 1000; // meters
+  const rho = RESISTIVITY.Cu;                       // Ом·мм²/м — результат сразу в метрах
+  // Петля двухпроводная: на длину L приходится 2L проводника.
+  const Lmax = Math.max(0, Rcable) * S / (2 * rho);
 
   const ok = Rtotal <= Rmax;
 
@@ -71,27 +73,37 @@ export function calcRTDTable() {
 
   if (isNaN(val)) { toast('Введите значение'); return; }
 
-  const R0 = type === 'Pt1000' ? 1000 : type === 'Pt500' ? 500 : 100;
-  const A = 3.9083e-3;
-  const B = -5.775e-7;
+  const R0 = rtdR0(type);
 
   if (mode === 't2r') {
-    const R = R0 * (1 + A * val + B * val * val);
-    $('#rt-result-val').textContent = round(val, 1);
-    $('#rt-result-unit').textContent = '°C → ' + round(R, 3) + ' Ом';
-  } else {
-    // Iterative solver for R -> T
-    let t = val / R0 * 100; // initial guess
-    for (let i = 0; i < 10; i++) {
-      const Rcalc = R0 * (1 + A * t + B * t * t);
-      t = t + (val - Rcalc) / (R0 * (A + 2 * B * t));
+    if (val < RTD_RANGE[0] || val > RTD_RANGE[1]) {
+      toast(`Диапазон ${RTD_RANGE[0]}…${RTD_RANGE[1]} °C`);
+      return;
     }
+    $('#rt-result-val').textContent = round(val, 1);
+    $('#rt-result-unit').textContent = '°C → ' + round(rtdResistance(R0, val), 3) + ' Ом';
+  } else {
+    if (!(val > 0)) { toast('Введите значение'); return; }
     $('#rt-result-val').textContent = round(val, 3);
-    $('#rt-result-unit').textContent = 'Ом → ' + round(t, 2) + ' °C';
+    $('#rt-result-unit').textContent = 'Ом → ' + round(rtdTemperature(R0, val), 2) + ' °C';
   }
 }
 
-/* ===================== THERMOCOUPLE TABLE ==================== */
+/* ===================== THERMOCOUPLE TABLE ====================
+ * Обратные полиномы NIST ITS-90 (мВ → °C). Каждый набор действует только в
+ * своём поддиапазоне: range — по температуре, mvMax — соответствующий предел
+ * по термо-ЭДС. За границей полином расходится, поэтому вход проверяется.
+ *
+ * ВНИМАНИЕ. У типа K это набор для 0…500 °C, а не для всей шкалы до 1372 °C:
+ * раньше здесь стояла подпись [0, 1372], и она вводила в заблуждение.
+ */
+export const TC_COEFFS = {
+  'K': { range: [0, 500],  mvMax: 20.644, c: [0, 25.08355, 7.860106e-2, -2.503131e-1, 8.315270e-2, -1.228034e-2, 9.804036e-4, -4.413030e-5, 1.057734e-6, -1.052755e-8] },
+  'J': { range: [0, 760],  mvMax: 42.919, c: [0, 1.978425e1, -2.001204e-1, 1.036969e-2, -2.549687e-4, 3.585153e-6, -5.344285e-8, 5.099890e-10] },
+  'T': { range: [0, 400],  mvMax: 20.872, c: [0, 2.5949192e1, -2.1316967e-1, 7.9916180e-3, -4.2695200e-5] },
+  'E': { range: [0, 1000], mvMax: 76.373, c: [0, 1.6977288e1, -4.3514970e-1, -1.5859697e-3, 9.2502871e-5, -2.6084314e-7] }
+};
+
 export function calcThermocouple() {
   const type = $('#tc-type').value;
   const mode = $('#tc-mode').value;
@@ -99,36 +111,60 @@ export function calcThermocouple() {
 
   if (isNaN(val)) { toast('Введите значение'); return; }
 
-  // Simplified polynomial coefficients (mV -> °C)
-  const coeffs = {
-    'K': { range: [0, 1372], c: [0, 25.08355, 7.860106e-2, -2.503131e-1, 8.315270e-2, -1.228034e-2, 9.804036e-4, -4.413030e-5, 1.057734e-6, -1.052755e-8] },
-    'J': { range: [0, 760], c: [0, 1.978425e1, -2.001204e-1, 1.036969e-2, -2.549687e-4, 3.585153e-6, -5.344285e-8, 5.099890e-10] },
-    'T': { range: [0, 400], c: [0, 2.5949192e1, -2.1316967e-1, 7.9916180e-3, -4.2695200e-5] },
-    'E': { range: [0, 1000], c: [0, 1.6977288e1, -4.3514970e-1, -1.5859697e-3, 9.2502871e-5, -2.6084314e-7] }
-  };
-
-  const tc = coeffs[type];
+  const tc = TC_COEFFS[type];
   if (!tc) { toast('Неизвестный тип термопары'); return; }
 
   if (mode === 'mv2c') {
-    // mV -> °C
-    let t = 0;
-    for (let i = 1; i < tc.c.length; i++) {
-      t += tc.c[i] * Math.pow(val, i);
+    if (val < 0 || val > tc.mvMax) {
+      toast(`Для типа ${type} диапазон 0…${tc.mvMax} мВ`);
+      return;
     }
+    const t = mvToC(tc, val);
     $('#tc-result-val').textContent = round(val, 3);
     $('#tc-result-unit').textContent = 'мВ → ' + round(t, 1) + ' °C';
   } else {
-    // °C -> mV (using inverse polynomial approximation)
-    const n = tc.c.length - 1;
-    let mv = 0;
-    for (let i = 1; i <= n; i++) {
-      mv += tc.c[i] * Math.pow(val, i);
+    if (val < tc.range[0] || val > tc.range[1]) {
+      toast(`Для типа ${type} диапазон ${tc.range[0]}…${tc.range[1]} °C`);
+      return;
     }
-    // This is approximate - real inverse needs iterative approach
+    const mv = cToMv(tc, val);
     $('#tc-result-val').textContent = round(val, 1);
-    $('#tc-result-unit').textContent = '°C → ~' + round(mv, 3) + ' мВ';
+    $('#tc-result-unit').textContent = '°C → ' + round(mv, 3) + ' мВ';
   }
+}
+
+/**
+ * Термо-ЭДС → температура по полиному NIST ITS-90.
+ * @param {{c:number[]}} tc набор коэффициентов
+ * @param {number} mv термо-ЭДС, мВ
+ * @returns {number} температура, °C
+ */
+export function mvToC(tc, mv) {
+  let t = 0;
+  for (let i = 1; i < tc.c.length; i++) t += tc.c[i] * Math.pow(mv, i);
+  return t;
+}
+
+/**
+ * Температура → термо-ЭДС.
+ *
+ * Прямого полинома T→E в таблице нет, и подставлять температуру в обратный
+ * полином нельзя — это другая функция, ошибка получается на порядки. Поэтому
+ * обратное преобразование считается численно: mvToC монотонно возрастает,
+ * значит корень уравнения mvToC(mv) = t ищется делением отрезка пополам.
+ * Так прямое и обратное преобразования согласованы между собой по определению.
+ *
+ * @param {{c:number[], range:number[]}} tc набор коэффициентов
+ * @param {number} tC температура, °C
+ * @returns {number} термо-ЭДС, мВ
+ */
+export function cToMv(tc, tC) {
+  let lo = 0, hi = tc.mvMax;            // за mvMax полином расходится и теряет монотонность
+  for (let i = 0; i < 80; i++) {
+    const mid = (lo + hi) / 2;
+    if (mvToC(tc, mid) < tC) lo = mid; else hi = mid;
+  }
+  return (lo + hi) / 2;
 }
 
 /* ===================== PNEUMATIC LINE ===================== */
@@ -145,7 +181,7 @@ export function calcPneumLine() {
   const As = Math.PI * Ds * Ds / 4;
   const v = Qs / As;
   const Re = v * Ds / (1.5e-5); // kinematic viscosity of air
-  const rho = 1.2 * (P + 1) / 1; // density at pressure
+  const rho = 1.2 * (P + 1);     // плотность воздуха при избыточном давлении P, кг/м³
 
   let lambda;
   if (Re < 2300) {
@@ -177,7 +213,7 @@ export function calcEnergyAudit() {
     const hours = parseFloat(row.querySelector('.ea-h')?.value) || 0;
     const qty = parseInt(row.querySelector('.ea-q')?.value) || 1;
     const daily = P * hours * qty / 1000;
-    Ptotal += P * qty;
+    Ptotal += P * qty / 1000;            // таблица в ваттах, итог показываем в кВт
     dailyKWh += daily;
   });
 
@@ -185,7 +221,7 @@ export function calcEnergyAudit() {
   const yearlyKWh = dailyKWh * 365;
   cost = monthlyKWh * price;
 
-  $('#ea-Ptotal').textContent = round(Ptotal, 1) + ' кВт';
+  $('#ea-Ptotal').textContent = round(Ptotal, 2) + ' кВт';
   $('#ea-daily').textContent = round(dailyKWh, 1) + ' кВт·ч';
   $('#ea-monthly').textContent = round(monthlyKWh, 0) + ' кВт·ч';
   $('#ea-yearly').textContent = round(yearlyKWh, 0) + ' кВт·ч';
@@ -222,14 +258,11 @@ export function calcCableTray() {
   // Cable list
   const rows = document.querySelectorAll('#ct-table tbody tr');
   let totalCableArea = 0;
-  const cables = [];
 
   rows.forEach(row => {
     const d = parseFloat(row.querySelector('.ct-d')?.value) || 0;
     const qty = parseInt(row.querySelector('.ct-q')?.value) || 1;
-    const area = Math.PI * d * d / 4 * qty;
-    totalCableArea += area;
-    cables.push({ d, qty, area });
+    totalCableArea += Math.PI * d * d / 4 * qty;
   });
 
   const fillPercent = usableArea > 0 ? totalCableArea / usableArea * 100 : 0;

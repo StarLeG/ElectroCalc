@@ -57,7 +57,11 @@ export function calcSumOpamp() {
 export function calcDiffOpamp() {
   if(!validate('diff-R1','diff-R2','diff-R3','diff-R4'))return;
   const R1=num('diff-R1'),R2=num('diff-R2'),R3=num('diff-R3'),R4=num('diff-R4'),V1=num('diff-V1')||0,V2=num('diff-V2')||0;
-  const Vout=(R2/R1)*(V1-V2);
+  if(!(R1>0)||!(R3+R4>0)){toast(T('common.check_data'));return;}
+  // Полная формула: делитель R3/R4 на неинвертирующем входе и обратная связь
+  // R2/R1 на инвертирующем. Упрощение (R2/R1)·(V1−V2) верно только при
+  // R3/R4 = R1/R2 — раньше R3 и R4 читались, но в расчёт не входили вовсе.
+  const Vout=V1*(R4/(R3+R4))*((R1+R2)/R1)-V2*(R2/R1);
   $('#diff-result-val').textContent=round(Vout,2);
 }
 
@@ -95,13 +99,18 @@ export function calc7segDec() {
   };
   const seg=segMap[ch];
   if(!seg){toast('Неверный символ');return;}
-  const hexVal=Object.values(seg).reduce((acc,v,i)=>acc|(v<<(6-i)),0);
   const inv=type==='ca';
+  // Для общего анода сегмент зажигается низким уровнем, поэтому и код на порт
+  // инвертируется. Раньше таблица сегментов ниже инверсию учитывала, а HEX —
+  // нет, и два вывода на одной странице противоречили друг другу.
+  const bits=['a','b','c','d','e','f','g'].map(s=>inv?(seg[s]?0:1):seg[s]);
+  const hexVal=bits.reduce((acc,v,i)=>acc|(v<<(6-i)),0);
   $('#s7d-display').textContent=ch;
-  $('#s7d-hex').textContent='HEX: 0x'+hexVal.toString(16).toUpperCase().padStart(2,'0');
-  ['a','b','c','d','e','f','g'].forEach(s=>{
-    const v=inv?(seg[s]?0:1):seg[s];
+  $('#s7d-hex').textContent='HEX: 0x'+hexVal.toString(16).toUpperCase().padStart(2,'0')+' (abcdefg, a — старший бит)';
+  ['a','b','c','d','e','f','g'].forEach((s,i)=>{
+    const v=bits[i];
     const el=$('#s7d-'+s);
+    if(!el)return;
     el.textContent=v;
     el.style.color=v?'var(--result)':'var(--error)';
   });

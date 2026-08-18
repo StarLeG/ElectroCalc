@@ -36,18 +36,42 @@ export function calcDiam2Sec() {
   $('#ds-nearest').textContent=nearest+' мм²';
 }
 
+/* ===================== AWG =====================
+ * Ряд AWG задан по ДИАМЕТРУ: d(n) = 0.127 × 92^((36−n)/39) мм.
+ * Отсюда площадь S(n) = π/4 × d² = 0.012668 × 92^((36−n)/19.5) мм².
+ *
+ * Прежняя формула брала шаг 2^(10/39) вместо 92^(2/39) = 2^0.3346 и базис
+ * 0.162 мм² (это площадь AWG 25, а не AWG 36), из-за чего 2.5 мм² давало
+ * AWG 21 вместо AWG 13.
+ */
+
+/** Площадь сечения провода AWG, мм². */
+const AWG_BASE = 0.012668;              // площадь AWG 36, мм²
+const AWG_LOG92 = Math.log(92);
+
+export function awgArea(n) {
+  return AWG_BASE * Math.exp(AWG_LOG92 * (36 - n) / 19.5);
+}
+
+/** Ближайший калибр AWG для заданного сечения, мм². */
+export function awgFromArea(area) {
+  if (!(area > 0)) return NaN;
+  return Math.round(36 - 19.5 * Math.log(area / AWG_BASE) / AWG_LOG92);
+}
+
 export function calcConverter() {
   const type=$('#conv-type').value,val=num('conv-val');
   if(isNaN(val)){toast(T('common.check_data'));return;}
   let result='',formula='';
   switch(type){
     // === Электрика ===
-    case'mm2_awg':{const awg=Math.round(-39*Math.log2(val/0.162)/10+36);result=`${round(0.162*Math.pow(2,(36-awg)*10/39),2)} мм² = AWG ${awg}`;formula='AWG = −39 × log₂(S/0.162)/10 + 36';break;}
+    case'mm2_awg':{const awg=awgFromArea(val);result=`${round(val,3)} мм² ≈ AWG ${awg} (${round(awgArea(awg),3)} мм²)`;formula='S = 0.012668 × 92^((36−n)/19.5) мм², откуда n = 36 − 19.5 × log₉₂(S/0.012668)';break;}
     case'a_ma':result=`${val} А = ${round(val*1000,2)} мА | ${val} мА = ${round(val/1000,6)} А`;formula='1 А = 1000 мА';break;
     case'v_mv':result=`${val} В = ${round(val*1000,2)} мВ | ${val} мВ = ${round(val/1000,6)} В`;formula='1 В = 1000 мВ';break;
     case'v_kv':result=`${val} В = ${round(val/1000,4)} кВ | ${val} кВ = ${round(val*1000,1)} В`;formula='1 кВ = 1000 В';break;
     case'ohm_kohm':result=`${val} Ом = ${round(val/1000,4)} кОм | ${val} кОм = ${round(val*1000,1)} Ом`;formula='1 кОм = 1000 Ом';break;
-    case'ohm_mohm':result=`${val} Ом = ${round(val/1000000,6)} мОм | ${val} мОм = ${round(val*1000000,1)} Ом`;formula='1 мОм = 10⁶ Ом';break;
+    case'ohm_mohm':result=`${val} Ом = ${round(val*1000,1)} мОм | ${val} мОм = ${round(val/1000,6)} Ом`;formula='1 Ом = 1000 мОм';break;
+    case'ohm_Mohm':result=`${val} Ом = ${round(val/1000000,6)} МОм | ${val} МОм = ${round(val*1000000,1)} Ом`;formula='1 МОм = 10⁶ Ом';break;
     case'w_kw':result=`${val} Вт = ${round(val/1000,4)} кВт | ${val} кВт = ${round(val*1000,1)} Вт`;formula='1 кВт = 1000 Вт';break;
     case'kva_kvar':{const cos=0.85,kw=val*cos;result=`${val} кВА = ${round(kw,1)} кВт (cos φ=0.85) = ${round(Math.sqrt(Math.max(0,val*val-kw*kw)),1)} квар`;formula='S² = P² + Q²';break;}
     case'ah_mah':result=`${val} А·ч = ${round(val*1000,1)} мА·ч | ${val} мА·ч = ${round(val/1000,4)} А·ч`;formula='1 А·ч = 1000 мА·ч';break;

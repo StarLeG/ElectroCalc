@@ -10,9 +10,6 @@
  */
 'use strict';
 
-/** Стандартные напряжения питания лент, В. */
-export const STRIP_VOLTAGES = [12, 24, 36, 48];
-
 /**
  * Типовые ленты.
  * wattPerMeter    — мощность на метр, Вт/м;
@@ -33,7 +30,7 @@ export const STRIP_TYPES = [
 export const PSU_RATINGS = [12, 25, 36, 50, 60, 75, 100, 120, 150, 200, 250, 300, 350, 400, 500, 600];
 
 /** Запас мощности блока питания. Меньше 1.2 брать не стоит: БП на пределе греется и деградирует. */
-export const PSU_RESERVE = { min: 1.2, recommended: 1.25, max: 1.3 };
+export const PSU_RESERVE = { recommended: 1.25 };
 
 /**
  * Мелкие сечения монтажного провода, которых нет в CABLE_TABLE.
@@ -61,9 +58,6 @@ export const MIN_SECTION_MECHANICAL = 0.5;
  * расчёт просадки, а это ориентир, который монтажники держат в голове.
  */
 export const MAX_RUN_RULE = { 12: 5, 24: 10, 36: 15, 48: 20 };
-
-/** Схемы подачи питания на ленту. */
-export const FEED_SCHEMES = ['one', 'both', 'multi', 'ring'];
 
 /**
  * Коэффициент в формуле просадки на дорожках: ΔU = r · i · L² / k.

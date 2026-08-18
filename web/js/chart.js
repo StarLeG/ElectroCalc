@@ -56,9 +56,14 @@ function esc(text) {
   return String(text).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 }
 
-/** Подпись деления: убирает хвостовые нули, но не превращает 0.05 в 0. */
+/**
+ * Подпись деления: убирает хвостовые нули дробной части, но не трогает нули
+ * целой. Раньше регулярка применялась и к записи без точки, поэтому деления
+ * 100 / 20 / 250 печатались как «1», «2» и «25».
+ */
 function tickLabel(value, digits) {
   const fixed = value.toFixed(digits);
+  if (!fixed.includes('.')) return fixed;
   return fixed.replace(/\.?0+$/, '') || '0';
 }
 

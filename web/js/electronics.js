@@ -1,6 +1,6 @@
 /* EngiCalc — Electronics: dynamic R/C/L, dividers, RC/RL/LC, LED, zener, RLC, bridge */
 'use strict';
-import { $, $$, num, round, toast, validate, validateRange, T } from './core.js';
+import { $, $$, num, round, toast, validate, validatePositive, validateRange, T } from './core.js';
 
 /* ===================== DYNAMIC LIST HELPERS ===================== */
 function getDynValues(prefix) {
@@ -80,7 +80,7 @@ export function calcIndParallel() {
 
 /* ===================== VOLTAGE DIVIDER ===================== */
 export function calcVoltageDivider() {
-  if (!validate('vd-Vin', 'vd-R1', 'vd-R2')) return;
+  if (!validate('vd-Vin') || !validatePositive('vd-R1', 'vd-R2')) return;
   const Vin = num('vd-Vin'), R1 = num('vd-R1'), R2 = num('vd-R2'), RL = num('vd-RL') || 0;
   const R2eff = RL > 0 ? (R2 * RL) / (R2 + RL) : R2;
   const Vout = Vin * R2eff / (R1 + R2eff);
@@ -96,7 +96,7 @@ export function calcVoltageDivider() {
 
 /* ===================== RC TIME CONSTANT ===================== */
 export function calcRCTau() {
-  if (!validate('rc-R', 'rc-C')) return;
+  if (!validatePositive('rc-R', 'rc-C')) return;
   const R = num('rc-R'), C = num('rc-C');
   const tau = R * C / 1000000;
   const fc = 1 / (2 * Math.PI * tau);
@@ -108,7 +108,7 @@ export function calcRCTau() {
 
 /* ===================== RL TIME CONSTANT ===================== */
 export function calcRLTau() {
-  if (!validate('rl-R', 'rl-L')) return;
+  if (!validatePositive('rl-R', 'rl-L')) return;
   const R = num('rl-R'), L = num('rl-L');
   const tau = L / R;
   $('#rl-tau-result-val').textContent = round(tau, 3);
@@ -118,7 +118,7 @@ export function calcRLTau() {
 
 /* ===================== LC RESONANCE ===================== */
 export function calcLCResonance() {
-  if (!validate('lc-L', 'lc-C')) return;
+  if (!validatePositive('lc-L', 'lc-C')) return;
   const L = num('lc-L') / 1000, C = num('lc-C') / 1000000;
   const f = 1 / (2 * Math.PI * Math.sqrt(L * C));
   const w = 2 * Math.PI * f;
@@ -130,7 +130,7 @@ export function calcLCResonance() {
 }
 
 export function calcMotorCap() {
-  if(!validate('mc-P','mc-U','mc-f')||!validateRange('mc-cos',0.01,1)||!validateRange('mc-eta',0.01,1))return;
+  if(!validate('mc-P')||!validatePositive('mc-U','mc-f')||!validateRange('mc-cos',0.01,1)||!validateRange('mc-eta',0.01,1))return;
   const P=num('mc-P'),U=num('mc-U'),f=num('mc-f'),cos=num('mc-cos'),eta=num('mc-eta'),type=$('#mc-type').value;
   const Pw=P*1000;
   const I=Pw/(U*cos*eta);
@@ -153,14 +153,15 @@ export function calcCapCode() {
   const code=$('#cc-code').value.trim();
   if(!code){toast(T('common.check_data'));return;}
   let pF;
-  if(/^\d+$/.test(code)&&code.length>=3){
-    const ab=parseInt(code.substring(0,2));
-    const d=parseInt(code.substring(2));
-    pF=ab*Math.pow(10,d);
-  } else if(/^\d+$/.test(code)&&code.length===2){
+  if(/^\d{3}$/.test(code)){
+    // Трёхзначный код: две значащие цифры и показатель степени.
+    // Ограничение именно тремя знаками не случайно: раньше сюда проходил
+    // любой код длиной от трёх цифр, и «1041» превращалось в 10·10⁴¹.
+    pF=parseInt(code.substring(0,2))*Math.pow(10,parseInt(code.substring(2)));
+  } else if(/^\d{1,2}$/.test(code)){
     pF=parseInt(code);
   } else {
-    toast('Неверный код');return;
+    toast('Код должен быть из 1–3 цифр, например 104');return;
   }
   const nF=pF/1000;
   const uF=pF/1000000;
@@ -191,19 +192,19 @@ export function calcCapUnit() {
 }
 
 export function calcLED() {
-  if(!validate('led-V','led-Vf','led-I'))return;
+  if(!validate('led-V','led-Vf')||!validatePositive('led-I'))return;
   const V=num('led-V'),Vf=num('led-Vf'),I=num('led-I'),N=num('led-N')||1,conn=$('#led-conn').value;
   const If=I/1000;
-  let R,Ptotal,Itotal;
+  let R,Itotal;
   if(conn==='series'){
+    // Последовательно — один общий резистор на всю цепочку.
     R=(V-N*Vf)/If;
     if(R<=0){toast('Напряжение питания меньше суммы падений!');return;}
-    Ptotal=If*If*R*N;
     Itotal=I;
   } else {
+    // Параллельно — свой резистор на каждый светодиод.
     R=(V-Vf)/If;
     if(R<=0){toast('Напряжение питания меньше падения на светодиоде!');return;}
-    Ptotal=If*If*R*N;
     Itotal=I*N;
   }
   const std=[10,22,33,47,56,68,82,100,120,150,180,220,270,330,390,470,560,680,820,1000,1200,1500,2200,3300,4700,5600,6800,10000];
@@ -217,7 +218,7 @@ export function calcLED() {
 }
 
 export function calcZener() {
-  if(!validate('zen-Vin','zen-Vz','zen-IL','zen-Iz','zen-Pz'))return;
+  if(!validate('zen-Vin','zen-Vz','zen-IL')||!validatePositive('zen-Iz','zen-Pz'))return;
   const Vin=num('zen-Vin'),Vz=num('zen-Vz'),IL=num('zen-IL'),Iz=num('zen-Iz'),Pzmax=num('zen-Pz');
   if(Vin<=Vz){toast('Vin должен быть больше Vz!');return;}
   const Itotal=(Iz+IL)/1000;
@@ -237,20 +238,26 @@ export function calcZener() {
 }
 
 export function calcRLC() {
-  if(!validate('rlc-R','rlc-L','rlc-C','rlc-f'))return;
+  if(!validatePositive('rlc-R','rlc-L','rlc-C','rlc-f'))return;
   const R=num('rlc-R'),L=num('rlc-L'),C=num('rlc-C'),f=num('rlc-f'),type=$('#rlc-type').value;
   const XL=2*Math.PI*f*L/1000;
   const XC=1/(2*Math.PI*f*C/1000000);
   const X=XL-XC;
-  let Z;
+  const fres=1/(2*Math.PI*Math.sqrt(L/1000*C/1000000));
+  let Z,phi,Q;
   if(type==='series'){
     Z=Math.sqrt(R*R+X*X);
+    phi=Math.atan2(X,R)*180/Math.PI;
+    Q=XL/R;
   } else {
-    Z=1/Math.sqrt(1/(R*R)+Math.pow(1/XL-1/XC,2));
+    // Параллельный контур: складываются проводимости, а не сопротивления.
+    // Реактивная проводимость B = 1/XC − 1/XL, добротность Q = R/XL —
+    // раньше здесь брались φ и Q последовательной схемы, и оба были неверны.
+    const B=1/XC-1/XL;
+    Z=1/Math.sqrt(1/(R*R)+B*B);
+    phi=Math.atan2(-B,1/R)*180/Math.PI;
+    Q=R/XL;
   }
-  const phi=Math.atan2(X,R)*180/Math.PI;
-  const fres=1/(2*Math.PI*Math.sqrt(L/1000*C/1000000));
-  const Q=XL/R;
   $('#rlc-result-val').textContent=round(Z,1);
   $('#rlc-XL').textContent=round(XL,1)+' Ом';
   $('#rlc-XC').textContent=round(XC,1)+' Ом';
@@ -264,10 +271,16 @@ export function calcBridge() {
   if(!validate('wb-R1','wb-R2','wb-R3','wb-R4','wb-V'))return;
   const R1=num('wb-R1'),R2=num('wb-R2'),R3=num('wb-R3'),R4=num('wb-R4'),V=num('wb-V');
   const Vout=V*(R3/(R3+R4)-R2/(R1+R2));
-  const balanced=Math.abs(R1*R4-R2*R3)<1;
+  // Vout обнуляется при R1·R3 = R2·R4 — именно это и есть условие баланса.
+  // Прежняя проверка сравнивала R1·R4 с R2·R3 и противоречила самой формуле,
+  // а абсолютный порог «< 1» на произведении сопротивлений для килоомных плеч
+  // не срабатывал никогда. Сравниваем относительно.
+  const p1=R1*R3, p2=R2*R4;
+  const scale=Math.max(Math.abs(p1),Math.abs(p2),1e-9);
+  const balanced=Math.abs(p1-p2)/scale<1e-6;
   $('#wb-result-val').textContent=round(Vout,3);
   $('#wb-Vout').textContent=round(Vout,3)+' В';
   $('#wb-status').innerHTML=balanced?'<span class="check">Сбалансирован</span>':'<span style="color:var(--warn);font-weight:600">Не сбалансирован</span>';
-  $('#wb-prod1').textContent=Math.round(R1*R4);
-  $('#wb-prod2').textContent=Math.round(R2*R3);
+  $('#wb-prod1').textContent=Math.round(p1);
+  $('#wb-prod2').textContent=Math.round(p2);
 }

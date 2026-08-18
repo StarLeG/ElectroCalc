@@ -5,8 +5,9 @@
  * SVG из модели при каждом изменении: схемы небольшие, это дешевле, чем
  * поддерживать инкрементальные патчи DOM.
  *
- * Два режима: «Редактирование» (правка модели) и «Эмуляция» (канва только для
- * чтения, работает solveDC, показываются токи, U/I/P и пробники напряжения).
+ * Три режима: «Редактирование» (правка модели), «Эмуляция» (solveDC, токи,
+ * U/I/P и пробники напряжения) и «Переходный процесс» (solveTransient с
+ * графиками). В обоих расчётных режимах канва работает только на чтение.
  */
 'use strict';
 import { $, T, toast, lang } from './core.js';
@@ -150,7 +151,10 @@ function buildPresetList() {
 }
 
 function selectTool(type) {
-  if (mode === 'sim') return;
+  // Канва только для чтения в ОБОИХ расчётных режимах, не только в 'sim':
+  // раньше в режиме переходного процесса можно было ставить компоненты, и
+  // каждая правка запускала полный пересчёт на тысячи шагов.
+  if (mode !== 'edit') return;
   tool = (tool === type) ? null : type;
   pending = null;
   syncPaletteState();
@@ -245,6 +249,7 @@ function onPointerDown(e) {
   e.preventDefault();
 
   if (mode === 'sim') { probeAt(pt.x, pt.y); return; }
+  if (mode !== 'edit') return;              // переходный процесс — тоже только чтение
 
   // 1. Черчение провода
   if (tool === 'wire') {
@@ -395,7 +400,7 @@ function onKey(e) {
 }
 
 function deleteSelection() {
-  if (!selection || mode === 'sim') return;
+  if (!selection || mode !== 'edit') return;
   const sel = selection;
   commit(() => {
     if (sel.kind === 'comp') model.removeComponent(sel.id);
@@ -1199,7 +1204,6 @@ function buildStandaloneSVG() {
 
   const css = getComputedStyle(document.documentElement);
   const accent = css.getPropertyValue('--accent').trim() || '#FFB300';
-  const text = css.getPropertyValue('--text').trim() || '#000';
   const bg = css.getPropertyValue('--bg-input').trim() || '#fff';
 
   clone.querySelectorAll('.editor-flow, .editor-flow-arrow').forEach(n => {
@@ -1218,7 +1222,6 @@ function buildStandaloneSVG() {
     x: clone.viewBox.baseVal.x, y: clone.viewBox.baseVal.y,
     width: clone.viewBox.baseVal.width, height: clone.viewBox.baseVal.height, fill: bg,
   }), clone.firstChild);
-  void text;
   return clone;
 }
 

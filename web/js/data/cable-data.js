@@ -53,7 +53,7 @@ export const SMALL_SECTIONS = [0.5, 0.75, 1.0];
 export const ALL_SECTIONS = [...SMALL_SECTIONS, ...STD_SECTIONS];
 
 /** Удельное сопротивление при 20 °C, Ом·мм²/м. */
-export const RESISTIVITY = { Cu: 0.0175, Al: 0.028, Steel: 0.13 };
+export const RESISTIVITY = { Cu: 0.0175, Al: 0.028 };
 
 /** Температурный коэффициент сопротивления, 1/°C. */
 export const TEMP_COEF = { Cu: 0.00393, Al: 0.00403 };
@@ -135,46 +135,10 @@ export const BREAKER_K = { B: 1.13, C: 1.45, D: 1.45 };
 
 /**
  * Минимальные сечения медных жил по ПУЭ 7.1.34 и 7.1.45, мм².
+ * Здесь только те, что реально проверяются в collectWarnings().
  * Алюминий в жилых и общественных зданиях допускается от 16 мм² (ПУЭ 7.1.34).
  */
-export const MIN_SECTION_PUE = { lighting: 1.5, socket: 2.5, input: 4.0, aluminiumIndoor: 16 };
-
-/** Ряд стандартных диаметров труб для скрытой прокладки, мм. */
-export const PIPE_DIAMETERS = [16, 20, 25, 32, 40, 50, 63, 80, 100, 125, 150, 200];
-
-/**
- * Строка таблицы по сечению.
- * @param {number} section сечение, мм²
- * @returns {object|undefined} строка CABLE_TABLE либо undefined, если такого сечения нет в ряду
- */
-export function lookupSection(section) {
-  return CABLE_TABLE.find(row => Math.abs(row.S - section) < 0.01);
-}
-
-/**
- * Допустимый длительный ток по таблице, без поправок.
- * @param {number} section сечение, мм²
- * @param {string} material 'Cu' или 'Al'
- * @returns {number} ток, А; 0 — если сечения нет в таблице
- */
-export function baseCurrent(section, material) {
-  const row = lookupSection(section);
-  if (!row) return 0;
-  return material === 'Al' ? row.IAl : row.ICu;
-}
-
-/**
- * Активное сопротивление жилы при заданной температуре.
- * @param {number} section сечение, мм²
- * @param {string} material 'Cu' или 'Al'
- * @param {number} temp температура жилы, °C
- * @returns {number} сопротивление, Ом/км
- */
-export function resistanceAt(section, material, temp) {
-  const rho = RESISTIVITY[material] ?? RESISTIVITY.Cu;
-  const alpha = TEMP_COEF[material] ?? TEMP_COEF.Cu;
-  return rho * 1000 / section * (1 + alpha * (temp - 20));
-}
+export const MIN_SECTION_PUE = { socket: 2.5, aluminiumIndoor: 16 };
 
 /**
  * Значение из таблицы коэффициентов с линейной интерполяцией между узлами.
