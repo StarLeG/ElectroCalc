@@ -198,14 +198,14 @@ function makeOpampInverting() {
   const da  = put(m, 'opamp', 100, 60, { id: 'DA1' });
   const gnd = put(m, 'ground', 55, 95, { id: 'GND1' });
 
-  m.addWire([[20, 90], [90, 90]]);                 // шина нулевого потенциала
+  m.addWire([[30, 90], [85, 90]]);                 // шина нулевого потенциала
   m.addWire([gnd.g, [55, 90]]);
   m.addWire([gb.p, [30, 55], r1.a]);
   m.addWire([r1.b, da.inv]);
   m.addWire([gb.n, [30, 90]]);
   m.addWire([da.inv, [85, 25], rf.a]);             // цепь обратной связи
   m.addWire([rf.b, [115, 25], da.out]);
-  m.addWire([da.non, [90, 65], [90, 90]]);         // неинвертирующий вход на землю
+  m.addWire([da.non, [85, 65], [85, 90]]);         // неинвертирующий вход на землю
   return m;
 }
 
@@ -218,7 +218,7 @@ function makeOpampNonInverting() {
   const da  = put(m, 'opamp', 100, 60, { id: 'DA1' });
   const gnd = put(m, 'ground', 55, 95, { id: 'GND1' });
 
-  m.addWire([[20, 90], [90, 90]]);
+  m.addWire([[20, 90], [55, 90]]);
   m.addWire([gnd.g, [55, 90]]);
   m.addWire([gb.p, da.non]);                       // вход прямо на неинвертирующий
   m.addWire([gb.n, [30, 90]]);
@@ -236,7 +236,7 @@ function makeOpampFollower() {
   const da  = put(m, 'opamp', 100, 60, { id: 'DA1' });
   const gnd = put(m, 'ground', 55, 95, { id: 'GND1' });
 
-  m.addWire([[20, 90], [130, 90]]);
+  m.addWire([[30, 90], [55, 90]]);
   m.addWire([gnd.g, [55, 90]]);
   m.addWire([gb.p, da.non]);
   m.addWire([gb.n, [30, 90]]);
@@ -261,8 +261,8 @@ function makeRelayLatch() {
   const h2  = put(m, 'lamp', 160, 80, { id: 'HL2', value: 240, rotate: 90 });
   put(m, 'ground', 95, 115, { id: 'GND1' });        // вывод ложится на нулевую шину
 
-  m.addWire([[30, 20], [165, 20]]);                 // шина питания
-  m.addWire([[20, 110], [170, 110]]);               // шина нулевого потенциала
+  m.addWire([[30, 20], [160, 20]]);                 // шина питания
+  m.addWire([[30, 110], [160, 110]]);               // шина нулевого потенциала
   m.addWire([gb.p, [30, 20]]);
   m.addWire([gb.n, [30, 110]]);
 
@@ -290,7 +290,7 @@ function makeThyristorSwitch() {
   const rg  = put(m, 'resistor', 85, 65, { id: 'R1', value: 1000 });
   put(m, 'ground', 80, 110, { id: 'GND1' });
 
-  m.addWire([[20, 105], [145, 105]]);               // шина нулевого потенциала
+  m.addWire([[30, 105], [130, 105]]);               // шина нулевого потенциала
   m.addWire([gb.p, [30, 25], hl.a]);                // силовая цепь
   m.addWire([hl.b, [130, 25], vs.a]);
   m.addWire([vs.k, [130, 105]]);
@@ -317,7 +317,7 @@ function makeOptocoupler() {
   const g2 = put(m, 'vsource', 185, 70, { id: 'GB2', value: 12, rotate: 90 });
   put(m, 'ground', 110, 110, { id: 'GND1' });
 
-  m.addWire([[20, 105], [195, 105]]);              // общая шина нулевого потенциала
+  m.addWire([[30, 105], [185, 105]]);              // общая шина нулевого потенциала
   // входная сторона
   m.addWire([g1.p, [30, 25], r1.a]);
   m.addWire([r1.b, [70, 55], vu.a]);

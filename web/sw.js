@@ -1,6 +1,6 @@
 /* EngiCalc Service Worker — offline support */
 /* Updated: 2026-08-16 — адаптация под телефоны и планшеты */
-const CACHE_NAME = 'engicalc-v21';
+const CACHE_NAME = 'engicalc-v23';
 /* Список обязан содержать ВСЕ модули из графа импортов app.js: любой
    пропущенный файл офлайн отдаётся как 503 и роняет загрузку приложения целиком. */
 const STATIC_ASSETS = [

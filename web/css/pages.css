@@ -21,16 +21,19 @@
 .about-future .platform-badge { background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 6px 14px; font-size: 13px; color: var(--text); font-weight: 600; }
 
 /* ===================== SCHEMATIC EDITOR ===================== */
-.editor-card { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+/* Редактор прокручивается страницей целиком: карточка растёт по содержимому,
+   а не ужимается в экран. flex:1 здесь задаёт ширину (.content — flex-строка),
+   align-self снимает растягивание по высоте. */
+.editor-card { flex: 1; align-self: flex-start; display: flex; flex-direction: column; }
 
 .editor-toolbar { display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center; margin-bottom: var(--sp-4); }
 .editor-toolbar #editor-preset { width: auto; min-width: 200px; }
 .editor-sep { width: 1px; align-self: stretch; min-height: 24px; background: var(--border); }
 .editor-toolbar .btn.active { background: var(--accent); color: var(--text-on-accent); border-color: var(--accent); }
 
-.editor-body { display: flex; gap: var(--sp-4); flex: 1; min-height: 0; }
+.editor-body { display: flex; gap: var(--sp-4); align-items: flex-start; }
 
-.editor-panel { width: 150px; flex-shrink: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.editor-panel { width: 150px; flex-shrink: 0; }
 .editor-panel-title { font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: var(--sp-2); text-transform: uppercase; letter-spacing: .04em; }
 .editor-props-panel { width: 210px; }
 
@@ -45,7 +48,7 @@
 .palette-item.active { border-color: var(--accent); background: var(--accent); color: var(--text-on-accent); font-weight: 600; }
 
 .editor-canvas {
-  flex: 1; min-width: 0; overflow: auto; -webkit-overflow-scrolling: touch;
+  flex: 1; min-width: 0; overflow: visible;
   display: flex; justify-content: flex-start; align-items: flex-start;
   background: var(--bg-input); border: 1px solid var(--border);
   border-radius: var(--r-input); touch-action: none;
@@ -87,7 +90,7 @@
 .props-hint { font-size: 11px; color: var(--text-muted); line-height: 1.6; margin-top: var(--sp-3); }
 
 /* Отчёт эмуляции */
-.editor-sim-results { margin-top: var(--sp-4); border-top: 1px solid var(--border); padding-top: var(--sp-3); max-height: 34vh; overflow-y: auto; }
+.editor-sim-results { margin-top: var(--sp-4); border-top: 1px solid var(--border); padding-top: var(--sp-3); }
 .editor-sim-results .sim-block { margin-bottom: var(--sp-4); }
 .editor-sim-results h4 { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: var(--sp-2); }
 .sim-table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 12px; }
@@ -102,7 +105,7 @@
 .sim-error { color: var(--error); font-size: 13px; }
 
 /* Переходный процесс */
-.editor-transient { margin-top: var(--sp-4); border-top: 1px solid var(--border); padding-top: var(--sp-3); max-height: 46vh; overflow-y: auto; }
+.editor-transient { margin-top: var(--sp-4); border-top: 1px solid var(--border); padding-top: var(--sp-3); }
 .transient-controls { display: flex; gap: var(--sp-3); align-items: flex-end; flex-wrap: wrap; margin-bottom: var(--sp-3); }
 .tr-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-muted); }
 .tr-field input { width: 120px; }
@@ -138,7 +141,6 @@
   .editor-panel, .editor-props-panel { width: 100%; max-height: none; }
   .editor-palette { flex-direction: row; flex-wrap: wrap; }
   .palette-item { width: auto; min-height: 44px; font-size: 14px; padding: 11px 14px; }
-  .editor-canvas { min-height: 46vh; }
   .editor-toolbar .btn { min-height: 44px; }
   .editor-toolbar #editor-preset { min-height: 44px; font-size: 16px; flex: 1 1 100%; }
   .props-actions .btn { min-height: 44px; flex: 1; }

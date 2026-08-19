@@ -13,9 +13,9 @@
 import { $, T, toast, lang } from './core.js';
 import {
   SchematicModel, COMPONENT_TYPES, PIN_OFFSETS, getComponentPins,
-  formatSI, unitSymbol, setLocale, GROUND_LEAD, pointOnSegment,
+  formatSI, unitSymbol, setLocale, GROUND_LEAD, junctionPoints,
 } from './schematic-model.js';
-import { solveDC, solveTransient } from './circuit-sim.js';
+import { solveDC, solveTransient, emissionLevel, emissionColor } from './circuit-sim.js';
 import { PRESETS, loadPreset } from './schematic-presets.js';
 import { niceScale } from './chart.js';
 
@@ -50,7 +50,7 @@ let redoStack = [];
 let canvasEl = null;            // постоянный контейнер-хост
 let rafId = 0;
 let saveTimer = 0;
-let lastBoxW = 0, lastBoxH = 0; // размеры канвы на момент последней отрисовки
+let lastBoxW = 0;              // ширина канвы на момент последней отрисовки
 
 /* ===================== ИНИЦИАЛИЗАЦИЯ ===================== */
 export function initEditor() {
@@ -72,13 +72,13 @@ export function initEditor() {
       .observe(page, { attributes: true, attributeFilter: ['class'] });
   }
 
-  // Размер поля считается от размеров канвы, поэтому её изменение требует
-  // перерисовки. Перерисовываем только при заметном изменении: появление
-  // полосы прокрутки меняет размер контейнера и без порога дало бы зацикливание.
+  // Ширина поля считается от ширины канвы, поэтому её изменение требует
+  // перерисовки. Порог в 3 px гасит дребезг от округлений и от появления
+  // полосы прокрутки страницы. Высоту не отслеживаем: её задаёт сам чертёж,
+  // и реакция на неё замкнула бы наблюдатель сам на себя.
   const onResize = () => {
     if (!page?.classList.contains('active')) return;
-    if (Math.abs(canvasEl.clientWidth - lastBoxW) < 3 &&
-        Math.abs(canvasEl.clientHeight - lastBoxH) < 3) return;
+    if (Math.abs(canvasEl.clientWidth - lastBoxW) < 3) return;
     render();
   };
   if (typeof ResizeObserver === 'function') new ResizeObserver(onResize).observe(canvasEl);
@@ -87,6 +87,15 @@ export function initEditor() {
   restore();
   render();
   updateProperties();
+}
+
+/**
+ * Перерисовать схему после смены темы. Цвет линий УГО библиотека зашивает
+ * в SVG в момент построения, поэтому одной сменой CSS-токенов чертёж
+ * не обновляется — его надо собрать заново.
+ */
+export function refreshEditorTheme() {
+  render();
 }
 
 /** Перечитать подписи после смены языка приложения. */
@@ -248,7 +257,12 @@ function onPointerDown(e) {
   if (!pt) return;
   e.preventDefault();
 
-  if (mode === 'sim') { probeAt(pt.x, pt.y); return; }
+  // В эмуляции канва только для чтения — кроме ключей: их можно щёлкать
+  // прямо на работающей схеме, расчёт тут же повторяется.
+  if (mode === 'sim') {
+    if (!toggleSwitchAt(pt.x, pt.y)) probeAt(pt.x, pt.y);
+    return;
+  }
   if (mode !== 'edit') return;              // переходный процесс — тоже только чтение
 
   // 1. Черчение провода
@@ -633,6 +647,17 @@ function plotGroup(group, all, colorOf) {
     `<svg viewBox="0 0 ${W} ${H}" class="tr-svg" preserveAspectRatio="xMidYMid meet">${axes}${lines}</svg></figure>`;
 }
 
+/**
+ * Щелчок по ключу в режиме эмуляции меняет его положение.
+ * @returns {boolean} попал ли щелчок по ключу
+ */
+function toggleSwitchAt(x, y) {
+  const comp = componentAt(x, y);
+  if (!comp || comp.type !== 'switch') return false;
+  commit(() => model.toggleSwitch(comp.id));
+  return true;
+}
+
 function probeAt(x, y) {
   if (!simResult?.ok) return;
   const net = model.buildNetlist();
@@ -701,9 +726,11 @@ function draw() {
 }
 
 /**
- * Рабочее поле. Оно не меньше габаритов схемы и не меньше видимой части канвы —
- * иначе на широком экране сетка занимала бы лишь часть окна, а вокруг оставался
- * пустой фон, куда нельзя поставить элемент.
+ * Рабочее поле. По ширине — не уже видимой части канвы, иначе на широком экране
+ * сетка занимала бы лишь часть окна. По высоте — строго по содержимому: канва
+ * не прокручивается сама, её высоту задаёт чертёж, а длинную страницу листает
+ * браузер. Оглядывайся мы здесь на высоту контейнера, получили бы обратную
+ * связь: поле растит канву, канва растит поле.
  */
 function modelBounds() {
   let maxX = 0, maxY = 0;
@@ -711,27 +738,25 @@ function modelBounds() {
   for (const c of model.components) touch(c.x + 25, c.y + 25);
   for (const w of model.wires) for (const p of w.points) touch(p[0] + 10, p[1] + 10);
 
-  // Минимум, который обязан поместиться: габариты схемы, но не меньше листа 120×90.
+  // Минимум, который обязан поместиться: габариты схемы, но не меньше листа
+  // 120×120 — иначе под пустой схемой нет места, куда поставить первый элемент.
   const needW = Math.max(Math.ceil(maxX / GRID) * GRID, 120);
-  const needH = Math.max(Math.ceil(maxY / GRID) * GRID, 90);
+  const needH = Math.max(Math.ceil(maxY / GRID) * GRID, 120);
 
-  lastBoxW = canvasEl.clientWidth  || 0;
-  lastBoxH = canvasEl.clientHeight || 0;
-  if (lastBoxW < 20 || lastBoxH < 20) {
+  lastBoxW = canvasEl.clientWidth || 0;
+  if (lastBoxW < 20) {
     return { w: needW, h: needH, scale: PX_PER_MM };   // страница ещё скрыта
   }
 
-  // Масштаб: обычно постоянный мм→px, но если схема не влезает — уменьшаем.
-  // Увеличивать сверх номинала не даём, иначе мелкая схема раздувается.
-  const fit = Math.min(lastBoxW / (needW + 2 * PAD), lastBoxH / (needH + 2 * PAD));
-  const scale = Math.min(PX_PER_MM, fit);
+  // Масштаб: обычно постоянный мм→px, но если схема не влезает по ширине —
+  // уменьшаем. Увеличивать сверх номинала не даём, иначе мелкая схема раздувается.
+  const scale = Math.min(PX_PER_MM, lastBoxW / (needW + 2 * PAD));
 
-  // При таком масштабе поле растягиваем ровно на контейнер — тогда сетка
-  // доходит до краёв и по ширине, и по высоте. Запас в 0.3 мм не даёт
-  // появиться прокрутке из-за округления пикселей.
+  // По ширине поле растягиваем ровно на контейнер, чтобы сетка доходила до краёв.
+  // Запас в 0.3 мм не даёт появиться прокрутке из-за округления пикселей.
   return {
     w: Math.max(needW, lastBoxW / scale - 2 * PAD - 0.3),
-    h: Math.max(needH, lastBoxH / scale - 2 * PAD - 0.3),
+    h: needH,
     scale,
   };
 }
@@ -794,48 +819,8 @@ function valueLabel(comp) {
  * это и есть «крест без точки» по ЕСКД.
  */
 function drawJunctions(s) {
-  const count = new Map();
-  const bump = (x, y) => {
-    const k = x + ',' + y;
-    count.set(k, (count.get(k) || 0) + 1);
-  };
-  const ends = [];
-  for (const w of model.wires) {
-    const first = w.points[0], last = w.points[w.points.length - 1];
-    bump(first[0], first[1]); bump(last[0], last[1]);
-    ends.push({ p: first, w }, { p: last, w });
-  }
-  for (const comp of model.components) {
-    const def = COMPONENT_TYPES[comp.type];
-    if (!def) continue;
-    for (const c of Object.values(getComponentPins(comp, def))) {
-      bump(c[0], c[1]);
-      ends.push({ p: c, w: null });
-    }
-  }
-
-  const dots = new Set();
-  for (const [k, n] of count) if (n >= 3) dots.add(k);
-
-  for (const e of ends) {
-    for (const w of model.wires) {
-      if (w === e.w) continue;
-      for (let i = 1; i < w.points.length; i++) {
-        const a = w.points[i - 1], b = w.points[i];
-        // концы самого провода w уже учтены счётчиком — интересна только середина
-        if (samePoint(e.p, a) || samePoint(e.p, b)) continue;
-        if (pointOnSegment(e.p, a, b)) dots.add(e.p[0] + ',' + e.p[1]);
-      }
-    }
-  }
-
-  for (const k of dots) {
-    const [x, y] = k.split(',').map(Number);
-    s.junction(x, y);
-  }
+  for (const [x, y] of junctionPoints(model)) s.junction(x, y);
 }
-
-function samePoint(p, q) { return Math.abs(p[0] - q[0]) < 0.01 && Math.abs(p[1] - q[1]) < 0.01; }
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 function el(name, attrs) {
@@ -880,9 +865,52 @@ function drawSelection(svg) {
 }
 
 /* ===================== ВИЗУАЛИЗАЦИЯ ЭМУЛЯЦИИ ===================== */
+/**
+ * Свечение индикаторов, через которые идёт ток. Ложится отдельным слоем сразу
+ * за сеткой — под УГО и провода: свет исходит из-под символа, а линии чертежа
+ * остаются чёткими поверх него.
+ */
+function drawGlow(svg) {
+  const defs = el('defs', {});
+  const glows = el('g', { class: 'editor-glow-layer', 'pointer-events': 'none' });
+  let n = 0;
+
+  for (const [id, br] of Object.entries(simResult.branches || {})) {
+    const comp = model.getComponent(id);
+    if (!comp) continue;
+    const level = emissionLevel(comp.type, br);
+    if (level <= 0) continue;
+
+    const color = emissionColor(comp.type, comp.value);
+    const gradId = 'editor-glow-' + (n++);
+    const grad = el('radialGradient', { id: gradId });
+    // Ядро ярче края: три остановки дают мягкий спад без видимой границы.
+    for (const [offset, alpha] of [['0%', 0.6], ['45%', 0.26], ['100%', 0]]) {
+      grad.appendChild(el('stop', {
+        offset,
+        'stop-color': color,
+        'stop-opacity': (alpha * level).toFixed(3),
+      }));
+    }
+    defs.appendChild(grad);
+    glows.appendChild(el('circle', {
+      cx: comp.x, cy: comp.y,
+      r: comp.type === 'lamp' ? 10 : 11,
+      fill: 'url(#' + gradId + ')',
+    }));
+  }
+
+  if (!n) return;
+  glows.insertBefore(defs, glows.firstChild);
+  const grid = svg.querySelector('.editor-grid');
+  svg.insertBefore(glows, grid ? grid.nextSibling : svg.firstChild);
+}
+
 function drawSimOverlay(svg) {
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const layer = el('g', { class: 'editor-sim', 'pointer-events': 'none' });
+
+  drawGlow(svg);
 
   // --- ток по проводам ---
   const currents = Object.values(simResult.wireCurrents || {}).map(c => Math.abs(c.i));

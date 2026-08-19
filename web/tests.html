@@ -318,8 +318,8 @@ function calcZener(Vin, Vz, IL_mA, Iz_mA) {
 assert('Zener: 24V/5.1V/20mA/10mA', calcZener(24, 5.1, 20, 10), 630, 10);
 
 // ==================== DC SOLVER (MNA) ====================
-import { SchematicModel, COMPONENT_TYPES, getComponentPins, PIN_OFFSETS, formatSI } from './js/schematic-model.js';
-import { solveDC, solveTransient } from './js/circuit-sim.js';
+import { SchematicModel, COMPONENT_TYPES, getComponentPins, PIN_OFFSETS, formatSI, junctionPoints } from './js/schematic-model.js';
+import { solveDC, solveTransient, emissionLevel, emissionColor } from './js/circuit-sim.js';
 import { PRESETS, loadPreset } from './js/schematic-presets.js';
 
 output.innerHTML += '<h3 style="color:#FFB300;margin-top:16px">DC solver</h3>';
@@ -856,6 +856,160 @@ output.innerHTML += '<h3 style="color:#FFB300;margin-top:16px">Model &amp; geome
   }
   assertTrue('All preset wires are orthogonal', ortho);
   assertTrue('All preset wire points are on the 5 mm grid', onGrid);
+}
+
+// Ни один провод пресета не обрывается в пустоте: конец провода обязан попасть
+// в вывод компонента или лечь на другой провод. Висячий «ус» шины — чертёжный
+// брак: на схеме он читается как незавершённая связь.
+{
+  const near = (a, b, t = 0.6) => Math.abs(a[0] - b[0]) < t && Math.abs(a[1] - b[1]) < t;
+  const onSeg = (p, a, b, t = 0.6) => {
+    const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy;
+    if (!L2) return near(p, a, t);
+    let u = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L2;
+    u = Math.max(0, Math.min(1, u));
+    return Math.hypot(a[0] + u * dx - p[0], a[1] + u * dy - p[1]) < t;
+  };
+  const dangling = [];
+  for (const preset of PRESETS) {
+    const m = preset.create();
+    const pins = [];
+    for (const c of m.components) {
+      for (const xy of Object.values(getComponentPins(c, COMPONENT_TYPES[c.type]))) pins.push(xy);
+    }
+    for (const w of m.wires) {
+      for (const end of [w.points[0], w.points[w.points.length - 1]]) {
+        if (pins.some(p => near(p, end))) continue;
+        let onWire = false;
+        for (const o of m.wires) {
+          if (o.id === w.id) continue;
+          for (let i = 0; i < o.points.length - 1; i++) if (onSeg(end, o.points[i], o.points[i + 1])) onWire = true;
+        }
+        if (!onWire) dangling.push(`${preset.id}@${end[0]},${end[1]}`);
+      }
+    }
+  }
+  assertTrue('No preset wire ends in mid-air' + (dangling.length ? ' — ' + dangling.join(', ') : ''),
+    dangling.length === 0);
+}
+
+// Провода не должны идти по корпусу УГО: линия, наложенная на грань
+// прямоугольника, визуально сливается с ним и связь перестаёт читаться.
+// Полугабариты корпусов взяты из gost-schematic.js (box/optocoupler).
+{
+  const HALF = { opamp: [10, 10], ic: [10, 12], optocoupler: [15, 10] };
+  const hits = [];
+  for (const preset of PRESETS) {
+    const m = preset.create();
+    const boxes = m.components
+      .filter(c => HALF[c.type])
+      .map(c => {
+        const [hw, hh] = HALF[c.type];
+        const swap = (((c.rotate || 0) % 360 + 360) % 360) % 180 === 90;
+        return { id: c.id, cx: c.x, cy: c.y, hw: swap ? hh : hw, hh: swap ? hw : hh };
+      });
+    for (const w of m.wires) {
+      for (let i = 0; i < w.points.length - 1; i++) {
+        const a = w.points[i], b = w.points[i + 1];
+        for (const box of boxes) {
+          const steps = Math.max(2, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 0.5));
+          let inside = 0;
+          for (let s = 0; s <= steps; s++) {
+            const t = s / steps, x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t;
+            if (Math.abs(x - box.cx) <= box.hw + 0.25 && Math.abs(y - box.cy) <= box.hh + 0.25) inside++;
+          }
+          const len = inside / steps * Math.hypot(b[0] - a[0], b[1] - a[1]);
+          if (len > 1.2) hits.push(`${preset.id}:${box.id}`);
+        }
+      }
+    }
+  }
+  assertTrue('No preset wire runs along a component body' + (hits.length ? ' — ' + hits.join(', ') : ''),
+    hits.length === 0);
+}
+
+// Ключ переключается вручную — в том числе не выходя из режима эмуляции.
+{
+  const m = loadPreset('switch-lamp');
+  const s1 = m.getComponent('S1');
+  const lampLevel = () => {
+    const r = solveDC(m);
+    return r.ok ? emissionLevel('lamp', r.branches.HL1) : -1;
+  };
+
+  assertTrue('Preset starts with the switch closed', Number(s1.value) !== 0);
+  assertTrue('Lamp is lit while the switch is closed', lampLevel() > 0);
+
+  assertTrue('Toggling a switch reports success', m.toggleSwitch('S1') === true);
+  assertTrue('Switch is now open', Number(s1.value) === 0);
+  assertTrue('Open switch leaves the lamp dark', lampLevel() === 0);
+
+  m.toggleSwitch('S1');
+  assertTrue('Toggling again closes the switch', Number(s1.value) !== 0);
+  assertTrue('Closed switch lights the lamp again', lampLevel() > 0);
+
+  // Контакты реле подчиняются катушке, а не руке: их дёргать нельзя.
+  const relay = loadPreset('relay-latch');
+  const k2 = relay.getComponent('K2');
+  const before = k2.value;
+  assertTrue('A relay contact refuses to be toggled by hand', relay.toggleSwitch('K2') === false);
+  assertTrue('The relay contact keeps its state', relay.getComponent('K2').value === before);
+  assertTrue('A resistor is not a switch', relay.toggleSwitch('K1') === false);
+  assertTrue('An unknown id toggles nothing', relay.toggleSwitch('NOPE') === false);
+}
+
+// Свечение светодиода и лампы: уровень 0…1 от протекающего тока.
+{
+  const led = (i) => emissionLevel('led', { i, p: i * 2 });
+
+  assertTrue('Dark LED at zero current', led(0) === 0);
+  // Закрытый переход пропускает ток утечки u·G_OPEN — светиться он не должен.
+  assertTrue('Leakage current leaves the LED dark', led(1e-9) === 0);
+  assertTrue('Reverse current leaves the LED dark', led(-0.02) === 0);
+  assertTrue('Sub-threshold current leaves the LED dark', led(0.0005) === 0);
+
+  assertTrue('LED lights up above the threshold', led(0.005) > 0);
+  assertTrue('Brightness grows with current', led(0.005) < led(0.012));
+  assertTrue('LED reaches full brightness at its rated current', Math.abs(led(0.02) - 1) < 1e-9);
+  assertTrue('Brightness saturates above the rating', led(0.2) === 1);
+  assertTrue('Brightness never leaves 0…1', led(1e6) <= 1 && led(0.008) >= 0);
+
+  // Лампа накаливания светит пропорционально рассеиваемой мощности, а не току:
+  // одинаковый ток на разном сопротивлении даёт разную яркость.
+  const lampAt = (p) => emissionLevel('lamp', { i: 0.1, p });
+  assertTrue('Cold lamp at zero power', lampAt(0) === 0);
+  assertTrue('Lamp ignores the sign of power', lampAt(-1) === lampAt(1));
+  assertTrue('Lamp brightness grows with power', lampAt(0.2) < lampAt(0.6));
+  assertTrue('Lamp reaches full brightness at its rated power', Math.abs(lampAt(1) - 1) < 1e-9);
+  assertTrue('Lamp brightness saturates', lampAt(50) === 1);
+
+  // Прочие элементы не светятся вовсе.
+  assertTrue('A resistor never glows', emissionLevel('resistor', { i: 1, p: 100 }) === 0);
+  assertTrue('Unknown type never glows', emissionLevel(undefined, { i: 1, p: 1 }) === 0);
+  assertTrue('Missing branch data never glows', emissionLevel('led', undefined) === 0);
+
+  // Цвет светодиода читается из прямого напряжения — отдельного свойства нет.
+  assertTrue('Red LED at 2.0 V', emissionColor('led', 2.0) === emissionColor('led', 1.8));
+  assertTrue('Colour changes with the forward voltage', emissionColor('led', 2.0) !== emissionColor('led', 3.2));
+  assertTrue('Lamp colour does not depend on its resistance',
+    emissionColor('lamp', 100) === emissionColor('lamp', 240));
+  assertTrue('Every colour is a hex value', /^#[0-9A-Fa-f]{6}$/.test(emissionColor('led', 2.6)));
+}
+
+// Точка соединения обязана стоять там, где проводник упирается в излом другого:
+// без неё T-образная связь читается как простое пересечение линий.
+{
+  const has = (pts, x, y) => pts.some(p => Math.abs(p[0] - x) < 0.01 && Math.abs(p[1] - y) < 0.01);
+  const dots = junctionPoints(loadPreset('wheatstone'));
+  assertTrue('Junction dot at the upper bridge tap', has(dots, 65, 20));
+  assertTrue('Junction dot where the lower rail meets R3', has(dots, 65, 100));
+  assertTrue('Junction dot where the lower rail meets ground', has(dots, 95, 100));
+
+  // Крест без общей вершины — это пересечение без связи, точки быть не должно.
+  const cross = new SchematicModel();
+  cross.addWire([[0, 10], [20, 10]]);
+  cross.addWire([[10, 0], [10, 20]]);
+  assertTrue('No dot where two wires merely cross', junctionPoints(cross).length === 0);
 }
 
 // Каждый пресет решается без ошибок.

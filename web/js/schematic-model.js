@@ -268,6 +268,61 @@ export function pointOnSegment(p, a, b) {
   return Math.hypot(p[0] - (a[0] + t * dx), p[1] - (a[1] + t * dy)) <= eps;
 }
 
+/**
+ * Точки электрического соединения (ГОСТ 2.721-74): узлы, где сходятся три и
+ * более проводника. Живёт в модели, а не в отрисовке, потому что это свойство
+ * связей, а не картинки — и потому что иначе его нечем проверить тестом.
+ *
+ * @param {SchematicModel} model
+ * @returns {Array<[number, number]>} координаты точек в мм
+ */
+export function junctionPoints(model) {
+  const same = (p, q) => Math.abs(p[0] - q[0]) < 0.01 && Math.abs(p[1] - q[1]) < 0.01;
+  const count = new Map();
+  const ends = [];
+  const bump = (x, y) => {
+    const k = coordKey(x, y);
+    count.set(k, (count.get(k) || 0) + 1);
+  };
+
+  for (const w of model.wires) {
+    const first = w.points[0], last = w.points[w.points.length - 1];
+    bump(first[0], first[1]); bump(last[0], last[1]);
+    ends.push({ p: first, w }, { p: last, w });
+  }
+  for (const comp of model.components) {
+    const def = COMPONENT_TYPES[comp.type];
+    if (!def) continue;
+    for (const c of Object.values(getComponentPins(comp, def))) {
+      bump(c[0], c[1]);
+      ends.push({ p: c, w: null });
+    }
+  }
+
+  const dots = new Set();
+  for (const [k, n] of count) if (n >= 3) dots.add(k);
+
+  // Конец проводника, упирающийся в чужую линию, — тоже узел. Отбрасываем
+  // только совпадение с КОНЦАМИ этой линии (они уже посчитаны выше): попадание
+  // в её промежуточный излом — полноценное T-образное соединение, и точку там
+  // ставить обязательно, иначе связь читается как простое пересечение.
+  for (const e of ends) {
+    for (const w of model.wires) {
+      if (w === e.w) continue;
+      const wFirst = w.points[0], wLast = w.points[w.points.length - 1];
+      if (same(e.p, wFirst) || same(e.p, wLast)) continue;
+      for (let i = 1; i < w.points.length; i++) {
+        if (pointOnSegment(e.p, w.points[i - 1], w.points[i])) {
+          dots.add(coordKey(e.p[0], e.p[1]));
+          break;
+        }
+      }
+    }
+  }
+
+  return [...dots].map(k => k.split(',').map(Number));
+}
+
 /* ===================== МОДЕЛЬ СХЕМЫ ===================== */
 
 export class SchematicModel {
@@ -310,6 +365,21 @@ export class SchematicModel {
   snapGrid(v) { return Math.round(v / this.grid) * this.grid; }
 
   getComponent(id) { return this.components.find(c => c.id === id) || null; }
+
+  /**
+   * Переключить коммутационный аппарат с ручным управлением.
+   * Контакты реле сюда намеренно не входят: их положение задаёт катушка,
+   * и переключение рукой разошлось бы с расчётом цепи управления.
+   *
+   * @param {string} id позиционное обозначение
+   * @returns {boolean} было ли переключение
+   */
+  toggleSwitch(id) {
+    const comp = this.getComponent(id);
+    if (!comp || comp.type !== 'switch') return false;
+    comp.value = Number(comp.value) !== 0 ? 0 : 1;
+    return true;
+  }
 
   /** Удалить компонент и все провода, привязанные к нему по ссылке. */
   removeComponent(id) {

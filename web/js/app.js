@@ -12,7 +12,7 @@ import { calcAstable, calcMonostable, calcInvOpamp, calcNonInvOpamp, calcSumOpam
 import { calcCurrentLoop, calcScaling, calcRTD, calcPID, calcAccuracy, calcPneumFlow, calcPneumCyl, calcPneumComp, calcHydCyl, calcHydPump, calcHydPipe } from './kipia.js';
 import { toggleHelp } from './help.js';
 import { initWirecab, calcWirecabQuick, calcWirecabAdvanced, addWirecabGroup, removeWirecabGroup, downloadWirecabCSV, resetWirecabQuick, resetWirecabAdvanced } from './wirecab.js';
-import { initEditor, refreshEditorLang } from './schematic-editor.js';
+import { initEditor, refreshEditorLang, refreshEditorTheme } from './schematic-editor.js';
 import { calcGroundCircuit, calcKZCableCheck, calcBusbar, calcDemandFactor, addDemandRow, removeDemandRow } from './electrical2.js';
 import { calcFuse, calc420Cable, calcRTDTable, calcThermocouple, calcPneumLine, calcEnergyAudit, addEnergyRow, removeEnergyRow, calcCableTray, addCableRow, removeCableRow } from './industry.js';
 import { calc3PhasePower, calcDCVoltageDrop, calcConduitFill, addConduitRow, removeConduitRow, calcMotorStart, calcNeutralCurrent, calcCableLoss, calcEmergencyLight, calcSolarPanel, calcArcFlash, calcTHD, addTHDRow, removeTHDRow } from './electrical3.js';
@@ -34,6 +34,7 @@ function bindAll() {
     toggleTheme();
     // Цвета УГО зашиты в SVG при построении — схемы надо собрать заново.
     refreshCircuits();
+    refreshEditorTheme();
   });
   $('.btn-lang')?.addEventListener('click', () => {
     loadLang(lang === 'ru' ? 'en' : 'ru');
