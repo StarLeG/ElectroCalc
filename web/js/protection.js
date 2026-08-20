@@ -239,3 +239,153 @@ export function checkSelectivity(input = {}) {
     warnings,
   };
 }
+
+/* ─────────────────────────── обвязка страницы ─────────────────────────── */
+
+/** Значение выпадающего списка по id. */
+const sel = id => document.getElementById(id)?.value;
+
+/** Число из поля, где пусто означает «неизвестно», а не ноль. */
+const optional = id => {
+  const raw = document.getElementById(id)?.value;
+  return raw === '' || raw == null ? 0 : Number(raw);
+};
+
+/** Класс плитки по тому, сколько запаса израсходовано. */
+function marginClass(margin) {
+  if (margin > 1) return 'state-error';
+  return margin >= NUISANCE_THRESHOLD ? 'state-warn' : 'state-ok';
+}
+
+/**
+ * Строка таблицы проверок: слева смысл, посередине «факт / предел», справа итог.
+ * @param {object} check элемент result.checks
+ * @param {string} unit единица измерения
+ * @returns {string} HTML
+ */
+function renderCheck(check) {
+  const unit = T('protection.unit_a');
+  const verdict = check.passed
+    ? `<span class="check">✓ ${T('protection.check_ok')}</span>`
+    : `<span class="fail">✗ ${T('protection.check_fail')}</span>`;
+
+  return `<div class="check-row">
+    <span class="check-name">${T('protection.check_' + check.name)}</span>
+    <span class="check-req">${round(check.value, 1)} / ${round(check.limit, 1)} ${unit}</span>
+    <span class="check-verdict">${verdict}</span>
+  </div>`;
+}
+
+/** Список предупреждений по ключам сообщений. */
+function renderWarnings(keys) {
+  return keys.map(key => `<div class="warn-item">${T(key)}</div>`).join('');
+}
+
+/**
+ * Приводит форму автомата в согласованное состояние: показывает поле мощности
+ * либо тока и прячет cos φ там, где он не участвует в расчёте.
+ */
+function syncBreakerForm() {
+  const byCurrent = sel('prb-mode') === 'current';
+  const fieldP = $('#prb-field-P');
+  const fieldI = $('#prb-field-I');
+  const fieldCos = $('#prb-field-cos');
+  if (fieldP) fieldP.hidden = byCurrent;
+  if (fieldI) fieldI.hidden = !byCurrent;
+  if (fieldCos) fieldCos.hidden = byCurrent;
+}
+
+/** Подстановка типового напряжения при смене числа фаз. */
+function applyPhaseDefaults() {
+  const field = $('#prb-U');
+  if (field) field.value = sel('prb-phases') === '3' ? 400 : 230;
+}
+
+/** Навешивает обработчики формы защиты. Вызывается один раз при старте. */
+export function initProtectionForm() {
+  const mode = $('#prb-mode');
+  if (!mode) return;
+  mode.addEventListener('change', syncBreakerForm);
+  $('#prb-phases')?.addEventListener('change', () => { applyPhaseDefaults(); });
+  syncBreakerForm();
+}
+
+/** Расчёт автомата по кнопке. */
+export function calcProtectionBreaker() {
+  const res = calcBreaker({
+    loadMode: sel('prb-mode'),
+    power: num('prb-P'),
+    current: num('prb-I'),
+    voltage: num('prb-U'),
+    phases: num('prb-phases'),
+    cosPhi: num('prb-cos'),
+    loadType: sel('prb-type'),
+    curve: sel('prb-curve'),
+    startMultiple: optional('prb-start'),
+    cableCurrent: optional('prb-Iz'),
+    scCurrent: optional('prb-Ikz'),
+    breakingCapacity: optional('prb-Icn'),
+  });
+
+  if (!res.ok) { toast(T(res.messageKey)); return; }
+
+  $('#prb-result-val').textContent = res.rating;
+  const a = ' ' + T('protection.unit_a');
+  $('#prb-IB').textContent = round(res.IB, 2) + a;
+  $('#prb-curve-val').textContent = res.curve;
+  $('#prb-I2').textContent = round(res.overloadTrip, 1) + a;
+  $('#prb-Istart').textContent = res.startCurrent > 0 ? round(res.startCurrent, 1) + a : '—';
+  $('#prb-checks').innerHTML = res.checks.map(renderCheck).join('');
+  $('#prb-warnings').innerHTML = renderWarnings(res.warnings);
+}
+
+/** Расчёт УЗО по кнопке. */
+export function calcProtectionRCD() {
+  const res = calcRCD({
+    current: num('prr-I'),
+    length: num('prr-L'),
+    purpose: sel('prr-purpose'),
+    loadCharacter: sel('prr-character'),
+    breakerRating: optional('prr-breaker'),
+  });
+
+  if (!res.ok) { toast(T(res.messageKey)); return; }
+
+  $('#prr-result-val').textContent = res.rating;
+  const ma = ' ' + T('protection.unit_ma');
+  $('#prr-leak').textContent = round(res.leakage, 2) + ma;
+  $('#prr-required').textContent = round(res.required, 1) + ma;
+  $('#prr-limit').textContent = res.limit + ma;
+  $('#prr-type').textContent = res.type;
+  $('#prr-nominal').textContent = res.nominalCurrent
+    ? res.nominalCurrent + ' ' + T('protection.unit_a') : '—';
+
+  const margin = $('#prr-margin');
+  margin.textContent = Math.round(res.margin * 100) + ' %';
+  margin.className = 'val ' + marginClass(res.margin);
+
+  // Предельная длина имеет смысл только там, где длина ещё что-то решает.
+  $('#prr-maxlen').textContent = res.maxLength > 0
+    ? Math.round(res.maxLength) + ' ' + T('protection.unit_m') : '—';
+
+  $('#prr-warnings').innerHTML = renderWarnings(res.warnings);
+}
+
+/** Проверка селективности по кнопке. */
+export function calcProtectionSelectivity() {
+  const res = checkSelectivity({
+    upstreamRating: num('prs-up'),
+    upstreamType: sel('prs-up-type'),
+    downstreamRating: num('prs-down'),
+  });
+
+  if (!res.ok) { toast(T(res.messageKey)); return; }
+
+  const val = $('#prs-result-val');
+  val.textContent = T(res.selective ? 'protection.selective_yes' : 'protection.selective_no');
+  val.className = 'result-val ' + (res.selective ? 'state-ok' : 'state-error');
+
+  $('#prs-ratio').textContent = round(res.ratio, 2);
+  $('#prs-required').textContent = res.requiredRatio;
+  $('#prs-warnings').innerHTML = renderWarnings(res.warnings);
+}

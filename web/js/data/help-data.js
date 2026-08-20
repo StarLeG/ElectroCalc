@@ -130,16 +130,27 @@ export const HELP_RU = {
 <p><strong>Норматив:</strong> ПУЭ п. 1.7.16.</p>`
   },
   protection: {
-    title: 'Автоматы и УЗО',
-    body: `<p><strong>Автоматический выключатель</strong> — отключает электричество при перегрузке или коротком замыкании.</p>
-<p><strong>УЗО</strong> — отключает цепь при утечке тока на землю. Если человек коснётся оголённого провода, УЗО сработает за доли секунды.</p>
-<p><strong>Что нужно ввести:</strong></p>
+    title: 'Автоматы, УЗО и селективность',
+    body: `<p>Автомат и УЗО решают разные задачи, и одно не заменяет другое. <strong>Автомат</strong> бережёт провод: он отключается, когда ток греет кабель сверх допустимого или когда случилось короткое замыкание. <strong>УЗО</strong> бережёт человека: оно ловит ток, ушедший мимо обратного провода — через отсыревшую изоляцию, через воду, через человека.</p>
+
+<p><strong>Вкладка «Автомат».</strong> Расчётный ток считается из мощности так же, как на странице «Мощность», номинал берётся ближайший больший из стандартного ряда. Дальше идут проверки, и они здесь важнее самого номинала:</p>
 <ul>
-<li><strong>Ток нагрузки (А)</strong> — потребление оборудования.</li>
-<li><strong>Характеристика:</strong> B (розетки), C (смешанные), D (двигатели).</li>
-<li><strong>Ток утечки (мА)</strong> — ванная 10 мА, розетки 30 мА, ввод 100-300 мА.</li>
+<li><strong>Кабель защищён от перегрузки.</strong> Номинал автомата не должен превышать длительно допустимый ток кабеля — иначе кабель успеет перегреться раньше, чем автомат отключится. Допустимый ток считается на странице «Кабели».</li>
+<li><strong>Пуск не вызывает мгновенного расцепления.</strong> Двигатель в момент пуска берёт ток в 5–7 раз больше номинального. Если этот бросок попадает в зону мгновенного расцепления, автомат вправе отключаться при каждом пуске. Отсюда и берутся характеристики: B срабатывает от 3-кратного тока, C — от 5-кратного, D — от 10-кратного.</li>
+<li><strong>Отключение при КЗ гарантировано.</strong> Обратная сторона той же зоны: ток короткого замыкания в самой дальней точке линии обязан превысить её верхнюю границу — 5·In для B, 10·In для C, 20·In для D. Если не превышает, автомат уйдёт в тепловое расцепление и будет отключаться секунды вместо сотых долей.</li>
+<li><strong>Отключающая способность.</strong> Ток КЗ у ввода бывает в тысячи ампер. Аппарат должен этот ток разорвать и уцелеть: для квартирных щитов берут 6000 А, ближе к вводу — 10000 А.</li>
 </ul>
-<p><strong>Норматив:</strong> ПУЭ п. 1.7.79.</p>`
+<p>Незаполненное необязательное поле означает «данных нет»: соответствующая проверка просто не выполняется и в список не попадает.</p>
+
+<p><strong>Вкладка «УЗО».</strong> Здесь считается не то, что аппарат должен отключать, а то, что течёт мимо обратного провода в нормальном режиме. При отсутствии паспортных данных ПУЭ 7.1.83 разрешает оценку: <strong>0,4 мА на каждый ампер нагрузки плюс 10 мкА на каждый метр фазного проводника</strong>. Эта утечка не должна превышать трети номинала УЗО — иначе аппарат начнёт отключаться сам по себе.</p>
+
+<p><strong>Почему расчёт иногда отказывается поднимать номинал.</strong> Условий два, и они тянут в разные стороны. Запас втрое требует брать УЗО крупнее. Защита людей запрещает уходить выше 30 мА: аппарат на 100 мА пропустит через человека ток, которого хватит на фибрилляцию, и отключится уже потом. Когда расчёт требует больше потолка, правильный ответ не «взять 100 мА», а <strong>разделить линию на группы</strong> — калькулятор говорит об этом прямо и называет предельную длину, при которой условие ПУЭ ещё выполняется.</p>
+
+<p><strong>Тип УЗО</strong> отвечает не за величину утечки, а за её форму. Тип AC видит только синусоиду. Импульсный блок питания, светодиодный драйвер или стиральная машина создают утечку с постоянной составляющей, и от неё тип AC слепнет — нужен тип A. Однофазному частотному приводу нужен тип F, трёхфазному приводу и зарядной станции — тип B.</p>
+
+<p><strong>Вкладка «Селективность».</strong> Утечка в группе течёт и через вводное УЗО тоже — оно видит ровно тот же ток. Поэтому запаса по номиналу мало: без выдержки времени вводной аппарат успевает отключиться первым, и вместо одной группы темнеет весь объект. Нужны оба условия сразу — кратность номиналов не меньше трёх и исполнение S или G у вышестоящего аппарата.</p>
+
+<p><strong>Нормативы:</strong> ГОСТ Р 50345 (характеристики B, C, D), ГОСТ Р 50571.4.43 (защита от перегрузки), ПУЭ 7.1.79 и 7.1.82 (защита людей), ПУЭ 7.1.83 (ток утечки), ГОСТ IEC 61008-1 (исполнение S).</p>`
   },
   compensation: {
     title: 'Компенсация реактивной мощности',
@@ -552,7 +563,29 @@ export const HELP_EN = {
   voltage: { title: 'Voltage Drop', body: `<p>Formula: dU = 1.732 x I x L x (R x cos phi + X x sin phi) / 1000</p><p>Max 5% drop.</p>` },
   shortcircuit: { title: 'Short Circuit Current', body: `<p>Formula: Ikz = U / (1.732 x Z)</p><p>Standard: PUE cl. 1.4.1.</p>` },
   grounding: { title: 'Grounding', body: `<p>Formula: R = rho/(2 x pi x L) x ln(4L/d)</p><p>Standard: PUE cl. 1.7.16.</p>` },
-  protection: { title: 'Circuit Breakers and RCD', body: `<p>Standard: PUE cl. 1.7.79.</p>` },
+  protection: {
+    title: 'Breakers, RCDs and selectivity',
+    body: `<p>A breaker and an RCD do different jobs, and neither replaces the other. The <strong>breaker</strong> protects the wire: it trips when the current heats the cable beyond its rating or when a short circuit occurs. The <strong>RCD</strong> protects the person: it catches the current that leaves through damp insulation, through water, through a human body instead of returning along the neutral.</p>
+
+<p><strong>Breaker tab.</strong> The design current comes from the power the same way as on the Power page, and the rating is the next standard value above it. The checks that follow matter more than the rating itself:</p>
+<ul>
+<li><strong>Cable protected against overload.</strong> The breaker rating must not exceed the cable capacity, otherwise the cable overheats before the breaker trips. The capacity is calculated on the Cables page.</li>
+<li><strong>Starting does not cause instantaneous tripping.</strong> A motor draws five to seven times its rated current while starting. If that inrush reaches the instantaneous band, the breaker may trip on every start. This is where the curves come from: B trips from three times the rating, C from five, D from ten.</li>
+<li><strong>Disconnection on a fault is guaranteed.</strong> The other side of the same band: the fault current at the far end of the line must exceed its upper edge — 5·In for B, 10·In for C, 20·In for D. Below that the breaker falls back to thermal tripping and takes seconds instead of hundredths of a second.</li>
+<li><strong>Breaking capacity.</strong> Near the intake the fault current runs into thousands of amps. The device has to interrupt that current and survive: 6000 A is usual for apartment boards, 10000 A closer to the intake.</li>
+</ul>
+<p>An empty optional field means «no data»: the corresponding check is simply skipped.</p>
+
+<p><strong>RCD tab.</strong> What is calculated here is not what the device should trip on, but what leaks past the return conductor in normal operation. Without manufacturer data the wiring rules allow an estimate: <strong>0.4 mA per amp of load plus 10 µA per metre of line conductor</strong>. That leakage must stay below one third of the RCD rating, otherwise the device starts tripping on its own.</p>
+
+<p><strong>Why the calculation sometimes refuses to raise the rating.</strong> Two conditions pull in opposite directions. The threefold margin asks for a larger RCD. Protection of people forbids going above 30 mA: a 100 mA device lets enough current through a human body to cause fibrillation and only then trips. When the calculation asks for more than the ceiling, the answer is not «take 100 mA» but <strong>split the line into groups</strong> — the calculator says so directly and names the maximum length at which the rule still holds.</p>
+
+<p><strong>The RCD type</strong> is about the shape of the leakage, not its size. Type AC only sees a sine wave. A switching power supply, an LED driver or a washing machine produces leakage with a DC component that type AC is blind to — type A is required. A single-phase drive needs type F, a three-phase drive or an EV charger needs type B.</p>
+
+<p><strong>Selectivity tab.</strong> Leakage in a group flows through the upstream RCD as well — it sees exactly the same current. A margin in rating alone is therefore not enough: without a time delay the upstream device trips first and the whole installation goes dark instead of one group. Both conditions are needed — a rating ratio of at least three and an S or G design upstream.</p>
+
+<p><strong>Standards:</strong> IEC 60898-1 (curves B, C, D), IEC 60364-4-43 (overload protection), PUE 7.1.79 and 7.1.82 (protection of people), PUE 7.1.83 (leakage current), IEC 61008-1 (type S).</p>`
+  },
   compensation: { title: 'Reactive Power Compensation', body: `<p>Formula: Qc = P x (tg phi1 - tg phi2)</p>` },
   motor: { title: 'Electric Motors', body: `<p>Starting current is 5-7x rated. Use D-characteristic breakers.</p>` },
   transformer: { title: 'Transformer', body: `<p>Formula: S = P / cos phi, I = S / (1.732 x U)</p>` },

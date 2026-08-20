@@ -519,26 +519,138 @@
 
   <!-- ====== PAGE: PROTECTION ====== -->
   <main class="content page" id="page-protection">
-    <div class="card input-card">
-      <h2 class="card-title" data-i18n="protection.page_title">Выбор аппарата защиты</h2>
-      <div class="field"><label for="pr-I" data-i18n="protection.load_current">Ток нагрузки (А)</label><input type="number" value="16" id="pr-I"></div>
-      <div class="field"><label for="pr-char" data-i18n="protection.breaker_char">Характеристика автомата</label><select id="pr-char"><option>B</option><option selected>C</option><option>D</option></select></div>
-      <div class="field"><label for="pr-leak" data-i18n="protection.leak_current">Ток утечки (мА)</label><input type="number" value="30" id="pr-leak"></div>
-      <div class="btns"><button class="btn btn-primary" id="btn-pr-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-pr-reset" data-i18n="common.reset">Сбросить</button></div>
-    </div>
-    <div class="card result-card">
-      <h3 class="card-title" data-i18n="common.result">Результат</h3>
-      <div class="result-val" id="pr-result-val">100</div>
-      <div class="result-unit">мА</div>
-      <div class="result-desc" data-i18n="protection.uzo_nominal">НОМИНАЛ УЗО</div>
-      <div class="formula-panel">
-        <div class="title" data-i18n="common.formula_norm">Формула и норматив</div>
-        <div class="formula" data-i18n="protection.formula">Iавт ≥ Iнагр · kзап</div>
-        <div class="ref" data-i18n="protection.ref">ПУЭ п. 1.7.79 — выбор автоматического выключателя</div>
+    <div class="card" style="flex:1;display:flex;flex-direction:column">
+      <h2 class="card-title" data-i18n="protection.page_title">Подбор аппарата защиты</h2>
+      <div class="sub-tabs">
+        <div class="sub-tab active" data-sub="prbreaker" data-i18n="protection.tab_breaker">Автомат</div>
+        <div class="sub-tab" data-sub="prrcd" data-i18n="protection.tab_rcd">УЗО / дифавтомат</div>
+        <div class="sub-tab" data-sub="prsel" data-i18n="protection.tab_sel">Селективность</div>
       </div>
+
+      <!-- Sub: Breaker -->
+      <div class="sub-page active" id="sub-prbreaker">
+        <div class="card input-card">
+          <h3 class="card-title" data-i18n="protection.b_title">Автоматический выключатель</h3>
+          <div class="field"><label for="prb-mode" data-i18n="protection.load_mode">Задать нагрузку</label><select id="prb-mode"><option value="power" data-i18n="protection.by_power">Мощностью</option><option value="current" data-i18n="protection.by_current">Током</option></select></div>
+          <div class="row">
+            <div class="field" id="prb-field-P"><label for="prb-P" data-i18n="protection.power">Мощность (кВт)</label><input type="number" step="0.1" value="3.5" id="prb-P"></div>
+            <div class="field" id="prb-field-I" hidden><label for="prb-I" data-i18n="protection.load_current">Ток нагрузки (А)</label><input type="number" step="0.1" value="16" id="prb-I"></div>
+            <div class="field" id="prb-field-cos"><label for="prb-cos" data-i18n="protection.cos_phi">cos φ</label><input type="number" step="0.01" value="0.95" id="prb-cos"></div>
+          </div>
+          <div class="row">
+            <div class="field"><label for="prb-phases" data-i18n="protection.phases">Сеть</label><select id="prb-phases"><option value="1" data-i18n="protection.ph1">Однофазная</option><option value="3" data-i18n="protection.ph3">Трёхфазная</option></select></div>
+            <div class="field"><label for="prb-U" data-i18n="protection.voltage">Напряжение (В)</label><input type="number" value="230" id="prb-U"></div>
+          </div>
+          <div class="field"><label for="prb-type" data-i18n="protection.load_type">Тип нагрузки</label><select id="prb-type"><option value="resistive" data-i18n="protection.lt_resistive">Активная — ТЭНы, лампы накаливания</option><option value="mixed" selected data-i18n="protection.lt_mixed">Смешанная — розетки, бытовая техника</option><option value="motor" data-i18n="protection.lt_motor">Двигатель, компрессор, насос</option></select></div>
+          <div class="row">
+            <div class="field"><label for="prb-curve" data-i18n="protection.breaker_char">Характеристика</label><select id="prb-curve"><option value="" data-i18n="protection.curve_auto">По типу нагрузки</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></div>
+            <div class="field"><label for="prb-start" data-i18n="protection.start_mult">Кратность пускового тока</label><input type="number" step="0.5" value="0" id="prb-start"></div>
+          </div>
+
+          <div class="opt-note">
+            <span data-i18n="protection.optional">Необязательные данные: без них проверка не выполняется.</span>
+            <a href="/cable/" data-i18n="protection.cable_hint">Посчитать ток кабеля</a>
+            <a href="/kzcable/" data-i18n="protection.sc_hint">Посчитать ток КЗ</a>
+          </div>
+          <div class="row">
+            <div class="field"><label for="prb-Iz" data-i18n="protection.cable_current">Допустимый ток кабеля (А)</label><input type="number" step="0.1" value="" id="prb-Iz"></div>
+            <div class="field"><label for="prb-Ikz" data-i18n="protection.sc_current">Ток КЗ в конце линии (А)</label><input type="number" value="" id="prb-Ikz"></div>
+          </div>
+          <div class="field"><label for="prb-Icn" data-i18n="protection.breaking">Отключающая способность (А)</label><select id="prb-Icn"><option value="">—</option><option value="4500">4500</option><option value="6000">6000</option><option value="10000">10000</option></select></div>
+
+          <div class="btns"><button class="btn btn-primary" id="btn-prb-calc" data-i18n="common.calculate">Рассчитать</button></div>
+        </div>
+
+        <div class="card result-card">
+          <h3 class="card-title" data-i18n="common.result">Результат</h3>
+          <div class="result-val" id="prb-result-val">—</div>
+          <div class="result-unit" data-i18n="protection.unit_a">А</div>
+          <div class="result-desc" data-i18n="protection.breaker_rating">НОМИНАЛ АВТОМАТА</div>
+          <div class="grid">
+            <div class="detail"><div class="lbl" data-i18n="protection.calc_current">РАСЧЁТНЫЙ ТОК</div><div class="val" id="prb-IB">—</div></div>
+            <div class="detail"><div class="lbl" data-i18n="protection.curve_res">ХАРАКТЕРИСТИКА</div><div class="val" id="prb-curve-val">—</div></div>
+            <div class="detail"><div class="lbl" data-i18n="protection.i2">ТОК РАСЦЕПЛЕНИЯ I₂</div><div class="val" id="prb-I2">—</div></div>
+            <div class="detail"><div class="lbl" data-i18n="protection.start_current">ПУСКОВОЙ ТОК</div><div class="val" id="prb-Istart">—</div></div>
+          </div>
+          <div class="card-title" data-i18n="protection.checks">Проверки</div>
+          <div class="check-table" id="prb-checks"></div>
+          <div class="warn-list" id="prb-warnings"></div>
+          <div class="formula-panel">
+            <div class="title" data-i18n="common.formula_norm">Формула и норматив</div>
+            <div class="formula" data-i18n="protection.b_formula">IB ≤ In ≤ Iдоп,  Iкз ≥ 1,1 · k · In</div>
+            <div class="ref" data-i18n="protection.b_ref">ГОСТ Р 50345 (характеристики B, C, D), ГОСТ Р 50571.4.43 (защита от перегрузки)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub: RCD -->
+      <div class="sub-page" id="sub-prrcd">
+        <div class="card input-card">
+          <h3 class="card-title" data-i18n="protection.r_title">УЗО и дифференциальная часть дифавтомата</h3>
+          <div class="row">
+            <div class="field"><label for="prr-I" data-i18n="protection.load_current">Ток нагрузки (А)</label><input type="number" step="0.1" value="16" id="prr-I"></div>
+            <div class="field"><label for="prr-L" data-i18n="protection.r_length">Длина фазного проводника (м)</label><input type="number" value="50" id="prr-L"></div>
+          </div>
+          <div class="field"><label for="prr-purpose" data-i18n="protection.purpose">Назначение линии</label><select id="prr-purpose"><option value="group" selected data-i18n="protection.p_group">Розеточная группа, бытовые потребители</option><option value="wet" data-i18n="protection.p_wet">Влажное помещение, детская — повышенная опасность</option><option value="main" data-i18n="protection.p_main">Ввод в здание, противопожарное</option></select></div>
+          <div class="field"><label for="prr-character" data-i18n="protection.character">Характер нагрузки</label><select id="prr-character"><option value="resistive" data-i18n="protection.c_resistive">ТЭНы, лампы накаливания</option><option value="electronics" selected data-i18n="protection.c_electronics">Бытовая техника, электроника, светодиоды</option><option value="drive1ph" data-i18n="protection.c_drive1ph">Однофазный частотный привод, инверторная техника</option><option value="drive3ph" data-i18n="protection.c_drive3ph">Трёхфазный привод, зарядная станция</option></select></div>
+          <div class="field"><label for="prr-breaker" data-i18n="protection.rcd_breaker">Номинал защищающего автомата (А)</label><input type="number" value="16" id="prr-breaker"></div>
+          <div class="btns"><button class="btn btn-primary" id="btn-prr-calc" data-i18n="common.calculate">Рассчитать</button></div>
+        </div>
+
+        <div class="card result-card">
+          <h3 class="card-title" data-i18n="common.result">Результат</h3>
+          <div class="result-val" id="prr-result-val">—</div>
+          <div class="result-unit" data-i18n="protection.unit_ma">мА</div>
+          <div class="result-desc" data-i18n="protection.rcd_rating">НОМИНАЛ УЗО</div>
+          <div class="grid">
+            <div class="detail"><div class="lbl" data-i18n="protection.leakage">ТОК УТЕЧКИ</div><div class="val" id="prr-leak">—</div></div>
+            <div class="detail"><div class="lbl" data-i18n="protection.required">ТРЕБУЕТ РАСЧЁТ</div><div class="val" id="prr-required">—</div></div>
+            <div class="detail"><div class="lbl" data-i18n="protection.limit">ПОТОЛОК ПО НАЗНАЧЕНИЮ</div><div class="val" id="prr-limit">—</div></div>
+            <div class="detail"><div class="lbl" data-i18n="protection.rcd_type">ТИП</div><div class="val" id="prr-type">—</div></div>
+            <div class="detail"><div class="lbl" data-i18n="protection.nominal_current">НОМИНАЛЬНЫЙ ТОК</div><div class="val" id="prr-nominal">—</div></div>
+            <div class="detail"><div class="lbl" data-i18n="protection.margin">ЗАПАС ИЗРАСХОДОВАН</div><div class="val" id="prr-margin">—</div></div>
+            <div class="detail"><div class="lbl" data-i18n="protection.max_length">ПРЕДЕЛЬНАЯ ДЛИНА</div><div class="val" id="prr-maxlen">—</div></div>
+          </div>
+          <div class="warn-list" id="prr-warnings"></div>
+          <div class="formula-panel">
+            <div class="title" data-i18n="common.formula_norm">Формула и норматив</div>
+            <div class="formula" data-i18n="protection.r_formula">IΔ = 0,4 мА/А · Iнагр + 0,01 мА/м · L,   IΔn ≥ 3 · IΔ</div>
+            <div class="ref" data-i18n="protection.r_ref">ПУЭ 7.1.83 (ток утечки), ПУЭ 7.1.79 и 7.1.82 (защита людей)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub: Selectivity -->
+      <div class="sub-page" id="sub-prsel">
+        <div class="card input-card">
+          <h3 class="card-title" data-i18n="protection.s_title">Селективность пары УЗО</h3>
+          <div class="row">
+            <div class="field"><label for="prs-up" data-i18n="protection.up_rating">IΔn вышестоящего (мА)</label><input type="number" value="300" id="prs-up"></div>
+            <div class="field"><label for="prs-up-type" data-i18n="protection.up_type">Исполнение вышестоящего</label><select id="prs-up-type"><option value="" data-i18n="protection.t_instant">Мгновенное — без выдержки</option><option value="S" selected data-i18n="protection.t_s">S — с выдержкой времени</option><option value="G" data-i18n="protection.t_g">G — с выдержкой времени</option></select></div>
+          </div>
+          <div class="field"><label for="prs-down" data-i18n="protection.down_rating">IΔn нижестоящего (мА)</label><input type="number" value="30" id="prs-down"></div>
+          <div class="btns"><button class="btn btn-primary" id="btn-prs-calc" data-i18n="common.calculate">Рассчитать</button></div>
+        </div>
+
+        <div class="card result-card">
+          <h3 class="card-title" data-i18n="common.result">Результат</h3>
+          <div class="result-val" id="prs-result-val">—</div>
+          <div class="grid">
+            <div class="detail"><div class="lbl" data-i18n="protection.ratio">КРАТНОСТЬ НОМИНАЛОВ</div><div class="val" id="prs-ratio">—</div></div>
+            <div class="detail"><div class="lbl" data-i18n="protection.required_ratio">ТРЕБУЕТСЯ</div><div class="val" id="prs-required">—</div></div>
+          </div>
+          <div class="warn-list" id="prs-warnings"></div>
+          <div class="formula-panel">
+            <div class="title" data-i18n="common.formula_norm">Формула и норматив</div>
+            <div class="formula" data-i18n="protection.s_formula">IΔn(верх) ≥ 3 · IΔn(низ)  и выдержка времени сверху</div>
+            <div class="ref" data-i18n="protection.s_ref">ГОСТ IEC 61008-1 (исполнение S)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="warn-item" id="prb-disclaimer" data-i18n="protection.disclaimer">Расчёт справочный. Он не заменяет проект: время отключения, тип системы заземления и характеристики конкретных аппаратов проверяются по каталогу производителя и ПУЭ.</div>
     </div>
   </main>
-
   <!-- ====== PAGE: COMPENSATION ====== -->
   <main class="content page" id="page-compensation">
     <div class="card input-card">

@@ -226,6 +226,21 @@ details.adv > :last-child { padding-bottom: var(--sp-3); }
 .check-verdict { white-space: nowrap; }
 .fail { color: var(--error); font-weight: 600; }
 
+/* Пояснение к необязательным полям.
+   Ссылки ведут туда, где эти значения считаются: держать оба расчёта на одной
+   странице незачем, а искать их вслепую пользователь не должен. */
+.opt-note {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: baseline;
+  margin: var(--sp-3) 0 var(--sp-2);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.opt-note a { color: var(--accent); text-decoration: none; }
+.opt-note a:hover { text-decoration: underline; }
+
 /* Предупреждения */
 .warn-list { display: flex; flex-direction: column; gap: var(--sp-2); }
 .warn-list:empty { display: none; }
@@ -294,9 +309,9 @@ details.adv > :last-child { padding-bottom: var(--sp-3); }
 
 /* Цвет статуса. Те же токены, что и у заливки жил в разрезе, — плитка и
    картинка обязаны читаться как одно сообщение. */
-.val.state-ok { color: var(--result); }
-.val.state-warn { color: var(--warn); }
-.val.state-error { color: var(--error); }
+.val.state-ok, .result-val.state-ok { color: var(--result); }
+.val.state-warn, .result-val.state-warn { color: var(--warn); }
+.val.state-error, .result-val.state-error { color: var(--error); }
 
 /* ============ Витрина на главной ============ */
 

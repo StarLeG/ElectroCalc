@@ -2,7 +2,8 @@
 'use strict';
 
 import { $, $$, lang, loadLang, showPage, showSubTab, toggleTheme, printPage, copyText } from './core.js';
-import { calcPower, calcVoltage, calcShortCircuit, calcGrounding, calcProtection } from './electrical.js';
+import { calcPower, calcVoltage, calcShortCircuit, calcGrounding } from './electrical.js';
+import { calcProtectionBreaker, calcProtectionRCD, calcProtectionSelectivity, initProtectionForm } from './protection.js';
 import { calcCable, initCableForm } from './cable-select.js';
 import { calcLedStrip, initStripForm, addStripRow, removeStripRow } from './led-strip.js';
 import { calcSleeveFill, initSleeveForm, addSleeveRow, removeSleeveRow } from './sleeve.js';
@@ -70,7 +71,9 @@ function bindAll() {
   const binds = [
     ['btn-power-calc', calcPower], ['btn-cable-calc', calcCable], ['btn-voltage-calc', calcVoltage],
     ['btn-lst-calc', calcLedStrip], ['btn-lst-add', addStripRow], ['btn-lst-remove', removeStripRow],
-    ['btn-sc-calc', calcShortCircuit], ['btn-g-calc', calcGrounding], ['btn-pr-calc', calcProtection],
+    ['btn-sc-calc', calcShortCircuit], ['btn-g-calc', calcGrounding],
+    ['btn-prb-calc', calcProtectionBreaker], ['btn-prr-calc', calcProtectionRCD],
+    ['btn-prs-calc', calcProtectionSelectivity],
     ['btn-comp-calc', calcCompensation], ['btn-m-calc', calcMotor], ['btn-t-calc', calcTransformer],
     ['btn-l-calc', calcLighting], ['btn-u-calc', calcUPS], ['btn-conv-calc', calcConverter],
     ['btn-cl-calc', calcCurrentLoop], ['btn-sc-scale-calc', calcScaling], ['btn-rtd-calc', calcRTD],
@@ -167,6 +170,7 @@ function bindAll() {
   initCableForm();
   initStripForm();
   initSleeveForm();
+  initProtectionForm();
 
   initWirecab();
 

@@ -66,10 +66,10 @@ export const PAGES = [
   {
     id: 'protection', group: 'electrical', priority: 0.8,
     related: ['shortcircuit', 'cable', 'fuse', 'kzcable'],
-    titleRu: 'Выбор автоматического выключателя по расчётному току',
-    titleEn: 'Circuit breaker selection by design current',
-    descRu: 'Подбор номинала и характеристики автомата под нагрузку и кабель. Проверка условия защиты кабеля от перегрузки: номинал не выше допустимого тока.',
-    descEn: 'Breaker rating and curve for the load and the cable, including the overload protection condition.',
+    titleRu: 'Подбор автомата и УЗО: номинал, характеристика, ток утечки',
+    titleEn: 'Breaker and RCD selection: rating, curve, leakage current',
+    descRu: 'Номинал и характеристика автомата с проверкой защиты кабеля и отключения при КЗ. Ток утечки по ПУЭ 7.1.83, номинал и тип УЗО, селективность пары.',
+    descEn: 'Breaker rating and curve with cable and fault-clearing checks, leakage current per the wiring rules, RCD rating, type and selectivity.',
   },
   {
     id: 'groundcircuit', group: 'electrical', priority: 0.7,

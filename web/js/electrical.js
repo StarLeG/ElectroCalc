@@ -1,7 +1,6 @@
 /* EngiCalc — Electrical calculations */
 'use strict';
 import { $, num, round, toast, validate, validatePositive, validateRange, T } from './core.js';
-import { RCD_RATINGS, nextStandard } from './data/cable-data.js';
 
 export function calcPower() {
   if(!validate('p-power')||!validatePositive('p-u','p-eta')||!validateRange('p-cos',0.01,1))return;
@@ -38,8 +37,3 @@ export function calcGrounding() {
   $('#g-result-val').textContent=Math.ceil(R1/(Rreq*0.65));
 }
 
-export function calcProtection() {
-  if(!validate('pr-leak'))return;
-  const leak=num('pr-leak');
-  $('#pr-result-val').textContent=nextStandard(RCD_RATINGS,leak*3)||RCD_RATINGS[RCD_RATINGS.length-1];
-}
