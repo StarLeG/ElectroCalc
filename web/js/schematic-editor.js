@@ -761,6 +761,25 @@ function modelBounds() {
   };
 }
 
+/**
+ * Замкнут ли контакт реле на чертеже.
+ *
+ * У обычного ключа положение хранится в модели, и чертёж читает его оттуда.
+ * Контакт реле своего состояния не имеет: им управляет катушка, и положение
+ * известно только из расчёта — оттуда и берётся. Без расчёта контакт чертится
+ * в исходном положении, как на схеме обесточенного щита: замыкающий разомкнут,
+ * размыкающий замкнут.
+ *
+ * @param {{id: string, type: string}} comp контакт
+ * @param {?{ok: boolean, branches: Object}} sim результат расчёта или null
+ */
+export function contactClosed(comp, sim) {
+  const region = sim?.ok ? sim.branches?.[comp.id]?.region : null;
+  if (region === 'ct_closed') return true;
+  if (region === 'ct_open') return false;
+  return comp.type === 'contactNC';
+}
+
 function drawComponent(s, comp) {
   const def = COMPONENT_TYPES[comp.type];
   const opts = { rotate: comp.rotate || 0, value: valueLabel(comp) };
@@ -785,8 +804,15 @@ function drawComponent(s, comp) {
     case 'diac':      s.diac(comp.id, comp.x, comp.y, opts); break;
     case 'relay':
     case 'contactor': s.relayCoil(comp.id, comp.x, comp.y, opts); break;
-    case 'contactNO': s.switchNO(comp.id, comp.x, comp.y, { ...opts, value: '' }); break;
-    case 'contactNC': s.switchNC(comp.id, comp.x, comp.y, { ...opts, value: '' }); break;
+    case 'contactNO':
+    case 'contactNC': {
+      // Положение контакта задаёт катушка, поэтому в режиме эмуляции оно
+      // берётся из расчёта: замкнувшийся контакт обязан выглядеть замкнутым,
+      // иначе чертёж противоречит числам рядом с ним.
+      const closed = contactClosed(comp, mode === 'sim' ? simResult : null);
+      s.contact(comp.id, comp.x, comp.y, { ...opts, value: '', kind: comp.type === 'contactNC' ? 'nc' : 'no', closed });
+      break;
+    }
     // lead согласован с PIN_OFFSETS.ground, иначе вывод уходит с сетки.
     case 'ground':    s.ground(comp.x, comp.y, { rotate: comp.rotate || 0, lead: GROUND_LEAD }); break;
     case 'npn':       s.transistor(comp.id, comp.x, comp.y, { ...opts, type: 'npn', value: '' }); break;

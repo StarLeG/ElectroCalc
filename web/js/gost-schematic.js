@@ -373,6 +373,35 @@
       this._labels(ref, cx, cy, deg, opts, -5, 2);
       return this;
     }
+    /**
+     * Контакт реле в заданном положении (расширение форка EngiCalc).
+     *
+     * switchNO/switchNC рисуют контакт всегда в исходном положении — этого
+     * хватает для чертежа, но не для эмуляции: там контакт подчиняется катушке
+     * и обязан быть виден замкнутым или разомкнутым. Тип контакта при этом
+     * читается по упору на неподвижной части: он есть у размыкающего в любом
+     * положении и отсутствует у замыкающего.
+     *
+     * kind   — 'no' замыкающий (по умолчанию) либо 'nc' размыкающий;
+     * closed — замкнут ли сейчас; по умолчанию исходное положение.
+     */
+    contact(ref, cx, cy, opts = {}) {
+      const deg = opts.rotate || 0, L = opts.pitch || 20;
+      const nc = opts.kind === 'nc';
+      const closed = opts.closed === undefined ? nc : !!opts.closed;
+      const inner =
+        `<path d="M ${-L/2} 0 H ${-3}"/>` +
+        `<circle cx="-3" cy="0" r="0.4" fill="${this.o.stroke}"/>` +
+        (closed ? `<path d="M -3 0 L 3 0"/>` : `<path d="M -3 0 L 3 -4"/>`) +
+        (nc ? `<path d="M 3 0 v -1 l 0 2 M 2 -4 L 3 -1"/>` : '') +
+        `<circle cx="3" cy="0" r="0.4" fill="${this.o.stroke}"/>` +
+        `<path d="M 3 0 H ${L/2}"/>`;
+      this._add(this._wrap(cx, cy, deg, inner));
+      this._reg(ref, 'a', ...place(-L/2, 0, cx, cy, deg));
+      this._reg(ref, 'b', ...place(L/2, 0, cx, cy, deg));
+      this._labels(ref, cx, cy, deg, opts, -5, 2);
+      return this;
+    }
     /** Кнопка с замыкающим контактом (SB). */
     button(ref, cx, cy, opts = {}) {
       const deg = opts.rotate || 0, L = opts.pitch || 20;
