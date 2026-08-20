@@ -604,13 +604,25 @@ export function showPage(name) {
 }
 
 
+/**
+ * Открыть вкладку внутри страницы.
+ *
+ * Вкладка ищется ДО того, как гасятся остальные: страниц с вкладками много,
+ * имена у них разные, и на чужое имя функция обязана не делать ничего. Иначе
+ * инлайновый display:none перебивает `.sub-page.active{display:flex}` из CSS,
+ * и страница стоит пустой до первого клика по вкладке.
+ *
+ * @param {string} name имя вкладки — суффикс id блока `#sub-<name>`
+ */
 export function showSubTab(name) {
   const parent = $('.page.active .sub-tabs')?.closest('.card');
   if (!parent) return;
+  const sub = parent.querySelector(`#sub-${name}`);
+  if (!sub) return;
   parent.querySelectorAll('.sub-page').forEach(p => { p.classList.remove('active'); p.style.display='none'; });
   parent.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
-  const sub = parent.querySelector(`#sub-${name}`);
-  if (sub) { sub.classList.add('active'); sub.style.display = 'flex'; }
+  sub.classList.add('active');
+  sub.style.display = 'flex';
   parent.querySelector(`.sub-tab[data-sub="${name}"]`)?.classList.add('active');
 }
 

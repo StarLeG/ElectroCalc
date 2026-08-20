@@ -36,7 +36,7 @@ function assert(name, actual, expected, tolerance = 0.01) {
 }
 
 // Import calculation functions from modules
-import { round } from './js/core.js';
+import { round, showSubTab } from './js/core.js';
 import { selectCable } from './js/cable-select.js';
 import { calcStripSystem } from './js/led-strip.js';
 import { plotXY, niceNum, niceScale } from './js/chart.js';
@@ -1476,6 +1476,40 @@ output.innerHTML += '<h3 style="color:#FFB300;margin-top:16px">Model &amp; geome
 }
 
 // ==================== SUMMARY ====================
+// ==================== SUB-TABS ====================
+// showSubTab получает имя стартовой вкладки один раз при загрузке, а страниц с
+// вкладками много, и имена у них разные. На чужое имя функция обязана не делать
+// ничего: стартовую вкладку помечает разметка классом active, а инлайновый
+// display:none перебил бы CSS и оставил бы страницу пустой до первого клика.
+{
+  const host = document.createElement('div');
+  host.className = 'page active';
+  host.innerHTML = `<div class="card">
+    <div class="sub-tabs">
+      <div class="sub-tab active" data-sub="prbreaker">Автомат</div>
+      <div class="sub-tab" data-sub="prrcd">УЗО</div>
+    </div>
+    <div class="sub-page active" id="sub-prbreaker"></div>
+    <div class="sub-page" id="sub-prrcd"></div>
+  </div>`;
+  document.body.appendChild(host);
+
+  const first = host.querySelector('#sub-prbreaker');
+  const second = host.querySelector('#sub-prrcd');
+
+  showSubTab('currentloop');
+  assertTrue('Вкладки: чужое имя не снимает active с размеченной вкладки', first.classList.contains('active'));
+  assertTrue('Вкладки: чужое имя не прячет содержимое инлайновым стилем', first.style.display !== 'none');
+  assertTrue('Вкладки: чужое имя не гасит подсветку самой вкладки',
+    host.querySelector('.sub-tab[data-sub="prbreaker"]').classList.contains('active'));
+
+  showSubTab('prrcd');
+  assertTrue('Вкладки: переключение на существующую вкладку работает', second.classList.contains('active'));
+  assertTrue('Вкладки: прежняя вкладка закрылась', !first.classList.contains('active'));
+
+  host.remove();
+}
+
 summary.innerHTML = `<div class="summary ${failed === 0 ? 'ok' : 'err'}">${passed} passed, ${failed} failed (total: ${passed + failed})</div>`;
 </script>
 </body>
