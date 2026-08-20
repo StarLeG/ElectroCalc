@@ -64,6 +64,43 @@ for (const [route, file] of files) {
   if (route !== '/' && /(?:href|src)="(?:css|js|assets)\//.test(html)) {
     fail(route, 'остались относительные пути к css, js или assets');
   }
+
+  if (route !== '/') {
+    // Цепочка для сниппета: без неё в выдаче остаётся голый адрес.
+    const ld = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+      .map(m => { try { return JSON.parse(m[1]); } catch { return null; } });
+    if (ld.includes(null)) fail(route, 'невалидный JSON-LD');
+    if (!ld.some(d => d && d['@type'] === 'BreadcrumbList')) {
+      fail(route, 'нет разметки BreadcrumbList');
+    }
+
+    // Перелинковка: ссылки должны вести на собранные страницы.
+    const related = [...html.matchAll(/<a class="related-card" href="\/([\w-]+)\/"/g)].map(m => m[1]);
+    const page = PAGES.find(p => `/${p.id}/` === route);
+    if (page && (page.related || []).length && !related.length) {
+      fail(route, 'блок «Смотрите также» не собрался');
+    }
+    for (const id of related) {
+      if (id === page?.id) fail(route, 'раздел ссылается сам на себя');
+      if (!existsSync(path.join(WEB, id, 'index.html'))) {
+        fail(route, `«Смотрите также» ведёт на несобранный раздел /${id}/`);
+      }
+    }
+  }
+}
+
+/* ===================== СТРАНИЦА 404 ===================== */
+
+const notFound = path.join(WEB, '404.html');
+if (!existsSync(notFound)) {
+  fail('/404.html', 'страница не собрана');
+} else {
+  const html = await readFile(notFound, 'utf8');
+  // Страница-заглушка не должна попадать в индекс и не должна назначать себе
+  // канонический адрес: она отдаётся под любым несуществующим адресом.
+  if (!/<meta name="robots" content="noindex">/.test(html)) fail('/404.html', 'нет noindex');
+  if (/rel="canonical"/.test(html)) fail('/404.html', 'остался canonical');
+  if (!/home-card/.test(html)) fail('/404.html', 'нет каталога разделов');
 }
 
 /* ===================== СООТВЕТСТВИЕ СПИСКУ ===================== */

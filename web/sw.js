@@ -64,6 +64,7 @@ const STATIC_ASSETS = [
   '/donate/',
   /* PAGES:END */
   '/manifest.json',
+  '/404.html',
   '/favicon.ico',
   '/favicon.svg',
   '/assets/icon-192.png',

@@ -22,7 +22,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WEB = path.join(ROOT, 'web');
 const SITE = 'https://engicalc.electroman.by';
 
-const { PAGES, GROUP_ORDER } = await import(url('web/js/data/pages-meta.js'));
+const { PAGES, PAGE_BY_ID, GROUP_ORDER } = await import(url('web/js/data/pages-meta.js'));
 const { HELP_RU } = await import(url('web/js/data/help-data.js'));
 
 function url(rel) {
@@ -164,6 +164,48 @@ function buildHelp(page) {
       </details>`;
 }
 
+/**
+ * Родственные расчёты под калькулятором.
+ *
+ * Связи заданы в pages-meta.js по ходу работы, а не по тематической близости:
+ * посчитав сечение кабеля, идут проверять потери напряжения и ток КЗ. Для
+ * поиска это ещё и внутренние ссылки, которых у сайта не было вовсе.
+ */
+function buildRelated(page) {
+  const items = (page.related || [])
+    .map(id => PAGE_BY_ID[id])
+    .filter(Boolean)
+    .map(rel => `
+          <a class="related-card" href="/${rel.id}/">
+            <span class="related-name">${escapeAttr(rel.titleRu)}</span>
+          </a>`).join('');
+  if (!items) return '';
+  return `
+      <nav class="related" aria-label="Смотрите также">
+        <h2 class="related-title">Смотрите также</h2>
+        <div class="related-cards">${items}
+        </div>
+      </nav>`;
+}
+
+/**
+ * Цепочка «Главная — раздел» для поисковой выдачи.
+ *
+ * Показывается в сниппете вместо голого адреса. Группы своих страниц не имеют,
+ * поэтому цепочка из двух звеньев — вымышленных уровней в ней быть не должно.
+ */
+function buildBreadcrumbLd(page) {
+  const data = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'EngiCalc', item: `${SITE}/` },
+      { '@type': 'ListItem', position: 2, name: page.titleRu, item: `${SITE}/${page.id}/` },
+    ],
+  };
+  return `<script type="application/ld+json">${JSON.stringify(data)}</script>`;
+}
+
 /* ===================== СТРАНИЦА РАЗДЕЛА ===================== */
 
 function buildPage(parts, page) {
@@ -172,7 +214,8 @@ function buildPage(parts, page) {
 
   // Внутри разметки калькулятора тоже встречаются ссылки на статику — например,
   // QR-код на странице поддержки. Из подкаталога они вели бы в никуда.
-  const withHelp = absolutePaths(main).replace(/<\/main>$/, buildHelp(page) + '\n  </main>');
+  const withHelp = absolutePaths(main).replace(
+    /<\/main>$/, buildHelp(page) + buildRelated(page) + '\n  </main>');
 
   // Название калькулятора — заголовок первого уровня страницы.
   const withH1 = withHelp
@@ -191,14 +234,18 @@ function buildPage(parts, page) {
     withH1.replace('class="content page"', 'class="content page active"') +
     absolutePaths(parts.suffix);
 
-  return buildHead(parts.head, page) + '</head>\n' + body;
+  return buildHead(parts.head, page) + buildBreadcrumbLd(page) + '</head>\n' + body;
 }
 
 /* ===================== ВИТРИНА ===================== */
 
 
-function buildHome(parts) {
-  const groups = GROUP_ORDER.map(g => {
+/**
+ * Каталог разделов — общая часть витрины и страницы 404: человеку, попавшему
+ * на несуществующий адрес, нужен тот же список, что и на главной.
+ */
+function buildCatalog() {
+  return GROUP_ORDER.map(g => {
     const items = PAGES.filter(p => p.group === g);
     if (!items.length) return '';
     const cards = items.map(p => `
@@ -213,6 +260,40 @@ function buildHome(parts) {
         </div>
       </section>`;
   }).join('');
+}
+
+/**
+ * Страница 404 в оболочке сайта.
+ *
+ * Сервер отдавал свою страницу — человек с неверной ссылки уходил ни с чем.
+ * Здесь он видит меню и каталог расчётов, то есть попадает не в тупик.
+ * Робот при этом получает честный код 404 — за него отвечает ErrorDocument.
+ */
+function build404(parts) {
+  const title = 'Страница не найдена — EngiCalc';
+  const head = absolutePaths(parts.head)
+    .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
+    .replace(/<meta name="description" content="[^"]*">/,
+      '<meta name="robots" content="noindex">')
+    .replace(/<link rel="canonical" href="[^"]*">/, '');
+
+  const main = `
+  <main class="content page active" id="page-404">
+    <div class="home">
+      <h1 class="home-title">Такой страницы нет</h1>
+      <p class="home-lead">Адрес не существует или раздел переехал. Вот все расчёты —
+        нужный, скорее всего, среди них.</p>
+      ${buildCatalog()}
+    </div>
+  </main>`;
+
+  return head + '</head>\n<body data-page="404">' +
+    setBreadcrumb(buildNav(parts.prefix, '404'), 'EngiCalc / Страница не найдена') +
+    main + absolutePaths(parts.suffix);
+}
+
+function buildHome(parts) {
+  const groups = buildCatalog();
 
   const title = 'EngiCalc — онлайн-калькуляторы для электриков и КИПиА';
   const desc = 'Более пятидесяти инженерных расчётов по ПУЭ, ГОСТ и IEC: ' +
@@ -300,6 +381,7 @@ for (const page of PAGES) {
 }
 
 await writeFile(path.join(WEB, 'index.html'), buildHome(parts));
+await writeFile(path.join(WEB, '404.html'), build404(parts));
 await writeFile(path.join(WEB, 'sitemap.xml'), buildSitemap());
 const cached = await patchServiceWorker();
 
@@ -315,7 +397,7 @@ for (const dir of stale) {
 }
 
 console.log(`страниц собрано: ${written}`);
-console.log(`витрина: web/index.html`);
+console.log(`витрина: web/index.html, страница 404: web/404.html`);
 console.log(`карта сайта: ${PAGES.length + 1} адресов`);
 console.log(`прекэш service worker: ${cached} адресов страниц`);
 if (stale.length) console.log(`удалены каталоги без раздела: ${stale.join(', ')}`);
