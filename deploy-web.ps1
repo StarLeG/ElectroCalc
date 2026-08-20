@@ -27,7 +27,12 @@ param(
     # assets/favicon.svg переехал в корень (/favicon.svg): каталог /assets/ закрыт
     # в robots.txt, и робот не мог загрузить оттуда фавиконку. Старую копию надо
     # снять с публикации, иначе она останется висеть на сервере после переезда.
-    [string[]]$Exclude  = @('tests.html', 'assets/favicon.svg')
+    # _master.html — исходник для сборки страниц: на сервере он был бы копией
+    # всего приложения на отдельном адресе, то есть дублем содержимого.
+    [string[]]$Exclude  = @('tests.html', 'assets/favicon.svg', '_master.html'),
+    # Пропустить проверку собранных страниц. Нужен только для выгрузки правок,
+    # не затрагивающих разметку: обычная выкладка обязана идти с проверкой.
+    [switch]$SkipCheck
 )
 
 $ErrorActionPreference = 'Stop'
@@ -39,6 +44,17 @@ if (-not $env:WEBDAV_PASS) {
 if (-not (Test-Path $LocalRoot)) {
     Write-Error "Каталог не найден: $LocalRoot"
     exit 1
+}
+
+# --- страницы должны быть собраны из текущего мастер-файла ---
+# Без этого легко залить сайт, разошедшийся с исходником: правки в _master.html
+# есть, а страницы разделов остались от прошлой сборки.
+if (-not $SkipCheck) {
+    & node (Join-Path $PSScriptRoot "tools/check-pages.mjs")
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Проверка страниц не прошла. Выполните: node tools/build-pages.mjs"
+        exit 1
+    }
 }
 
 $base = "https://${Server}:${Port}/${RemoteRoot}"

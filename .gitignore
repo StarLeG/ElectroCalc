@@ -81,3 +81,11 @@ __pycache__/
 # но это личная настройка машины, а не часть проекта.
 electroman.by Secure WebDisk.vbs
 mimocode_backup_*.zip
+
+# ===== Сгенерированные страницы веб-версии =====
+# Собираются из web/_master.html скриптом tools/build-pages.mjs.
+# В историю не идут: одна правка мастера меняла бы полсотни файлов разом.
+# Перед выкладкой: npm run build (deploy-web.ps1 проверяет свежесть сам).
+web/index.html
+web/*/index.html
+web/sitemap.xml

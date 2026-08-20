@@ -1,0 +1,12 @@
+{
+  "name": "engicalc",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Сборка страниц веб-версии EngiCalc. Зависимостей нет — только скрипты в tools/",
+  "type": "module",
+  "scripts": {
+    "build": "node tools/build-pages.mjs",
+    "check": "node tools/check-pages.mjs",
+    "prepare-deploy": "node tools/build-pages.mjs && node tools/check-pages.mjs"
+  }
+}

@@ -91,7 +91,8 @@ export const I18N = {
       page: {power:"Мощность",cable:"Кабели",voltage:"Потери",shortcircuit:"КЗ",grounding:"Заземление",protection:"Защита",groundcircuit:"Заземл. контур",kzcable:"КЗ-кабель",motor:"Двигатели",motorstart:"Пуск двигателя",transformer:"Трансформатор",compensation:"Компенсация",lighting:"Освещение",emergency:"Аварийное освещ.",ledstrip:"Светодиодные ленты",ups:"ИБП / АКБ",loadpanel:"Щит нагрузок",derating:"Дерейтинг",diam2sec:"Диаметр→Сечение",cableloss:"Потери в кабеле",busbar:"Шины",cabletray:"Кабель-лоток",conduitfill:"Заполнение труб",sleeve:"Гильзы",converter:"Конвертер",wirecab:"Провод и НШВИ",demandfactor:"Коэфф. спроса",fuse:"Предохранитель",dcvdrop:"DC потери",threephase:"Три фазы",energyaudit:"Энергоаудит",solar:"Солнечная энергия",rccalc:"R/C соединение",capval:"Значения конд.",motorcap:"Конденсатор Дв.",led:"Светодиод",zener:"Стабилитрон",rlc:"Импеданс RLC",bridge:"Мост Уитстона",ne555:"NE555",opamp:"Опер. усилитель","7seg":"7-сегмент",kipia:"КИПиА",pneumatics:"Пневматика",pneumline:"Пневмо-трасса",hydraulics:"Гидравлика",rtdtable:"Таблица RTD",tcouple:"Термопара",cablelength:"Длина каб. 4-20",neutral:"Ток нейтрали",arcflash:"Дуговая вспышка",thd:"THD гармоники",help:"Справка",developer:"О программе",donate:"Поддержать"}
     },
     common: {input_data:"Исходные данные",result:"Результат",calculate:"Рассчитать",reset:"Сбросить",export_pdf:"Экспорт PDF",copy:"Копировать",formula_norm:"Формула и норматив",ready:"Готово",copied:"Скопировано",check_data:"Проверьте данные"},
-    power: {p_power:"Мощность (кВт)",u_voltage:"Напряжение (В)",phase:"Фазность",phase1:"1 фаза",phase3:"3 фазы",cos_phi:"cos φ",efficiency:"КПД",current:"ТОК",total_power:"ПОЛНАЯ МОЩНОСТЬ",desc:"Расчётный ток нагрузки",ref:"ПУЭ п. 1.3.10"},
+    power: {
+      page_title:"Расчёт тока по мощности",p_power:"Мощность (кВт)",u_voltage:"Напряжение (В)",phase:"Фазность",phase1:"1 фаза",phase3:"3 фазы",cos_phi:"cos φ",efficiency:"КПД",current:"ТОК",total_power:"ПОЛНАЯ МОЩНОСТЬ",desc:"Расчётный ток нагрузки",ref:"ПУЭ п. 1.3.10"},
     cable: {
       page_title:"Подбор сечения кабеля",
       net:"Тип сети", net_3ph:"Трёхфазная 380 В", net_1ph:"Однофазная 220 В", net_dc:"Постоянный ток",
@@ -298,7 +299,8 @@ export const I18N = {
       page: {power:"Power",cable:"Cables",voltage:"Voltage Drop",shortcircuit:"Short Circuit",grounding:"Grounding",protection:"Protection",groundcircuit:"Ground Loop",kzcable:"SC Cable Check",motor:"Motors",motorstart:"Motor Starting",transformer:"Transformer",compensation:"Compensation",lighting:"Lighting",emergency:"Emergency Lighting",ledstrip:"LED strips",ups:"UPS / Battery",loadpanel:"Load Panel",derating:"Derating",diam2sec:"Diameter→Section",cableloss:"Cable Losses",busbar:"Busbars",cabletray:"Cable Tray",conduitfill:"Conduit Fill",sleeve:"Sleeves",converter:"Converter",wirecab:"Wire & Ferrules",demandfactor:"Demand Factor",fuse:"Fuse",dcvdrop:"DC Voltage Drop",threephase:"Three-Phase",energyaudit:"Energy Audit",solar:"Solar Power",rccalc:"R/C Connection",capval:"Capacitor Codes",motorcap:"Motor Capacitor",led:"LED",zener:"Zener Diode",rlc:"RLC Impedance",bridge:"Wheatstone Bridge",ne555:"NE555",opamp:"Op-Amp","7seg":"7-Segment",kipia:"I&C",pneumatics:"Pneumatics",pneumline:"Pneumatic Line",hydraulics:"Hydraulics",rtdtable:"RTD Table",tcouple:"Thermocouple",cablelength:"4-20 mA Cable",neutral:"Neutral Current",arcflash:"Arc Flash",thd:"THD Harmonics",help:"Help",developer:"About",donate:"Support"}
     },
     common: {input_data:"Input Data",result:"Result",calculate:"Calculate",reset:"Reset",export_pdf:"Export PDF",copy:"Copy",formula_norm:"Formula & Standard",ready:"Ready",copied:"Copied to clipboard",check_data:"Please check input data"},
-    power: {p_power:"Power (kW)",u_voltage:"Voltage (V)",phase:"Phase",phase1:"Single phase",phase3:"Three phase",cos_phi:"cos φ",efficiency:"Efficiency",current:"CURRENT",total_power:"TOTAL POWER",desc:"Calculated load current",ref:"PUE cl. 1.3.10"},
+    power: {
+      page_title:"Load current from power",p_power:"Power (kW)",u_voltage:"Voltage (V)",phase:"Phase",phase1:"Single phase",phase3:"Three phase",cos_phi:"cos φ",efficiency:"Efficiency",current:"CURRENT",total_power:"TOTAL POWER",desc:"Calculated load current",ref:"PUE cl. 1.3.10"},
     cable: {
       page_title:"Cable sizing",
       net:"Network type", net_3ph:"Three-phase 380 V", net_1ph:"Single-phase 220 V", net_dc:"Direct current",
@@ -582,6 +584,13 @@ export function updateBreadcrumb(page) {
 }
 
 /* ===================== NAVIGATION ===================== */
+/**
+ * Показать раздел внутри текущей страницы.
+ *
+ * Межстраничной навигацией больше не занимается: у каждого калькулятора свой
+ * адрес, и переход делает браузер по ссылке. Вызывается один раз при загрузке,
+ * чтобы проставить активные классы и крошки, если их не проставил генератор.
+ */
 export function showPage(name) {
   $$('.page').forEach(p => p.classList.remove('active'));
   $$('.nav-item').forEach(i => i.classList.remove('active'));
@@ -592,21 +601,8 @@ export function showPage(name) {
   updateBreadcrumb(name);
   $('.sidebar')?.classList.remove('open');
   $('.nav-overlay')?.classList.remove('show');
-  history.replaceState(null, '', '#' + name);
-  trackPageView(name);
 }
 
-/**
- * Просмотр раздела для Метрики.
- *
- * Разделы живут на одном адресе, и счётчик сам их не различает: без явного
- * hit вся статистика свелась бы к одному входу на главную. Заголовок берём
- * из словаря, чтобы в отчётах стояли названия калькуляторов, а не якоря.
- */
-function trackPageView(name) {
-  if (typeof window.ym !== 'function') return;
-  window.ym(111795803, 'hit', location.href, { title: T('crumb.page.' + name) });
-}
 
 export function showSubTab(name) {
   const parent = $('.page.active .sub-tabs')?.closest('.card');

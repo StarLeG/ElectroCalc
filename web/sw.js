@@ -1,11 +1,68 @@
 /* EngiCalc Service Worker — offline support */
-/* Updated: 2026-08-20 — иерархия заголовков и мета-теги под поиск */
-const CACHE_NAME = 'engicalc-v26';
+/* Updated: 2026-08-20 — своя страница у каждого калькулятора */
+const CACHE_NAME = 'engicalc-v27';
 /* Список обязан содержать ВСЕ модули из графа импортов app.js: любой
    пропущенный файл офлайн отдаётся как 503 и роняет загрузку приложения целиком. */
 const STATIC_ASSETS = [
+  /* PAGES:BEGIN — список собирает tools/build-pages.mjs */
   '/',
-  '/index.html',
+  '/power/',
+  '/cable/',
+  '/voltage/',
+  '/shortcircuit/',
+  '/grounding/',
+  '/protection/',
+  '/groundcircuit/',
+  '/kzcable/',
+  '/motor/',
+  '/motorstart/',
+  '/transformer/',
+  '/compensation/',
+  '/ups/',
+  '/loadpanel/',
+  '/lighting/',
+  '/emergency/',
+  '/ledstrip/',
+  '/derating/',
+  '/diam2sec/',
+  '/cableloss/',
+  '/busbar/',
+  '/cabletray/',
+  '/conduitfill/',
+  '/sleeve/',
+  '/converter/',
+  '/wirecab/',
+  '/demandfactor/',
+  '/fuse/',
+  '/dcvdrop/',
+  '/threephase/',
+  '/energyaudit/',
+  '/solar/',
+  '/neutral/',
+  '/arcflash/',
+  '/thd/',
+  '/kipia/',
+  '/cablelength/',
+  '/rtdtable/',
+  '/tcouple/',
+  '/pneumatics/',
+  '/pneumline/',
+  '/hydraulics/',
+  '/rccalc/',
+  '/capval/',
+  '/motorcap/',
+  '/led/',
+  '/zener/',
+  '/rlc/',
+  '/bridge/',
+  '/ne555/',
+  '/opamp/',
+  '/7seg/',
+  '/editor/',
+  '/help/',
+  '/developer/',
+  '/donate/',
+  /* PAGES:END */
   '/manifest.json',
   '/favicon.ico',
   '/favicon.svg',
@@ -122,8 +179,13 @@ self.addEventListener('fetch', event => {
         return response;
       }).catch(() => {
         if (cached) return cached;
-        // SPA: любой неизвестный маршрут офлайн отдаём как index.html
-        if (request.mode === 'navigate') return caches.match('/index.html');
+        // Офлайн: сначала ищем саму страницу раздела (адреса вида /cable/),
+        // и только если её нет в кэше — отдаём витрину. Раньше здесь всегда
+        // возвращался index.html, но теперь это каталог, а не приложение.
+        if (request.mode === 'navigate') {
+          const page = url.pathname.endsWith('/') ? url.pathname : url.pathname + '/';
+          return caches.match(page).then(hit => hit || caches.match('/'));
+        }
         return new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
       });
       return cached || network;

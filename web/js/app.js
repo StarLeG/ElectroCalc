@@ -21,8 +21,7 @@ import { CIRCUITS, renderCircuit, refreshCircuits } from './circuits.js';
 
 /* ===================== BIND ALL ===================== */
 function bindAll() {
-  // Navigation
-  $$('.nav-item[data-page]').forEach(el => el.addEventListener('click', () => showPage(el.dataset.page)));
+  // Меню — обычные ссылки на страницы разделов, перехватывать клик незачем.
 
   // Sub-tabs (event delegation)
   document.addEventListener('click', e => {
@@ -174,9 +173,16 @@ function bindAll() {
   // Init schematic editor
   initEditor();
 
-  // Hash routing
+  // Раздел задан адресом страницы: генератор проставил его в data-page.
+  // Старые ссылки вида /#cable ведут на витрину — переводим их на /cable/,
+  // фрагмент до сервера не доходит, и перенаправить его может только браузер.
   const hash = location.hash.slice(1);
-  showPage((hash && $(`#page-${hash}`)) ? hash : 'power');
+  const page = document.body.dataset.page || 'power';
+  if (page === 'home' && hash && /^[\w-]+$/.test(hash)) {
+    location.replace('/' + hash + '/');
+    return;
+  }
+  if (page !== 'home') showPage(page);
   showSubTab('currentloop');
 }
 
