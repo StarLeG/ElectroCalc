@@ -47,6 +47,9 @@ import { calcSleeve, sleeveWireLayout, sleeveCutScale } from './js/sleeve.js';
 import { contactClosed } from './js/schematic-editor.js';
 import { SLEEVES, SLEEVE_FAMILIES, FILL_LIMITS } from './js/data/sleeve-data.js';
 import { STD_SECTIONS } from './js/data/cable-data.js';
+import { calcBreaker, calcRCD, checkSelectivity } from './js/protection.js';
+import { INSTANT_TRIP, RCD_RATINGS, RCD_NOMINAL_CURRENTS, RCD_LIMITS,
+  LEAKAGE, LEAKAGE_MARGIN, SC_MARGIN, SELECTIVITY_RATIO } from './js/data/protection-data.js';
 
 // ==================== POWER ====================
 function calcPower(P, U, phase, cos, eta) {
@@ -1476,6 +1479,144 @@ output.innerHTML += '<h3 style="color:#FFB300;margin-top:16px">Model &amp; geome
 }
 
 // ==================== SUMMARY ====================
+/// ==================== PROTECTION: ДАННЫЕ ====================
+// Ряды и кратности — не расчёт, а нормативные числа. Проверяется то, на что
+// расчёт опирается молча: порядок ряда и согласованность таблиц между собой.
+{
+  const ascending = (name, series) => assertTrue(
+    `Защита: ряд ${name} возрастает`,
+    series.every((v, i) => i === 0 || v > series[i - 1]));
+
+  ascending('IΔn', RCD_RATINGS);
+  ascending('номинальных токов УЗО', RCD_NOMINAL_CURRENTS);
+
+  for (const [curve, [low, high]] of Object.entries(INSTANT_TRIP)) {
+    assertTrue(`Защита: у кривой ${curve} нижняя граница мгновенной зоны ниже верхней`, low < high);
+  }
+  assertTrue('Защита: зона B наступает раньше C, а C — раньше D',
+    INSTANT_TRIP.B[0] < INSTANT_TRIP.C[0] && INSTANT_TRIP.C[0] < INSTANT_TRIP.D[0]);
+
+  // Потолок по назначению линии выбирается из того же ряда, иначе подобранный
+  // номинал не совпал бы ни с одним существующим аппаратом.
+  for (const [purpose, limit] of Object.entries(RCD_LIMITS)) {
+    assertTrue(`Защита: потолок «${purpose}» = ${limit} мА есть в ряду IΔn`, RCD_RATINGS.includes(limit));
+  }
+}
+
+// ==================== PROTECTION: АВТОМАТ ====================
+// Расчётный ток — то же, что считает страница «Мощность»; номинал берётся
+// ближайший больший из стандартного ряда.
+{
+  const single = calcBreaker({ loadMode: 'power', power: 3.5, voltage: 230, phases: 1, cosPhi: 0.95 });
+  assertTrue('Автомат: расчёт однофазной нагрузки успешен', single.ok);
+  assert('Автомат: ток 3,5 кВт при 230 В и cos φ 0,95', single.IB, 16.02, 0.02);
+  assert('Автомат: номинал округляется вверх до 20 А', single.rating, 20, 1e-9);
+
+  const three = calcBreaker({ loadMode: 'power', power: 15, voltage: 400, phases: 3, cosPhi: 0.9 });
+  assert('Автомат: ток 15 кВт при 400 В в трёхфазной сети', three.IB, 24.06, 0.02);
+  assert('Автомат: номинал 25 А', three.rating, 25, 1e-9);
+
+  const byCurrent = calcBreaker({ loadMode: 'current', current: 16 });
+  assert('Автомат: заданный ток берётся как есть', byCurrent.IB, 16, 1e-9);
+  assert('Автомат: номинал, равный току, из ряда подходит', byCurrent.rating, 16, 1e-9);
+}
+
+// Характеристика идёт от типа нагрузки, но остаётся за проектировщиком.
+{
+  assertTrue('Автомат: активная нагрузка — кривая B',
+    calcBreaker({ loadMode: 'current', current: 10, loadType: 'resistive' }).curve === 'B');
+  assertTrue('Автомат: смешанная нагрузка — кривая C',
+    calcBreaker({ loadMode: 'current', current: 10, loadType: 'mixed' }).curve === 'C');
+  assertTrue('Автомат: двигатель — кривая D',
+    calcBreaker({ loadMode: 'current', current: 10, loadType: 'motor' }).curve === 'D');
+  assertTrue('Автомат: выбор пользователя перекрывает рекомендацию',
+    calcBreaker({ loadMode: 'current', current: 10, loadType: 'motor', curve: 'C' }).curve === 'C');
+}
+
+// Незаполненное необязательное поле означает «данных нет», а не «ноль»:
+// проверка без данных не выполняется и в список не попадает.
+{
+  const bare = calcBreaker({ loadMode: 'current', current: 16 });
+  const names = bare.checks.map(c => c.name);
+  assertTrue('Автомат: без необязательных данных остаётся одна проверка нагрузки',
+    names.length === 1 && names[0] === 'load');
+  assertTrue('Автомат: проверка нагрузки пройдена', bare.checks[0].passed);
+  assertTrue('Автомат: без замечаний список предупреждений пуст', bare.warnings.length === 0);
+}
+
+// Защита кабеля от перегрузки: номинал автомата не должен превышать
+// длительно допустимый ток кабеля.
+{
+  const fits = calcBreaker({ loadMode: 'current', current: 16, cableCurrent: 19 });
+  assertTrue('Автомат: 16 А в ряду даёт номинал 16 А', fits.rating === 16);
+  assertTrue('Автомат: кабель на 19 А защищён автоматом 16 А',
+    fits.checks.find(c => c.name === 'cable').passed);
+
+  const over = calcBreaker({ loadMode: 'current', current: 17, cableCurrent: 19 });
+  assertTrue('Автомат: ток 17 А поднимает номинал до 20 А', over.rating === 20);
+  assertTrue('Автомат: автомат 20 А кабель на 19 А не защищает',
+    !over.checks.find(c => c.name === 'cable').passed);
+  assertTrue('Автомат: несогласованность с кабелем попадает в предупреждения',
+    over.warnings.includes('protection.warn_cable_over'));
+
+  // Ток гарантированного расцепления в зоне перегрузки — справочная величина
+  // из ГОСТ Р 50345, её электрик сверяет с 1,45·Iдоп.
+  assert('Автомат: ток расцепления I₂ = 1,45·In', over.overloadTrip, 29, 1e-9);
+}
+
+// Пуск: бросок тока не должен попадать в зону мгновенного расцепления —
+// иначе автомат имеет право отключаться на каждом пуске. Это и есть ответ
+// на вопрос, зачем нужна кривая D.
+{
+  const onB = calcBreaker({ loadMode: 'current', current: 16, startMultiple: 7, curve: 'B' });
+  const onD = calcBreaker({ loadMode: 'current', current: 16, startMultiple: 7, curve: 'D' });
+  assert('Автомат: пусковой ток 7×16 А', onB.startCurrent, 112, 1e-9);
+  assertTrue('Автомат: пуск 112 А роняет автомат 16 А с кривой B',
+    !onB.checks.find(c => c.name === 'start').passed);
+  assertTrue('Автомат: тот же пуск проходит на кривой D',
+    onD.checks.find(c => c.name === 'start').passed);
+  assertTrue('Автомат: срыв пуска попадает в предупреждения',
+    onB.warnings.includes('protection.warn_start_trip'));
+}
+
+// Отключение при КЗ: ток должен превысить верхнюю границу мгновенной зоны
+// с запасом — расчётный ток КЗ всегда оптимистичнее фактического.
+{
+  const weak = calcBreaker({ loadMode: 'current', current: 16, curve: 'C', scCurrent: 150 });
+  const strong = calcBreaker({ loadMode: 'current', current: 16, curve: 'C', scCurrent: 200 });
+  assert('Автомат: требуемый ток КЗ для 16 А с кривой C',
+    weak.checks.find(c => c.name === 'sc').limit, SC_MARGIN * INSTANT_TRIP.C[1] * 16, 1e-9);
+  assertTrue('Автомат: 150 А для отключения 16 А с кривой C мало',
+    !weak.checks.find(c => c.name === 'sc').passed);
+  assertTrue('Автомат: 200 А достаточно', strong.checks.find(c => c.name === 'sc').passed);
+  assertTrue('Автомат: недостаточный ток КЗ попадает в предупреждения',
+    weak.warnings.includes('protection.warn_sc_slow'));
+}
+
+// Отключающая способность: аппарат обязан выдержать ток КЗ в точке установки.
+{
+  const res = calcBreaker({ loadMode: 'current', current: 16, scCurrent: 8000, breakingCapacity: 6000 });
+  assertTrue('Автомат: 6000 А отключающей способности мало при КЗ 8000 А',
+    !res.checks.find(c => c.name === 'capacity').passed);
+  assertTrue('Автомат: нехватка отключающей способности попадает в предупреждения',
+    res.warnings.includes('protection.warn_capacity'));
+  assertTrue('Автомат: 10000 А хватает',
+    calcBreaker({ loadMode: 'current', current: 16, scCurrent: 8000, breakingCapacity: 10000 })
+      .checks.find(c => c.name === 'capacity').passed);
+}
+
+// Отказы: считать не из чего.
+{
+  assertTrue('Автомат: нулевая мощность — отказ',
+    calcBreaker({ loadMode: 'power', power: 0, voltage: 230 }).messageKey === 'protection.err_load');
+  assertTrue('Автомат: нулевое напряжение — отказ',
+    calcBreaker({ loadMode: 'power', power: 3, voltage: 0 }).messageKey === 'protection.err_voltage');
+  assertTrue('Автомат: cos φ вне диапазона — отказ',
+    calcBreaker({ loadMode: 'power', power: 3, voltage: 230, cosPhi: 0 }).messageKey === 'protection.err_cos');
+  assertTrue('Автомат: нагрузка выше ряда номиналов — отказ',
+    calcBreaker({ loadMode: 'current', current: 400 }).messageKey === 'protection.err_over_range');
+}
+
 // ==================== SUB-TABS ====================
 // showSubTab получает имя стартовой вкладки один раз при загрузке, а страниц с
 // вкладками много, и имена у них разные. На чужое имя функция обязана не делать
@@ -1508,6 +1649,149 @@ output.innerHTML += '<h3 style="color:#FFB300;margin-top:16px">Model &amp; geome
   assertTrue('Вкладки: прежняя вкладка закрылась', !first.classList.contains('active'));
 
   host.remove();
+}
+
+// ==================== PROTECTION: УЗО ====================
+// Ток утечки при отсутствии данных об электроприёмниках считается по ПУЭ
+// 7.1.83: 0,4 мА на 1 А тока нагрузки плюс 10 мкА на 1 м фазного проводника.
+{
+  const res = calcRCD({ current: 16, length: 50, purpose: 'group', loadCharacter: 'electronics' });
+  assertTrue('УЗО: расчёт успешен', res.ok);
+  assert('УЗО: ток утечки 16 А на 50 м', res.leakage, 6.9, 1e-9);
+  assert('УЗО: ток утечки собран из тока нагрузки и длины',
+    res.leakage, LEAKAGE.perAmp * 16 + LEAKAGE.perMetre * 50, 1e-9);
+
+  // Запас втрое — то же ПУЭ 7.1.83: утечка не более трети номинала.
+  assert('УЗО: требуемый номинал втрое больше утечки', res.required, LEAKAGE_MARGIN * res.leakage, 1e-9);
+  assert('УЗО: подобран номинал 30 мА', res.rating, 30, 1e-9);
+  assertTrue('УЗО: утечка укладывается в треть номинала', res.leakage <= res.rating / LEAKAGE_MARGIN);
+  assertTrue('УЗО: у штатного расчёта замечаний нет', res.warnings.length === 0);
+}
+
+// Ниже 10 мА бытовые УЗО не делают: 6 мА в ряду — это устройства защиты от
+// постоянного тока утечки, а не общее применение. Малая утечка не должна
+// приводить к подбору аппарата, которого не купить.
+{
+  const tiny = calcRCD({ current: 1, length: 5, purpose: 'group' });
+  assert('УЗО: при малой утечке подбирается минимальный практический номинал', tiny.rating, 10, 1e-9);
+}
+
+// Потолок по назначению линии — не результат расчёта, а граница. Когда расчёт
+// требует больше, поднимать номинал нельзя: 100 мА человека не защищает.
+// Правильный вывод — делить линию на группы.
+{
+  const edge = calcRCD({ current: 16, length: 360, purpose: 'group' });
+  assert('УЗО: на границе условия ПУЭ номинал ещё 30 мА', edge.rating, 30, 1e-9);
+  assertTrue('УЗО: на границе делить линию не требуют',
+    !edge.warnings.includes('protection.warn_split_line'));
+
+  const over = calcRCD({ current: 16, length: 400, purpose: 'group' });
+  assertTrue('УЗО: за границей расчёт требует больше 30 мА', over.required > 30);
+  assert('УЗО: номинал всё равно остаётся 30 мА', over.rating, 30, 1e-9);
+  assert('УЗО: назван потолок для розеточной группы', over.limit, RCD_LIMITS.group, 1e-9);
+  assertTrue('УЗО: за границей появляется требование разделить линию',
+    over.warnings.includes('protection.warn_split_line'));
+
+  // Предельная длина обращает условие ПУЭ в равенство — это и есть ответ
+  // на вопрос «а сколько можно».
+  assert('УЗО: предельная длина линии', over.maxLength, 360, 1e-9);
+  const atLimit = calcRCD({ current: 16, length: over.maxLength, purpose: 'group' });
+  assert('УЗО: на предельной длине требуемый номинал равен потолку',
+    atLimit.required, RCD_LIMITS.group, 1e-9);
+}
+
+// Бывает, что дело не в длине: один ток нагрузки уже съедает весь запас.
+// Тогда предельная длина нулевая, и укорачивать линию бессмысленно.
+{
+  const heavy = calcRCD({ current: 40, length: 300, purpose: 'group' });
+  assert('УЗО: при большом токе предельная длина нулевая', heavy.maxLength, 0, 1e-9);
+  assertTrue('УЗО: сказано, что виновата не длина, а ток',
+    heavy.warnings.includes('protection.warn_split_load'));
+}
+
+// Влажные помещения и ввод здания живут по своим потолкам.
+{
+  assert('УЗО: для ванной потолок 10 мА',
+    calcRCD({ current: 10, length: 10, purpose: 'wet' }).limit, 10, 1e-9);
+  assert('УЗО: для ввода потолок 300 мА',
+    calcRCD({ current: 63, length: 40, purpose: 'main' }).limit, 300, 1e-9);
+  assert('УЗО: противопожарное УЗО на вводе — 100 мА',
+    calcRCD({ current: 63, length: 40, purpose: 'main' }).rating, 100, 1e-9);
+}
+
+// Тип УЗО отвечает не за величину утечки, а за её форму. Импульсный блок
+// питания даёт постоянную составляющую, от которой тип AC слепнет.
+{
+  assertTrue('УЗО: бытовая электроника требует тип A',
+    calcRCD({ current: 16, length: 20, loadCharacter: 'electronics' }).type === 'A');
+  assertTrue('УЗО: однофазный привод требует тип F',
+    calcRCD({ current: 16, length: 20, loadCharacter: 'drive1ph' }).type === 'F');
+  assertTrue('УЗО: трёхфазный привод требует тип B',
+    calcRCD({ current: 16, length: 20, loadCharacter: 'drive3ph' }).type === 'B');
+
+  const ac = calcRCD({ current: 16, length: 20, loadCharacter: 'resistive' });
+  assertTrue('УЗО: чисто активная нагрузка допускает тип AC', ac.type === 'AC');
+  assertTrue('УЗО: тип AC сопровождается оговоркой',
+    ac.warnings.includes('protection.warn_type_ac'));
+}
+
+// Номинальный ток УЗО — это ток, который оно пропускает через себя. Он не
+// может быть меньше номинала автомата, который его защищает.
+{
+  const res = calcRCD({ current: 25, length: 30, breakerRating: 32 });
+  assert('УЗО: под автомат 32 А берётся аппарат на 40 А', res.nominalCurrent, 40, 1e-9);
+  assertTrue('УЗО: номинальный ток не ниже номинала автомата', res.nominalCurrent >= 32);
+  assertTrue('УЗО: номинальный ток из стандартного ряда',
+    RCD_NOMINAL_CURRENTS.includes(res.nominalCurrent));
+}
+
+// Близость к пределу ПУЭ — практическая примета ложных отключений: сеть уже
+// «шумит» утечкой, и любой скачок влажности добавит недостающее.
+{
+  const calm = calcRCD({ current: 16, length: 50, purpose: 'group' });
+  const noisy = calcRCD({ current: 16, length: 300, purpose: 'group' });
+  assertTrue('УЗО: при запасе в треть предупреждения о ложных срабатываниях нет',
+    !calm.warnings.includes('protection.warn_nuisance'));
+  assertTrue('УЗО: у самого предела предупреждение появляется',
+    noisy.warnings.includes('protection.warn_nuisance'));
+}
+
+// Отказы.
+{
+  assertTrue('УЗО: нулевой ток нагрузки — отказ',
+    calcRCD({ current: 0, length: 10 }).messageKey === 'protection.err_load');
+  assertTrue('УЗО: отрицательная длина — отказ',
+    calcRCD({ current: 16, length: -1 }).messageKey === 'protection.err_length');
+}
+
+// ==================== PROTECTION: СЕЛЕКТИВНОСТЬ ====================
+// Селективность означает, что при утечке в группе отключается групповое УЗО,
+// а вводное остаётся включённым. Для этого нужны оба условия сразу: запас по
+// номиналу и выдержка времени у вышестоящего аппарата.
+{
+  const good = checkSelectivity({ upstreamRating: 300, upstreamType: 'S', downstreamRating: 30 });
+  assertTrue('Селективность: 300 мА с выдержкой над 30 мА — селективно', good.selective);
+  assert('Селективность: кратность номиналов', good.ratio, 10, 1e-9);
+  assertTrue('Селективность: замечаний нет', good.warnings.length === 0);
+
+  const noDelay = checkSelectivity({ upstreamRating: 100, upstreamType: '', downstreamRating: 30 });
+  assertTrue('Селективность: без выдержки времени вводное отключится вместе с групповым',
+    !noDelay.selective);
+  assertTrue('Селективность: отсутствие выдержки названо прямо',
+    noDelay.warnings.includes('protection.warn_no_delay'));
+
+  const closeRatings = checkSelectivity({ upstreamRating: 100, upstreamType: 'S', downstreamRating: 100 });
+  assertTrue('Селективность: одинаковые номиналы селективности не дают', !closeRatings.selective);
+  assertTrue('Селективность: нехватка кратности названа прямо',
+    closeRatings.warnings.includes('protection.warn_ratio'));
+  assert('Селективность: требуемая кратность', closeRatings.requiredRatio, SELECTIVITY_RATIO, 1e-9);
+
+  assertTrue('Селективность: ровно трёхкратный запас с выдержкой проходит',
+    checkSelectivity({ upstreamRating: 90, upstreamType: 'G', downstreamRating: 30 }).selective);
+  assertTrue('Селективность: нижнее УЗО крупнее верхнего — отказ',
+    checkSelectivity({ upstreamRating: 30, upstreamType: 'S', downstreamRating: 100 }).selective === false);
+  assertTrue('Селективность: без номиналов считать нечего',
+    checkSelectivity({ upstreamRating: 0, downstreamRating: 30 }).messageKey === 'protection.err_rating');
 }
 
 summary.innerHTML = `<div class="summary ${failed === 0 ? 'ok' : 'err'}">${passed} passed, ${failed} failed (total: ${passed + failed})</div>`;
