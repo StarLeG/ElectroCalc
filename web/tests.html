@@ -43,6 +43,10 @@ import { awgArea, awgFromArea } from './js/cable-networks.js';
 import { mvToC, cToMv, TC_COEFFS } from './js/industry.js';
 import { rtdResistance, rtdTemperature, rtdR0 } from './js/data/rtd.js';
 
+import { calcSleeve, sleeveWireLayout, sleeveCutScale } from './js/sleeve.js';
+import { contactClosed } from './js/schematic-editor.js';
+import { SLEEVES, SLEEVE_FAMILIES, FILL_LIMITS } from './js/data/sleeve-data.js';
+import { STD_SECTIONS } from './js/data/cable-data.js';
 // ==================== POWER ====================
 function calcPower(P, U, phase, cos, eta) {
   return phase === 3 ? P * 1000 / (Math.sqrt(3) * U * cos * eta) : P * 1000 / (U * cos * eta);
@@ -1149,6 +1153,328 @@ output.innerHTML += '<h3 style="color:#FFB300;margin-top:16px">Model &amp; geome
 }
 
 // ==================== SUMMARY ====================
+// ==================== УГО КОНТАКТА ====================
+// Одного признака «замкнут» мало: его должно быть видно на чертеже. Проверяем
+// саму разметку УГО, потому что именно она и разъехалась с расчётом.
+{
+  const draw = opts => {
+    const s = new window.GostSchematic.Schematic({ width: 60, height: 40 });
+    s.contact('K1', 30, 20, opts);
+    return s.toSVG();
+  };
+  // Наклонная линия подвижного контакта — признак разомкнутого положения,
+  // горизонтальная перемычка — замкнутого.
+  const tilted = svg => /L\s+3\s+-4/.test(svg);
+
+  assertTrue('УГО: разомкнутый замыкающий контакт нарисован под углом',
+    tilted(draw({ kind: 'no', closed: false })));
+  assertTrue('УГО: замкнутый замыкающий контакт нарисован перемычкой',
+    tilted(draw({ kind: 'no', closed: true })) === false);
+  assertTrue('УГО: замкнутый размыкающий контакт нарисован перемычкой',
+    tilted(draw({ kind: 'nc', closed: true })) === false);
+  assertTrue('УГО: разомкнутый размыкающий контакт нарисован под углом',
+    tilted(draw({ kind: 'nc', closed: false })));
+
+  // Размыкающий контакт отличается от замыкающего упором на неподвижной части —
+  // по нему на чертеже и читают тип контакта, в любом положении.
+  const stop = svg => svg.includes('M 3 0 v -1');
+  assertTrue('УГО: у размыкающего контакта есть упор в замкнутом положении',
+    stop(draw({ kind: 'nc', closed: true })));
+  assertTrue('УГО: у размыкающего контакта есть упор и в разомкнутом положении',
+    stop(draw({ kind: 'nc', closed: false })));
+  assertTrue('УГО: у замыкающего контакта упора нет',
+    stop(draw({ kind: 'no', closed: false })) === false);
+
+  // Выводы регистрируются одинаково в любом положении: иначе провода,
+  // притянутые к контакту, отвалились бы при срабатывании.
+  const s = new window.GostSchematic.Schematic({ width: 60, height: 40 });
+  s.contact('K1', 30, 20, { kind: 'no', closed: false });
+  s.contact('K2', 30, 35, { kind: 'no', closed: true });
+  assertTrue('УГО: положение контакта не двигает его выводы',
+    s.pin('K1', 'a')[0] === s.pin('K2', 'a')[0] && s.pin('K1', 'b')[0] === s.pin('K2', 'b')[0]);
+}
+
+// ==================== КОНТАКТЫ РЕЛЕ НА ЧЕРТЕЖЕ ====================
+// Обычный ключ хранит своё состояние в модели, а контакт реле — нет: он
+// подчиняется катушке, и его положение известно только после расчёта. Пока
+// чертёж рисовал контакт по одному типу, замыкающий контакт оставался
+// разомкнутым даже при сработавшей катушке — схема противоречила числам.
+{
+  const ok = res => ({ ok: true, branches: res });
+
+  // Катушка сработала: замыкающий контакт замкнут, размыкающий разомкнут.
+  const picked = ok({ K2: { region: 'ct_closed' }, K3: { region: 'ct_open' } });
+  assertTrue('Контакт: замыкающий при сработавшей катушке — замкнут',
+    contactClosed({ id: 'K2', type: 'contactNO' }, picked) === true);
+  assertTrue('Контакт: размыкающий при сработавшей катушке — разомкнут',
+    contactClosed({ id: 'K3', type: 'contactNC' }, picked) === false);
+
+  // Катушка отпущена: положения возвращаются к исходным.
+  const released = ok({ K2: { region: 'ct_open' }, K3: { region: 'ct_closed' } });
+  assertTrue('Контакт: замыкающий при отпущенной катушке — разомкнут',
+    contactClosed({ id: 'K2', type: 'contactNO' }, released) === false);
+  assertTrue('Контакт: размыкающий при отпущенной катушке — замкнут',
+    contactClosed({ id: 'K3', type: 'contactNC' }, released) === true);
+
+  // Без расчёта (режим правки) контакт рисуется в исходном положении: NO
+  // разомкнут, NC замкнут — так его и чертят на схеме обесточенного щита.
+  assertTrue('Контакт: без расчёта замыкающий разомкнут',
+    contactClosed({ id: 'K2', type: 'contactNO' }, null) === false);
+  assertTrue('Контакт: без расчёта размыкающий замкнут',
+    contactClosed({ id: 'K3', type: 'contactNC' }, null) === true);
+
+  // Расчёт есть, но этого контакта в нём нет (например, ветвь отброшена):
+  // исходное положение, а не случайное.
+  assertTrue('Контакт: отсутствие ветви в расчёте не переключает контакт',
+    contactClosed({ id: 'K9', type: 'contactNO' }, ok({})) === false);
+
+  // Неуспешный расчёт не имеет права двигать контакты.
+  assertTrue('Контакт: при неуспешном расчёте остаётся исходное положение',
+    contactClosed({ id: 'K2', type: 'contactNO' }, { ok: false }) === false);
+}
+
+// Связка расчёта и чертежа на боевой схеме: реле с самоподхватом. Именно здесь
+// чертёж и разъезжался с числами — контакт K2 нёс 100 мА, оставаясь на вид
+// разомкнутым.
+{
+  const m = loadPreset('relay-latch');
+  const sim = solveDC(m);
+  assertTrue('Реле: расчёт схемы с самоподхватом успешен', sim.ok);
+  assertTrue('Реле: катушка K1 сработала', sim.branches.K1.region === 'coil_on');
+  assertTrue('Реле: замыкающий контакт K2 показан замкнутым',
+    contactClosed(m.getComponent('K2'), sim) === true);
+  assertTrue('Реле: размыкающий контакт K3 показан разомкнутым',
+    contactClosed(m.getComponent('K3'), sim) === false);
+
+  // Контакт, который несёт ток, обязан выглядеть замкнутым: расхождение
+  // чертежа с числами рядом — это и был баг.
+  assertTrue('Реле: ток через K2 не нулевой', Math.abs(sim.branches.K2.i) > 1e-6);
+  assertTrue('Реле: через разомкнутый K3 ток не идёт', Math.abs(sim.branches.K3.i) < 1e-9);
+}
+
+// ==================== SLEEVE FILL ====================
+// Гильза подбирается по СУММАРНОМУ сечению скручиваемых жил — так устроены
+// каталоги. Числа ряда приблизительные (см. шапку sleeve-data.js), поэтому
+// тесты проверяют поведение расчёта и консистентность таблицы, а не то,
+// что конкретный типоразмер имеет именно такой внутренний диаметр.
+{
+  const two25 = calcSleeve({ conductors: [{ S: 2.5, qty: 2 }], material: 'cu', flexClass: 5 });
+  assertTrue('Гильза: 2×2.5 мм² — расчёт успешен', two25.ok);
+  assert('Гильза: суммарное сечение 2×2.5 мм²', two25.sumS, 5, 1e-9);
+  assertTrue('Гильза: 2×2.5 мм² укладывается в ГМЛ-6', two25.sleeve.id === 'ГМЛ-6');
+}
+
+// Заполнение считается по площади, которую занимают жилы В ГАБАРИТЕ, а не по
+// сумме их сечений: гибкая многопроволочная жила при том же сечении толще
+// монолитной, потому что между проволоками есть пустоты.
+{
+  const solid = calcSleeve({ conductors: [{ S: 2.5, qty: 2 }], material: 'cu', flexClass: 1 });
+  const flex = calcSleeve({ conductors: [{ S: 2.5, qty: 2 }], material: 'cu', flexClass: 5 });
+
+  assert('Гильза: монолит занимает ровно своё сечение', solid.condArea, solid.sumS, 1e-9);
+  assertTrue('Гильза: гибкая жила занимает больше своего сечения', flex.condArea > flex.sumS);
+  assertTrue('Гильза: класс 5 заполняет гильзу плотнее класса 1', flex.fillPct > solid.fillPct);
+  assertTrue('Гильза: класс гибкости не меняет типоразмер', flex.sleeve.id === solid.sleeve.id);
+
+  // Заполнение — доля площади канала, то есть считается по ВНУТРЕННЕМУ
+  // диаметру. Наружный сюда попасть не должен: он больше, и заполнение вышло
+  // бы заниженным, а гильза — ложно свободной.
+  const channel = Math.PI * flex.sleeve.dIn ** 2 / 4;
+  assert('Гильза: заполнение = площадь жил / площадь канала', flex.fillPct, flex.condArea / channel * 100, 1e-9);
+}
+
+// Статус — то, что монтажник читает вместо процентов. Проверяется не по
+// конкретным числам ряда (они подлежат сверке), а по согласованности статуса
+// с порогами: после правки таблицы связь обязана сохраниться.
+{
+  const cases = [
+    calcSleeve({ conductors: [{ S: 1.5, qty: 2 }], material: 'cu', flexClass: 1 }),
+    calcSleeve({ conductors: [{ S: 2.5, qty: 2 }], material: 'cu', flexClass: 5 }),
+    calcSleeve({ conductors: [{ S: 16, qty: 1 }], material: 'cu', flexClass: 5 }),
+    calcSleeve({ conductors: [{ S: 16, qty: 1 }], material: 'cu', flexClass: 6 }),
+    calcSleeve({ conductors: [{ S: 6, qty: 3 }], material: 'cu', flexClass: 5 }),
+  ];
+  const expected = f => f < FILL_LIMITS.loose ? 'loose'
+    : f < FILL_LIMITS.tight ? 'ok'
+    : f <= FILL_LIMITS.over ? 'tight' : 'over';
+  assertTrue('Гильза: статус согласован с порогами заполнения',
+    cases.every(r => r.status === expected(r.fillPct)));
+
+  // Монолит 2×1.5 болтается в гильзе — это тот случай, ради которого считается
+  // добивка: без неё опрессовка сомнёт гильзу, а контакта не даст.
+  const loose = cases[0];
+  assertTrue('Гильза: 2×1.5 мм² монолитом — гильза свободна', loose.status === 'loose');
+  assertTrue('Гильза: свободной гильзе назначена добивка', loose.filler > 0);
+  assert('Гильза: добивка доводит заполнение ровно до нижнего порога',
+    (loose.condArea + loose.filler) / (Math.PI * loose.sleeve.dIn ** 2 / 4) * 100,
+    FILL_LIMITS.loose, 1e-9);
+
+  const normal = cases[1];
+  assertTrue('Гильза: при нормальном заполнении статус ok', normal.status === 'ok');
+  assert('Гильза: при нормальном заполнении добивка не нужна', normal.filler, 0, 1e-12);
+}
+
+// Заполнение обязано расти с добавлением жил. Сравнивать можно только внутри
+// одного типоразмера: с ростом суммы подбирается гильза крупнее, и процент
+// после перехода закономерно падает.
+{
+  const two = calcSleeve({ conductors: [{ S: 1.5, qty: 2 }], material: 'cu', flexClass: 5 });
+  const three = calcSleeve({ conductors: [{ S: 1.5, qty: 2 }, { S: 1, qty: 1 }], material: 'cu', flexClass: 5 });
+  assertTrue('Гильза: сравниваются две суммы в одном типоразмере', two.sleeve.id === three.sleeve.id);
+  assertTrue('Гильза: лишняя жила увеличивает заполнение', three.fillPct > two.fillPct);
+}
+
+// Материал жил задаёт материал гильзы. Медь с алюминием напрямую соединять
+// нельзя: пара даёт электрохимическую коррозию и контакт выгорает, поэтому
+// для такого соединения отбираются только биметаллические гильзы.
+{
+  const cu = calcSleeve({ conductors: [{ S: 25, qty: 2 }], material: 'cu', flexClass: 5 });
+  const al = calcSleeve({ conductors: [{ S: 25, qty: 2 }], material: 'al', flexClass: 1 });
+  const bi = calcSleeve({ conductors: [{ S: 25, qty: 2 }], material: 'cu-al', flexClass: 1 });
+
+  assertTrue('Гильза: медным жилам — медная гильза', cu.ok && cu.sleeve.material === 'cu');
+  assertTrue('Гильза: алюминиевым жилам — алюминиевая гильза', al.ok && al.sleeve.material === 'al');
+  assertTrue('Гильза: медь с алюминием — только биметалл', bi.ok && bi.sleeve.material === 'bi');
+
+  // Семейство можно задать явно — например, когда на объекте есть только ГМЛ-П.
+  const forced = calcSleeve({ conductors: [{ S: 25, qty: 2 }], material: 'cu', flexClass: 5, family: 'ГМЛ-П' });
+  assertTrue('Гильза: заданное семейство соблюдается', forced.ok && forced.sleeve.family === 'ГМЛ-П');
+
+  // Семейство, которого нет под этот материал, — отказ с причиной, а не молча
+  // выбранная гильза из другого семейства.
+  const wrong = calcSleeve({ conductors: [{ S: 25, qty: 2 }], material: 'al', flexClass: 1, family: 'ГМЛ' });
+  assertTrue('Гильза: чужое семейство отбито', wrong.ok === false);
+  assertTrue('Гильза: у отказа по семейству есть ключ сообщения', wrong.messageKey === 'sleeve.err_no_family');
+}
+
+// Края ряда. Снизу — не отказ: монтажнику нужна работающая рекомендация, и
+// наименьшая гильза с добивкой её даёт. Сверху отказ обязателен: соединение
+// такого сечения одной гильзой не собирают, его делят.
+{
+  const small = calcSleeve({ conductors: [{ S: 2.5, qty: 2 }], material: 'al', flexClass: 1 });
+  const smallestAl = SLEEVES.filter(s => s.material === 'al')[0];
+  assertTrue('Гильза: сумма ниже ряда — предложена наименьшая гильза', small.ok && small.sleeve.id === smallestAl.id);
+  assertTrue('Гильза: наименьшая гильза при малой сумме свободна', small.status === 'loose');
+  assertTrue('Гильза: при малой сумме назначена добивка', small.filler > 0);
+  assertTrue('Гильза: выход за нижний край ряда отмечен предупреждением',
+    small.warnings.includes('sleeve.warn_below_range'));
+
+  const huge = calcSleeve({ conductors: [{ S: 240, qty: 2 }], material: 'cu', flexClass: 1 });
+  assertTrue('Гильза: сумма выше ряда — отказ', huge.ok === false);
+  assertTrue('Гильза: у отказа по верхнему краю есть ключ сообщения', huge.messageKey === 'sleeve.err_over_range');
+
+  const normal = calcSleeve({ conductors: [{ S: 2.5, qty: 2 }], material: 'cu', flexClass: 5 });
+  assertTrue('Гильза: в норме предупреждений нет', normal.warnings.length === 0);
+}
+
+// Вырожденный ввод возвращает отказ с ключом, а не бросает исключение и не
+// считает по нулям: страница показывает локализованный текст причины.
+{
+  assertTrue('Гильза: пустой список жил отбит',
+    calcSleeve({ conductors: [], material: 'cu' }).messageKey === 'sleeve.err_empty');
+  assertTrue('Гильза: нулевое сечение отбито',
+    calcSleeve({ conductors: [{ S: 0, qty: 2 }], material: 'cu' }).messageKey === 'sleeve.err_empty');
+  assertTrue('Гильза: нулевое количество отбито',
+    calcSleeve({ conductors: [{ S: 2.5, qty: 0 }], material: 'cu' }).messageKey === 'sleeve.err_empty');
+  assertTrue('Гильза: отрицательное сечение отбито',
+    calcSleeve({ conductors: [{ S: -2.5, qty: 1 }], material: 'cu' }).messageKey === 'sleeve.err_section');
+  assertTrue('Гильза: отрицательное количество отбито',
+    calcSleeve({ conductors: [{ S: 2.5, qty: -1 }], material: 'cu' }).messageKey === 'sleeve.err_section');
+}
+
+// Границы диапазонов. Ряд смежный, и ошибка на единицу в сравнении увела бы
+// пограничное значение в соседний типоразмер — молча и незаметно.
+{
+  const gml = SLEEVES.filter(s => s.family === 'ГМЛ');
+  const pick = S => calcSleeve({ conductors: [{ S, qty: 1 }], material: 'cu', flexClass: 1, family: 'ГМЛ' }).sleeve.id;
+  assertTrue('Гильза: верхняя граница диапазона остаётся в своей гильзе',
+    gml.every(s => pick(s.sMax) === s.id));
+  assertTrue('Гильза: значение сразу над нижней границей попадает в свою гильзу',
+    gml.every(s => pick(s.sMin + 0.01) === s.id));
+}
+
+// Консистентность таблицы. Числа ряда подлежат сверке с каталогом, и эти
+// проверки существуют затем, чтобы сверка не внесла противоречий.
+{
+  const families = [...new Set(SLEEVES.map(s => s.family))];
+  assertTrue('Данные гильз: каждое семейство описано в SLEEVE_FAMILIES',
+    families.every(f => !!SLEEVE_FAMILIES[f]));
+  assertTrue('Данные гильз: материал записи совпадает с материалом семейства',
+    SLEEVES.every(s => SLEEVE_FAMILIES[s.family].material === s.material));
+  assertTrue('Данные гильз: у каждой записи заполнены матрица и стандарт',
+    SLEEVES.every(s => !!s.die && !!s.std));
+  assertTrue('Данные гильз: внутренний диаметр меньше наружного',
+    SLEEVES.every(s => s.dIn < s.dOut));
+  assertTrue('Данные гильз: длина и диаметры положительны',
+    SLEEVES.every(s => s.dIn > 0 && s.len > 0));
+
+  const rows = f => SLEEVES.filter(s => s.family === f);
+  assertTrue('Данные гильз: диапазоны семейства идут без дыр и пересечений',
+    families.every(f => rows(f).every((s, i, arr) => i === 0 || arr[i - 1].sMax === s.sMin)));
+  assertTrue('Данные гильз: диапазон каждой записи не пустой',
+    SLEEVES.every(s => s.sMin < s.sMax));
+  assertTrue('Данные гильз: внутренний диаметр растёт вместе с диапазоном',
+    families.every(f => rows(f).every((s, i, arr) => i === 0 || arr[i - 1].dIn < s.dIn)));
+  assertTrue('Данные гильз: идентификаторы уникальны',
+    new Set(SLEEVES.map(s => s.id)).size === SLEEVES.length);
+
+  // Медный ряд обязан покрывать весь стандартный ряд сечений: одиночная жила
+  // любого сечения из ГОСТ 22483 должна находить себе гильзу.
+  assertTrue('Данные гильз: стандартный ряд сечений покрыт медными гильзами',
+    STD_SECTIONS.every(S => calcSleeve({ conductors: [{ S, qty: 1 }], material: 'cu', flexClass: 1 }).ok));
+}
+
+// Разрез — иллюстрация, а не проверка укладки: жилы раскладываются кольцами по
+// отношению длин окружностей и при плотном заполнении могут вылезти за канал.
+// Но сами кружки обязаны быть настоящими: по одному на жилу, нужного диаметра
+// и без наложений друг на друга.
+{
+  const wires = sleeveWireLayout([{ S: 2.5, qty: 5 }], 5);
+  assertTrue('Разрез: по кружку на каждую жилу', wires.length === 5);
+
+  // Диаметр кружка — габарит жилы, то есть считается из занимаемой площади,
+  // а не из сечения металла: иначе гибкая жила рисовалась бы тоньше, чем есть.
+  assert('Разрез: диаметр кружка отвечает габариту жилы',
+    Math.PI * wires[0].d ** 2 / 4, 2.5 / 0.70, 1e-9);
+
+  const overlap = wires.some((a, i) => wires.some((b, j) =>
+    j > i && Math.hypot(a.x - b.x, a.y - b.y) < (a.d + b.d) / 2 - 1e-6));
+  assertTrue('Разрез: кружки жил не накладываются друг на друга', overlap === false);
+
+  // Толстая жила ложится в центр, вокруг неё — кольцо из тонких.
+  const mixed = sleeveWireLayout([{ S: 16, qty: 1 }, { S: 1.5, qty: 4 }], 1);
+  assertTrue('Разрез: в центре — самая толстая жила',
+    mixed[0].x === 0 && mixed[0].y === 0 && mixed[0].d === Math.max(...mixed.map(w => w.d)));
+  assertTrue('Разрез: остальные жилы выстроены вокруг центральной',
+    mixed.slice(1).every(w => Math.hypot(w.x, w.y) > 0));
+
+  assertTrue('Разрез: пустой список жил даёт пустую раскладку', sleeveWireLayout([], 1).length === 0);
+}
+
+// Круги той же площади лежат в канале хуже, чем реальные жилы: те при
+// опрессовке сминаются и заполняют углы, а круг остаётся кругом. Поэтому
+// раскладка вписывается в канал — иначе рисунок противоречил бы статусу и
+// показывал бы вылезающие жилы там, где заполнение всего 70 %.
+{
+  const channelR = 3.6 / 2;
+  const tight = sleeveWireLayout([{ S: 2.5, qty: 2 }], 5);
+  const scale = sleeveCutScale(tight, channelR, 'ok');
+  assertTrue('Разрез: тесная раскладка ужимается до канала', scale < 1);
+  assertTrue('Разрез: после масштабирования жилы внутри канала',
+    tight.every(w => (Math.hypot(w.x, w.y) + w.d / 2) * scale <= channelR + 1e-9));
+
+  // Свободная раскладка не раздувается: расстояние до стенки — тоже информация.
+  const loose = sleeveWireLayout([{ S: 1.5, qty: 1 }], 1);
+  assert('Разрез: свободная раскладка остаётся в своём масштабе',
+    sleeveCutScale(loose, channelR, 'ok'), 1, 1e-12);
+
+  // При переполнении жилы обязаны вылезти: именно это и говорит статус.
+  assert('Разрез: при переполнении раскладка не ужимается',
+    sleeveCutScale(tight, channelR, 'over'), 1, 1e-12);
+
+  assert('Разрез: пустая раскладка не ломает масштаб', sleeveCutScale([], channelR, 'ok'), 1, 1e-12);
+}
+
 summary.innerHTML = `<div class="summary ${failed === 0 ? 'ok' : 'err'}">${passed} passed, ${failed} failed (total: ${passed + failed})</div>`;
 </script>
 </body>

@@ -5,6 +5,7 @@ import { $, $$, lang, loadLang, showPage, showSubTab, toggleTheme, printPage, co
 import { calcPower, calcVoltage, calcShortCircuit, calcGrounding, calcProtection } from './electrical.js';
 import { calcCable, initCableForm } from './cable-select.js';
 import { calcLedStrip, initStripForm, addStripRow, removeStripRow } from './led-strip.js';
+import { calcSleeveFill, initSleeveForm, addSleeveRow, removeSleeveRow } from './sleeve.js';
 import { calcCompensation, calcMotor, calcTransformer, calcLighting, calcUPS, calcLoadPanel, addLoadRow, removeLoadRow } from './equipment.js';
 import { calcDerating, calcDiam2Sec, calcConverter } from './cable-networks.js';
 import { calcResSeries, calcResParallel, calcCapSeries, calcCapParallel, calcIndSeries, calcIndParallel, calcVoltageDivider, calcRCTau, calcRLTau, calcLCResonance, calcMotorCap, calcCapCode, calcCapUnit, calcLED, calcZener, calcRLC, calcBridge } from './electronics.js';
@@ -111,6 +112,7 @@ function bindAll() {
     // Electrical installation
     ['btn-tp-calc', calc3PhasePower], ['btn-dc-calc', calcDCVoltageDrop],
     ['btn-cf-calc', calcConduitFill], ['btn-cf-add', addConduitRow], ['btn-cf-remove', removeConduitRow],
+    ['btn-slv-calc', calcSleeveFill], ['btn-slv-add', addSleeveRow], ['btn-slv-remove', removeSleeveRow],
     ['btn-ms-calc', calcMotorStart], ['btn-nc-calc', calcNeutralCurrent],
     ['btn-cl-loss-calc', calcCableLoss], ['btn-el-calc', calcEmergencyLight],
     ['btn-sp-calc', calcSolarPanel], ['btn-af-calc', calcArcFlash],
@@ -165,6 +167,7 @@ function bindAll() {
   // Init wire cabinet calculator
   initCableForm();
   initStripForm();
+  initSleeveForm();
 
   initWirecab();
 

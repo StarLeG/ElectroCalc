@@ -148,6 +148,7 @@
   <div class="group">ЭНЕРГЕТИКА</div>
   <div class="nav-item" data-page="threephase"><svg viewBox="0 0 24 24"><path d="M2 12h4l2-6 4 12 2-6h4"/><path d="M2 6h4l2 6 4-12 2 6h4"/></svg><span>Три фазы</span></div>
   <div class="nav-item" data-page="energyaudit"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>Энергоаудит</span></div>
+  <div class="nav-item" data-page="sleeve"><svg viewBox="0 0 24 24"><rect x="7" y="8" width="10" height="8" rx="2"/><line x1="2" y1="10" x2="7" y2="10"/><line x1="2" y1="14" x2="7" y2="14"/><line x1="17" y1="12" x2="22" y2="12"/><line x1="10" y1="8" x2="10" y2="16"/><line x1="14" y1="8" x2="14" y2="16"/></svg><span>Гильзы</span></div>
   <div class="nav-item" data-page="solar"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg><span>Солнечная энергия</span></div>
 
   <!-- Редактор схем -->
@@ -1214,6 +1215,76 @@
     </div>
     <div class="card result-card">
       <div class="card-title">Результат</div>
+  <!-- ====== PAGE: SLEEVE FILL ====== -->
+  <main class="content page" id="page-sleeve">
+    <div class="card" style="flex:1;display:flex;flex-direction:column">
+      <h2 class="card-title">Подбор соединительной гильзы</h2>
+
+      <div class="row" style="max-width:760px;margin-bottom:16px">
+        <div class="field"><label>Материал жил</label>
+          <select id="slv-material">
+            <option value="cu">Медь</option>
+            <option value="al">Алюминий</option>
+            <option value="cu-al">Медь + алюминий</option>
+          </select>
+        </div>
+        <div class="field"><label>Класс гибкости жилы</label>
+          <select id="slv-flex">
+            <option value="1">1 — монолитная</option>
+            <option value="2">2 — многопроволочная</option>
+            <option value="5" selected>5 — гибкая</option>
+            <option value="6">6 — особо гибкая</option>
+          </select>
+        </div>
+        <div class="field"><label>Семейство гильз</label>
+          <select id="slv-family"><option value="">Любое подходящее</option></select>
+        </div>
+      </div>
+
+      <!-- flex:none обязателен: у блока с overflow автоматический минимальный
+           размер равен нулю, и в колонке карточки он схлопывается вместе с таблицей. -->
+      <div style="overflow-x:auto;flex:none;margin-bottom:16px">
+        <table id="slv-table">
+          <thead><tr><th>Сечение жилы, мм²</th><th>Количество</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="btns" style="margin-bottom:16px">
+        <button class="btn btn-secondary" id="btn-slv-add">+ Провод</button>
+        <button class="btn btn-ghost" id="btn-slv-remove">− Убрать</button>
+        <button class="btn btn-primary" id="btn-slv-calc">Рассчитать</button>
+      </div>
+
+      <div class="result-val" id="slv-result-val">—</div>
+
+      <div class="grid">
+        <div class="detail"><div class="lbl">СУММАРНОЕ СЕЧЕНИЕ</div><div class="val" id="slv-sum">—</div></div>
+        <div class="detail"><div class="lbl">ЗАПОЛНЕНИЕ</div><div class="val" id="slv-fill">—</div></div>
+        <div class="detail"><div class="lbl">СТАТУС</div><div class="val" id="slv-status">—</div></div>
+        <div class="detail"><div class="lbl">МАТРИЦА ОПРЕССОВКИ</div><div class="val" id="slv-die">—</div></div>
+        <div class="detail"><div class="lbl">КАНАЛ / ДЛИНА</div><div class="val" id="slv-geometry">—</div></div>
+        <div class="detail"><div class="lbl">ДОБИВКА</div><div class="val" id="slv-filler">—</div></div>
+      </div>
+
+      <div class="sleeve-cut">
+        <div class="title">Разрез гильзы</div>
+        <div id="slv-section"></div>
+        <div class="note">Укладка показана приблизительно: жилы разложены кольцами для наглядности, а не по расчёту.</div>
+      </div>
+
+      <div class="warn-list" id="slv-warnings"></div>
+
+      <div class="formula-panel">
+        <div class="title">Формула</div>
+        <div class="formula">Заполнение = Σ(S / k_гибкости) / (π · d_вн² / 4) × 100 %</div>
+        <div class="ref">ГОСТ 23469.3 (гильзы медные), ГОСТ 9581 (гильзы алюминиевые), ГОСТ 22483 (классы гибкости жил)</div>
+      </div>
+
+      <div class="warn-item" id="slv-disclaimer">Расчёт справочный. Размеры гильз и матрицы у производителей различаются — перед монтажом сверьтесь с каталогом производителя и требованиями ПУЭ.</div>
+    </div>
+  </main>
+
       <div class="result-val" id="ms-result-val">—</div>
       <div class="result-unit">%</div>
       <div class="result-desc">ПРОВАЛ НАПРЯЖЕНИЯ</div>

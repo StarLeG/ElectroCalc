@@ -421,6 +421,21 @@ const HELP_RU = {
 <p><strong>Калькулятор</strong> также подбирает минимальный диаметр трубы для заданных кабелей.</p>
 <p><strong>Стандартные диаметры:</strong> 16, 20, 25, 32, 40, 50, 63 мм.</p>`
   },
+  sleeve: {
+    title: 'Подбор соединительной гильзы',
+    body: `<p>Гильза подбирается по <strong>суммарному сечению</strong> всех жил, которые заводятся в неё: именно так составлены каталоги производителей.</p>
+<p><strong>Заполнение</strong> — доля площади канала гильзы, занятая жилами. Считается по внутреннему диаметру с поправкой на класс гибкости: гибкая жила класса 5 при том же сечении толще монолитной, потому что между проволоками остаются пустоты.</p>
+<p><strong>Статусы:</strong></p>
+<ul>
+<li><strong>Свободно</strong> (менее 60%) — гильза великовата. Опрессовка сомнёт её, но плотного контакта не даст. Нужна добивка проволокой того же металла; калькулятор считает, сколько мм² доложить.</li>
+<li><strong>Норма</strong> (60…90%) — рабочий диапазон.</li>
+<li><strong>Плотно</strong> (90…100%) — верхняя граница применимости типоразмера, проверьте по каталогу.</li>
+<li><strong>Не помещается</strong> (более 100%) — жилы занимают больше площади, чем есть в канале. Нужен следующий типоразмер.</li>
+</ul>
+<p><strong>Материал.</strong> Медь соединяется медной гильзой (ГМЛ), алюминий — алюминиевой (ГАО). Медь с алюминием напрямую соединять нельзя: во влаге пара работает как гальванический элемент, алюминий разрушается, контакт греется и выгорает. Для такого соединения отбираются только биметаллические гильзы (ГАМ).</p>
+<p><strong>Разрез</strong> показывает укладку приблизительно, кольцами, — для наглядности, а не как проверку геометрии.</p>
+<p><strong>Внимание:</strong> размеры гильз и обозначения матриц у производителей различаются. Расчёт справочный, перед монтажом сверьтесь с каталогом производителя и ПУЭ.</p>`
+  },
   motorstart: {
     title: 'Пуск двигателя: провал напряжения',
     body: `<p>При пуске двигателя ток возрастает в 5-7 раз, что вызывает провал напряжения в сети. Слишком большой провал мешает другому оборудованию.</p>
@@ -611,6 +626,10 @@ const HELP_EN = {
   threephase: { title: 'Three-Phase Power', body: `<p>Calculate P, Q, S in three-phase circuits. P = 1.732 * U * I * cos phi.</p>` },
   dcvdrop: { title: 'DC Voltage Drop', body: `<p>DC circuit voltage drop. R = 2*rho*L/S, dU = I*R. Max 3% recommended.</p>` },
   conduitfill: { title: 'Conduit Fill', body: `<p>Check if cables fit in conduit. Max 40% fill per PUE.</p>` },
+  sleeve: { title: 'Crimp Sleeve Selection', body: `<p>The sleeve is selected by the <strong>total section</strong> of all conductors entering it — that is how manufacturer catalogues are arranged. Fill is the share of the channel area taken by the conductors, computed from the inner diameter with a correction for the flexibility class.</p>
+<p>Below 60% the sleeve is loose and needs filler wire of the same metal; 60…90% is normal; 90…100% is tight; above 100% the conductors do not fit and the next size is required.</p>
+<p>Copper goes into copper sleeves, aluminium into aluminium ones. A direct copper-to-aluminium joint is not allowed — the pair corrodes galvanically — so that case selects bimetallic sleeves only.</p>
+<p>Reference calculation: check the manufacturer catalogue before crimping.</p>` },
   motorstart: { title: 'Motor Starting', body: `<p>Voltage dip during motor start. Max 15% dip allowed. DOL, star-delta, soft start methods.</p>` },
   neutral: { title: 'Neutral Current', body: `<p>Calculate neutral current in unbalanced three-phase system. Formula: In = sqrt(I1²+I2²+I3²-I1·I2-I2·I3-I1·I3).</p>` },
   cableloss: { title: 'Cable Power Loss', body: `<p>Calculate power loss in cables. Ploss = I² × R. Annual cost calculation.</p>` },

@@ -88,7 +88,7 @@ export const I18N = {
     nav: {electrical:"ЭЛЕКТРИКА",power:"Мощность",cable:"Кабели",voltage:"Потери",shortcircuit:"КЗ",grounding:"Заземление",protection:"Защита",equipment:"ОБОРУДОВАНИЕ",compensation:"Компенсация",motor:"Двигатели",transformer:"Трансформатор",lighting:"Освещение",lighting_group:"ОСВЕЩЕНИЕ",ledstrip:"Светодиодные ленты",ups:"ИБП / АКБ",loadpanel:"Щит нагрузок",cable_networks:"КАБЕЛЬНЫЕ СЕТИ",derating:"Дерейтинг",diam2sec:"Диаметр→Сечение",converter:"Конвертер",cabinet:"МОНТАЖ ШКАФОВ",wirecab:"Провод и НШВИ",electronics:"ЭЛЕКТРОНИКА",rccalc:"R/C соединение",capval:"Значения конд.",motorcap:"Конденсатор Дв.",led:"Светодиод",zener:"Стабилитрон",rlc:"Импеданс RLC",bridge:"Мост Уитстона",microchips:"МИКРОСХЕМЫ",ne555:"NE555",opamp:"Опер. усилитель","7seg":"7-сегмент",kipia_group:"КИПиА",kipia:"КИПиА",pneumatics:"Пневматика",hydraulics:"Гидравлика"},
     crumb: {
       group: {electrical:"ЭЛЕКТРИКА",equipment:"ОБОРУДОВАНИЕ",lighting:"ОСВЕЩЕНИЕ",cablenet:"КАБЕЛЬНЫЕ СЕТИ",cabinet:"МОНТАЖ ШКАФОВ",energy:"ЭНЕРГЕТИКА",electronics:"ЭЛЕКТРОНИКА",chips:"МИКРОСХЕМЫ",kipia:"КИПиА",safety:"БЕЗОПАСНОСТЬ",system:"СИСТЕМА"},
-      page: {power:"Мощность",cable:"Кабели",voltage:"Потери",shortcircuit:"КЗ",grounding:"Заземление",protection:"Защита",groundcircuit:"Заземл. контур",kzcable:"КЗ-кабель",motor:"Двигатели",motorstart:"Пуск двигателя",transformer:"Трансформатор",compensation:"Компенсация",lighting:"Освещение",emergency:"Аварийное освещ.",ledstrip:"Светодиодные ленты",ups:"ИБП / АКБ",loadpanel:"Щит нагрузок",derating:"Дерейтинг",diam2sec:"Диаметр→Сечение",cableloss:"Потери в кабеле",busbar:"Шины",cabletray:"Кабель-лоток",conduitfill:"Заполнение труб",converter:"Конвертер",wirecab:"Провод и НШВИ",demandfactor:"Коэфф. спроса",fuse:"Предохранитель",dcvdrop:"DC потери",threephase:"Три фазы",energyaudit:"Энергоаудит",solar:"Солнечная энергия",rccalc:"R/C соединение",capval:"Значения конд.",motorcap:"Конденсатор Дв.",led:"Светодиод",zener:"Стабилитрон",rlc:"Импеданс RLC",bridge:"Мост Уитстона",ne555:"NE555",opamp:"Опер. усилитель","7seg":"7-сегмент",kipia:"КИПиА",pneumatics:"Пневматика",pneumline:"Пневмо-трасса",hydraulics:"Гидравлика",rtdtable:"Таблица RTD",tcouple:"Термопара",cablelength:"Длина каб. 4-20",neutral:"Ток нейтрали",arcflash:"Дуговая вспышка",thd:"THD гармоники",help:"Справка",developer:"О программе",donate:"Поддержать"}
+      page: {power:"Мощность",cable:"Кабели",voltage:"Потери",shortcircuit:"КЗ",grounding:"Заземление",protection:"Защита",groundcircuit:"Заземл. контур",kzcable:"КЗ-кабель",motor:"Двигатели",motorstart:"Пуск двигателя",transformer:"Трансформатор",compensation:"Компенсация",lighting:"Освещение",emergency:"Аварийное освещ.",ledstrip:"Светодиодные ленты",ups:"ИБП / АКБ",loadpanel:"Щит нагрузок",derating:"Дерейтинг",diam2sec:"Диаметр→Сечение",cableloss:"Потери в кабеле",busbar:"Шины",cabletray:"Кабель-лоток",conduitfill:"Заполнение труб",sleeve:"Гильзы",converter:"Конвертер",wirecab:"Провод и НШВИ",demandfactor:"Коэфф. спроса",fuse:"Предохранитель",dcvdrop:"DC потери",threephase:"Три фазы",energyaudit:"Энергоаудит",solar:"Солнечная энергия",rccalc:"R/C соединение",capval:"Значения конд.",motorcap:"Конденсатор Дв.",led:"Светодиод",zener:"Стабилитрон",rlc:"Импеданс RLC",bridge:"Мост Уитстона",ne555:"NE555",opamp:"Опер. усилитель","7seg":"7-сегмент",kipia:"КИПиА",pneumatics:"Пневматика",pneumline:"Пневмо-трасса",hydraulics:"Гидравлика",rtdtable:"Таблица RTD",tcouple:"Термопара",cablelength:"Длина каб. 4-20",neutral:"Ток нейтрали",arcflash:"Дуговая вспышка",thd:"THD гармоники",help:"Справка",developer:"О программе",donate:"Поддержать"}
     },
     common: {input_data:"Исходные данные",result:"Результат",calculate:"Рассчитать",reset:"Сбросить",export_pdf:"Экспорт PDF",copy:"Копировать",formula_norm:"Формула и норматив",ready:"Готово",copied:"Скопировано",check_data:"Проверьте данные"},
     power: {p_power:"Мощность (кВт)",u_voltage:"Напряжение (В)",phase:"Фазность",phase1:"1 фаза",phase3:"3 фазы",cos_phi:"cos φ",efficiency:"КПД",current:"ТОК",total_power:"ПОЛНАЯ МОЩНОСТЬ",desc:"Расчётный ток нагрузки",ref:"ПУЭ п. 1.3.10"},
@@ -178,10 +178,39 @@ export const I18N = {
       ref:"ПУЭ табл. 1.3.4 — допустимый ток провода; просадка на дорожках — интеграл распределённой нагрузки",
       method_note:"Сопротивление дорожек по умолчанию — типовое для указанной ширины ленты. Для ответственного монтажа измерьте его омметром на отрезке 1 м."
     },
-    voltage: {current:"Ток (А)",length:"Длина линии (м)",r_resist:"R (Ом/км)",x_react:"X (Ом/км)",voltage:"U (В)",drop_pct:"ПАДЕНИЕ (%)",drop_v:"ПАДЕНИЕ (В)",desc:"ПАДЕНИЕ НАПРЯЖЕНИЯ",formula:"ΔU = √3·I·L·(R·cosφ + X·sinφ) / 1000",ref:"ПУЭ п. 1.3.10"},
-    shortcircuit: {voltage:"Линейное напряжение (В)",impedance:"Полное сопротивление (Ом)",ikz:"ТОК КОРОТКОГО ЗАМЫКАНИЯ",z_val:"ПОЛНОЕ СОПРОТИВЛЕНИЕ",formula:"Iкз = U / (√3 × Z)",ref:"ПУЭ п. 1.4.1"},
-    grounding: {rho:"ρ грунта (Ом·м)",length:"Длина электрода (м)",diameter:"Диаметр электрода (м)",r_required:"Требуемое R (Ом)",electrodes:"электродов",desc:"ЧИСЛО ЭЛЕКТРОДОВ",ref:"ПУЭ п. 1.7.16"},
-    protection: {load_current:"Ток нагрузки (А)",breaker_char:"Характеристика автомата",leak_current:"Ток утечки (мА)",uzo_nominal:"НОМИНАЛ УЗО",formula:"Iавт ≥ Iнагр · kзап",ref:"ПУЭ п. 1.7.79"},
+    sleeve: {
+      material:"Материал жил", mat_cu:"Медь", mat_al:"Алюминий", mat_cual:"Медь + алюминий",
+      flex:"Класс гибкости жилы",
+      flex_1:"1 — монолитная", flex_2:"2 — многопроволочная", flex_5:"5 — гибкая", flex_6:"6 — особо гибкая",
+      family:"Семейство гильз", family_any:"Любое подходящее",
+      th_section:"Сечение жилы, мм²", th_qty:"Количество",
+      add_wire:"+ Провод", remove_wire:"− Убрать",
+      size:"ТИПОРАЗМЕР", sum_section:"СУММАРНОЕ СЕЧЕНИЕ", fill:"ЗАПОЛНЕНИЕ",
+      die:"МАТРИЦА ОПРЕССОВКИ", geometry:"КАНАЛ / ДЛИНА", status:"СТАТУС", filler:"ДОБИВКА",
+      status_loose:"Свободно", status_ok:"Норма", status_tight:"Плотно", status_over:"Не помещается",
+      mm2:"мм²", unit_mm:"мм", no_filler:"не нужна",
+      section_title:"Разрез гильзы", section_note:"Укладка показана приблизительно: жилы разложены кольцами для наглядности, а не по расчёту.",
+      err_empty:"Добавьте хотя бы одну жилу с ненулевым сечением",
+      err_section:"Сечение и количество жил не могут быть отрицательными",
+      err_over_range:"Суммарное сечение выходит за верх ряда гильз. Разделите соединение на несколько гильз или примените болтовой зажим.",
+      err_no_family:"Для выбранного материала жил в этом семействе гильз нет. Смените семейство или оставьте «любое».",
+      warn_below_range:"Суммарное сечение меньше нижней границы ряда: предложена наименьшая гильза, её нужно добить проволокой.",
+      warn_filler:"Гильза заполнена меньше чем на 60 %. Без добивки проволокой того же металла опрессовка сомнёт гильзу, но плотного контакта не даст.",
+      warn_tight:"Гильза заполнена на пределе. Соединение соберётся, но проверьте применимость типоразмера по каталогу производителя.",
+      warn_over_fill:"Жилы занимают больше площади канала, чем в нём есть: в эту гильзу они не войдут. Возьмите следующий типоразмер.",
+      formula:"Заполнение = Σ(S / k_гибкости) / (π · d_вн² / 4) × 100 %",
+      ref:"ГОСТ 23469.3 (гильзы медные), ГОСТ 9581 (гильзы алюминиевые), ГОСТ 22483 (классы гибкости жил)",
+      disclaimer:"Расчёт справочный. Размеры гильз и матрицы у производителей различаются — перед монтажом сверьтесь с каталогом производителя и требованиями ПУЭ.",
+      method_note:"Гильза подбирается по суммарному сечению жил, заполнение считается по внутреннему диаметру с поправкой на класс гибкости: гибкая жила при том же сечении толще монолитной."
+    },
+    voltage: {
+      page_title:"Потери напряжения в линии",current:"Ток (А)",length:"Длина линии (м)",r_resist:"R (Ом/км)",x_react:"X (Ом/км)",voltage:"U (В)",drop_pct:"ПАДЕНИЕ (%)",drop_v:"ПАДЕНИЕ (В)",desc:"ПАДЕНИЕ НАПРЯЖЕНИЯ",formula:"ΔU = √3·I·L·(R·cosφ + X·sinφ) / 1000",ref:"ПУЭ п. 1.3.10"},
+    shortcircuit: {
+      page_title:"Ток короткого замыкания",voltage:"Линейное напряжение (В)",impedance:"Полное сопротивление (Ом)",ikz:"ТОК КОРОТКОГО ЗАМЫКАНИЯ",z_val:"ПОЛНОЕ СОПРОТИВЛЕНИЕ",formula:"Iкз = U / (√3 × Z)",ref:"ПУЭ п. 1.4.1"},
+    grounding: {
+      page_title:"Расчёт заземляющего устройства",rho:"ρ грунта (Ом·м)",length:"Длина электрода (м)",diameter:"Диаметр электрода (м)",r_required:"Требуемое R (Ом)",electrodes:"электродов",desc:"ЧИСЛО ЭЛЕКТРОДОВ",ref:"ПУЭ п. 1.7.16"},
+    protection: {
+      page_title:"Выбор аппарата защиты",load_current:"Ток нагрузки (А)",breaker_char:"Характеристика автомата",leak_current:"Ток утечки (мА)",uzo_nominal:"НОМИНАЛ УЗО",formula:"Iавт ≥ Iнагр · kзап",ref:"ПУЭ п. 1.7.79"},
     compensation: {title:"Компенсация реактивной мощности",active_power:"Активная мощность (кВт)",cos_before:"cos φ до",cos_after:"cos φ после",step_size:"Размер ступени (квар)",compensation:"КОМПЕНСАЦИЯ",steps:"СТУПЕНЕЙ",before:"ДО (квар)",after:"ПОСЛЕ (квар)",savings:"ЭКОНОМИЯ",formula:"Qc = P·(tgφ₁ − tgφ₂)",ref:"ПУЭ п. 1.5.15"},
     motor: {title:"Электродвигатель",power:"Мощность (кВт)",voltage:"Напряжение (В)",cos_phi:"cos φ",efficiency:"КПД",start_mult:"Кратность пускового тока",nominal_current:"Номинальный ток",starting_current:"ПУСКОВОЙ ТОК",breaker:"АВТОМАТ",section:"СЕЧЕНИЕ",formula:"I = P / (√3 × U × cos φ × η)",ref:"ПУЭ п. 1.3.10"},
     transformer: {title:"Трансформатор",load:"Нагрузка (кВт)",hv_voltage:"Напряжение ВН (кВ)",lv_voltage:"Напряжение НН (кВ)",uk:"uк (%)",hv_current:"ТОК ВН",lv_current:"ТОК НН",sc_current:"ТОК КЗ",loading:"ЗАГРУЗКА",formula:"S = P / cos φ, I = S / (√3 × U)",ref:"ПУЭ"},
@@ -264,7 +293,7 @@ export const I18N = {
     nav: {electrical:"ELECTRICAL",power:"Power",cable:"Cables",voltage:"Voltage Drop",shortcircuit:"Short Circuit",grounding:"Grounding",protection:"Protection",equipment:"EQUIPMENT",compensation:"Compensation",motor:"Motors",transformer:"Transformer",lighting:"Lighting",lighting_group:"LIGHTING",ledstrip:"LED strips",ups:"UPS / Battery",loadpanel:"Load Panel",cable_networks:"CABLE NETWORKS",derating:"Derating",diam2sec:"Diameter→Section",converter:"Converter",cabinet:"CABINET WIRING",wirecab:"Wire & Ferrules",electronics:"ELECTRONICS",rccalc:"R/C Connection",capval:"Capacitor Codes",motorcap:"Motor Capacitor",led:"LED",zener:"Zener Diode",rlc:"RLC Impedance",bridge:"Wheatstone Bridge",microchips:"IC CHIPS",ne555:"NE555",opamp:"Op-Amp","7seg":"7-Segment",kipia_group:"I&C",kipia:"I&C",pneumatics:"Pneumatics",hydraulics:"Hydraulics"},
     crumb: {
       group: {electrical:"ELECTRICAL",equipment:"EQUIPMENT",lighting:"LIGHTING",cablenet:"CABLE NETWORKS",cabinet:"CABINET WIRING",energy:"POWER ENGINEERING",electronics:"ELECTRONICS",chips:"IC CHIPS",kipia:"I&C",safety:"SAFETY",system:"SYSTEM"},
-      page: {power:"Power",cable:"Cables",voltage:"Voltage Drop",shortcircuit:"Short Circuit",grounding:"Grounding",protection:"Protection",groundcircuit:"Ground Loop",kzcable:"SC Cable Check",motor:"Motors",motorstart:"Motor Starting",transformer:"Transformer",compensation:"Compensation",lighting:"Lighting",emergency:"Emergency Lighting",ledstrip:"LED strips",ups:"UPS / Battery",loadpanel:"Load Panel",derating:"Derating",diam2sec:"Diameter→Section",cableloss:"Cable Losses",busbar:"Busbars",cabletray:"Cable Tray",conduitfill:"Conduit Fill",converter:"Converter",wirecab:"Wire & Ferrules",demandfactor:"Demand Factor",fuse:"Fuse",dcvdrop:"DC Voltage Drop",threephase:"Three-Phase",energyaudit:"Energy Audit",solar:"Solar Power",rccalc:"R/C Connection",capval:"Capacitor Codes",motorcap:"Motor Capacitor",led:"LED",zener:"Zener Diode",rlc:"RLC Impedance",bridge:"Wheatstone Bridge",ne555:"NE555",opamp:"Op-Amp","7seg":"7-Segment",kipia:"I&C",pneumatics:"Pneumatics",pneumline:"Pneumatic Line",hydraulics:"Hydraulics",rtdtable:"RTD Table",tcouple:"Thermocouple",cablelength:"4-20 mA Cable",neutral:"Neutral Current",arcflash:"Arc Flash",thd:"THD Harmonics",help:"Help",developer:"About",donate:"Support"}
+      page: {power:"Power",cable:"Cables",voltage:"Voltage Drop",shortcircuit:"Short Circuit",grounding:"Grounding",protection:"Protection",groundcircuit:"Ground Loop",kzcable:"SC Cable Check",motor:"Motors",motorstart:"Motor Starting",transformer:"Transformer",compensation:"Compensation",lighting:"Lighting",emergency:"Emergency Lighting",ledstrip:"LED strips",ups:"UPS / Battery",loadpanel:"Load Panel",derating:"Derating",diam2sec:"Diameter→Section",cableloss:"Cable Losses",busbar:"Busbars",cabletray:"Cable Tray",conduitfill:"Conduit Fill",sleeve:"Sleeves",converter:"Converter",wirecab:"Wire & Ferrules",demandfactor:"Demand Factor",fuse:"Fuse",dcvdrop:"DC Voltage Drop",threephase:"Three-Phase",energyaudit:"Energy Audit",solar:"Solar Power",rccalc:"R/C Connection",capval:"Capacitor Codes",motorcap:"Motor Capacitor",led:"LED",zener:"Zener Diode",rlc:"RLC Impedance",bridge:"Wheatstone Bridge",ne555:"NE555",opamp:"Op-Amp","7seg":"7-Segment",kipia:"I&C",pneumatics:"Pneumatics",pneumline:"Pneumatic Line",hydraulics:"Hydraulics",rtdtable:"RTD Table",tcouple:"Thermocouple",cablelength:"4-20 mA Cable",neutral:"Neutral Current",arcflash:"Arc Flash",thd:"THD Harmonics",help:"Help",developer:"About",donate:"Support"}
     },
     common: {input_data:"Input Data",result:"Result",calculate:"Calculate",reset:"Reset",export_pdf:"Export PDF",copy:"Copy",formula_norm:"Formula & Standard",ready:"Ready",copied:"Copied to clipboard",check_data:"Please check input data"},
     power: {p_power:"Power (kW)",u_voltage:"Voltage (V)",phase:"Phase",phase1:"Single phase",phase3:"Three phase",cos_phi:"cos φ",efficiency:"Efficiency",current:"CURRENT",total_power:"TOTAL POWER",desc:"Calculated load current",ref:"PUE cl. 1.3.10"},
@@ -354,10 +383,39 @@ export const I18N = {
       ref:"PUE table 1.3.4 for wire ampacity; the strip drop is the integral of a distributed load",
       method_note:"The default track resistance is typical for the stated strip width. For critical installations measure it with an ohmmeter over a 1 m piece."
     },
-    voltage: {current:"Current (A)",length:"Line length (m)",r_resist:"R (Ohm/km)",x_react:"X (Ohm/km)",voltage:"Voltage (V)",drop_pct:"DROP (%)",drop_v:"DROP (V)",desc:"VOLTAGE DROP",formula:"ΔU = √3·I·L·(R·cosφ + X·sinφ) / 1000",ref:"PUE cl. 1.3.10"},
-    shortcircuit: {voltage:"Line voltage (V)",impedance:"Total impedance (Ohm)",ikz:"SHORT CIRCUIT CURRENT",z_val:"TOTAL IMPEDANCE",formula:"Ikz = U / (√3 × Z)",ref:"PUE cl. 1.4.1"},
-    grounding: {rho:"Soil resistivity (Ohm·m)",length:"Electrode length (m)",diameter:"Electrode diameter (m)",r_required:"Required R (Ohm)",electrodes:"electrodes",desc:"NUMBER OF ELECTRODES",ref:"PUE cl. 1.7.16"},
-    protection: {load_current:"Load current (A)",breaker_char:"Breaker characteristic",leak_current:"Leakage current (mA)",uzo_nominal:"RCD RATING",formula:"Ibreak ≥ Iload · k_safety",ref:"PUE cl. 1.7.79"},
+    sleeve: {
+      material:"Conductor material", mat_cu:"Copper", mat_al:"Aluminium", mat_cual:"Copper + aluminium",
+      flex:"Conductor flexibility class",
+      flex_1:"1 — solid", flex_2:"2 — stranded", flex_5:"5 — flexible", flex_6:"6 — extra flexible",
+      family:"Sleeve family", family_any:"Any suitable",
+      th_section:"Conductor section, mm²", th_qty:"Quantity",
+      add_wire:"+ Conductor", remove_wire:"− Remove",
+      size:"SIZE", sum_section:"TOTAL SECTION", fill:"FILL",
+      die:"CRIMP DIE", geometry:"CHANNEL / LENGTH", status:"STATUS", filler:"FILLER WIRE",
+      status_loose:"Loose", status_ok:"Normal", status_tight:"Tight", status_over:"Does not fit",
+      mm2:"mm²", unit_mm:"mm", no_filler:"not needed",
+      section_title:"Sleeve cross-section", section_note:"The packing is indicative: conductors are arranged in rings for clarity, not by calculation.",
+      err_empty:"Add at least one conductor with a non-zero section",
+      err_section:"Section and quantity cannot be negative",
+      err_over_range:"The total section exceeds the top of the sleeve series. Split the joint between several sleeves or use a bolted connector.",
+      err_no_family:"This family has no sleeves for the selected conductor material. Change the family or leave it as «any».",
+      warn_below_range:"The total section is below the bottom of the series: the smallest sleeve is offered and must be packed out with filler wire.",
+      warn_filler:"The sleeve is less than 60 % full. Without filler wire of the same metal, crimping will collapse the sleeve without making a tight contact.",
+      warn_tight:"The sleeve is filled to its limit. The joint can be made, but check the size against the manufacturer catalogue.",
+      warn_over_fill:"The conductors take up more area than the channel has: they will not fit this sleeve. Take the next size up.",
+      formula:"Fill = Σ(S / k_flex) / (π · d_in² / 4) × 100 %",
+      ref:"GOST 23469.3 (copper sleeves), GOST 9581 (aluminium sleeves), GOST 22483 (conductor flexibility classes)",
+      disclaimer:"Reference calculation. Sleeve dimensions and dies differ between manufacturers — check the manufacturer catalogue and the wiring rules before crimping.",
+      method_note:"The sleeve is selected by the total conductor section; the fill is computed from the inner diameter with a correction for the flexibility class: a flexible conductor is thicker than a solid one of the same section."
+    },
+    voltage: {
+      page_title:"Voltage drop in a line",current:"Current (A)",length:"Line length (m)",r_resist:"R (Ohm/km)",x_react:"X (Ohm/km)",voltage:"Voltage (V)",drop_pct:"DROP (%)",drop_v:"DROP (V)",desc:"VOLTAGE DROP",formula:"ΔU = √3·I·L·(R·cosφ + X·sinφ) / 1000",ref:"PUE cl. 1.3.10"},
+    shortcircuit: {
+      page_title:"Short-circuit current",voltage:"Line voltage (V)",impedance:"Total impedance (Ohm)",ikz:"SHORT CIRCUIT CURRENT",z_val:"TOTAL IMPEDANCE",formula:"Ikz = U / (√3 × Z)",ref:"PUE cl. 1.4.1"},
+    grounding: {
+      page_title:"Earthing system calculation",rho:"Soil resistivity (Ohm·m)",length:"Electrode length (m)",diameter:"Electrode diameter (m)",r_required:"Required R (Ohm)",electrodes:"electrodes",desc:"NUMBER OF ELECTRODES",ref:"PUE cl. 1.7.16"},
+    protection: {
+      page_title:"Protective device selection",load_current:"Load current (A)",breaker_char:"Breaker characteristic",leak_current:"Leakage current (mA)",uzo_nominal:"RCD RATING",formula:"Ibreak ≥ Iload · k_safety",ref:"PUE cl. 1.7.79"},
     compensation: {title:"Reactive Power Compensation",active_power:"Active power (kW)",cos_before:"cos φ before",cos_after:"cos φ after",step_size:"Step size (kVAr)",compensation:"COMPENSATION",steps:"STEPS",before:"BEFORE (kVAr)",after:"AFTER (kVAr)",savings:"SAVINGS",formula:"Qc = P·(tgφ₁ − tgφ₂)",ref:"PUE cl. 1.5.15"},
     motor: {title:"Electric Motor",power:"Power (kW)",voltage:"Voltage (V)",cos_phi:"cos φ",efficiency:"Efficiency",start_mult:"Starting current multiplier",nominal_current:"Nominal current",starting_current:"STARTING CURRENT",breaker:"BREAKER",section:"SECTION",formula:"I = P / (√3 × U × cos φ × η)",ref:"PUE cl. 1.3.10"},
     transformer: {title:"Transformer",load:"Load (kW)",hv_voltage:"HV voltage (kV)",lv_voltage:"LV voltage (kV)",uk:"Uk (%)",hv_current:"HV CURRENT",lv_current:"LV CURRENT",sc_current:"SC CURRENT",loading:"LOADING",formula:"S = P / cos φ, I = S / (√3 × U)",ref:"PUE"},
@@ -482,7 +540,8 @@ const CRUMB_GROUP = {
   compensation:'equipment', ups:'equipment', loadpanel:'equipment',
   lighting:'lighting', emergency:'lighting', ledstrip:'lighting',
   derating:'cablenet', diam2sec:'cablenet', cableloss:'cablenet',
-  busbar:'cablenet', cabletray:'cablenet', conduitfill:'cablenet', converter:'cablenet',
+  busbar:'cablenet', cabletray:'cablenet', conduitfill:'cablenet', sleeve:'cablenet',
+  converter:'cablenet',
   wirecab:'cabinet', demandfactor:'cabinet', fuse:'cabinet', dcvdrop:'cabinet',
   threephase:'energy', energyaudit:'energy', solar:'energy',
   rccalc:'electronics', capval:'electronics', motorcap:'electronics',
