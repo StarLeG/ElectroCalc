@@ -88,4 +88,5 @@ mimocode_backup_*.zip
 # Перед выкладкой: npm run build (deploy-web.ps1 проверяет свежесть сам).
 web/index.html
 web/*/index.html
+web/404.html
 web/sitemap.xml
