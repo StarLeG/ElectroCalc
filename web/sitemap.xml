@@ -1,76 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Пока приложение живёт на одном адресе, в карте одна запись.
+     Якоря (/#cable и подобные) поисковые системы отбрасывают: для них это
+     повторы главной страницы. Разделы вернутся сюда, когда получат
+     собственные пути. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://engicalc.electroman.by/</loc>
-    <lastmod>2026-08-16</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
-  <!-- Редактор схем -->
-  <url>
-    <loc>https://engicalc.electroman.by/#editor</loc>
-    <lastmod>2026-08-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <!-- Электрика -->
-  <url><loc>https://engicalc.electroman.by/#power</loc><priority>0.8</priority></url>
-  <url><loc>https://engicalc.electroman.by/#cable</loc><priority>0.8</priority></url>
-  <url><loc>https://engicalc.electroman.by/#voltage</loc><priority>0.8</priority></url>
-  <url><loc>https://engicalc.electroman.by/#shortcircuit</loc><priority>0.8</priority></url>
-  <url><loc>https://engicalc.electroman.by/#grounding</loc><priority>0.7</priority></url>
-  <url><loc>https://engicalc.electroman.by/#protection</loc><priority>0.7</priority></url>
-  <url><loc>https://engicalc.electroman.by/#groundcircuit</loc><priority>0.7</priority></url>
-  <url><loc>https://engicalc.electroman.by/#kzcable</loc><priority>0.7</priority></url>
-  <!-- Оборудование -->
-  <url><loc>https://engicalc.electroman.by/#motor</loc><priority>0.7</priority></url>
-  <url><loc>https://engicalc.electroman.by/#motorstart</loc><priority>0.7</priority></url>
-  <url><loc>https://engicalc.electroman.by/#transformer</loc><priority>0.7</priority></url>
-  <url><loc>https://engicalc.electroman.by/#compensation</loc><priority>0.7</priority></url>
-  <url><loc>https://engicalc.electroman.by/#lighting</loc><priority>0.7</priority></url>
-  <url><loc>https://engicalc.electroman.by/#emergency</loc><priority>0.6</priority></url>
-  <url><loc>https://engicalc.electroman.by/#ups</loc><priority>0.7</priority></url>
-  <url><loc>https://engicalc.electroman.by/#loadpanel</loc><priority>0.7</priority></url>
-  <!-- Кабельные сети -->
-  <url><loc>https://engicalc.electroman.by/#derating</loc><priority>0.7</priority></url>
-  <url><loc>https://engicalc.electroman.by/#diam2sec</loc><priority>0.6</priority></url>
-  <url><loc>https://engicalc.electroman.by/#cableloss</loc><priority>0.7</priority></url>
-  <url><loc>https://engicalc.electroman.by/#busbar</loc><priority>0.6</priority></url>
-  <url><loc>https://engicalc.electroman.by/#cabletray</loc><priority>0.6</priority></url>
-  <url><loc>https://engicalc.electroman.by/#conduitfill</loc><priority>0.6</priority></url>
-  <url><loc>https://engicalc.electroman.by/#converter</loc><priority>0.6</priority></url>
-  <!-- Монтаж шкафов -->
-  <url><loc>https://engicalc.electroman.by/#wirecab</loc><priority>0.7</priority></url>
-  <url><loc>https://engicalc.electroman.by/#demandfactor</loc><priority>0.6</priority></url>
-  <url><loc>https://engicalc.electroman.by/#fuse</loc><priority>0.6</priority></url>
-  <url><loc>https://engicalc.electroman.by/#dcvdrop</loc><priority>0.6</priority></url>
-  <!-- Энергетика -->
-  <url><loc>https://engicalc.electroman.by/#threephase</loc><priority>0.7</priority></url>
-  <url><loc>https://engicalc.electroman.by/#energyaudit</loc><priority>0.6</priority></url>
-  <url><loc>https://engicalc.electroman.by/#solar</loc><priority>0.6</priority></url>
-  <!-- Электроника -->
-  <url><loc>https://engicalc.electroman.by/#rccalc</loc><priority>0.6</priority></url>
-  <url><loc>https://engicalc.electroman.by/#capval</loc><priority>0.5</priority></url>
-  <url><loc>https://engicalc.electroman.by/#motorcap</loc><priority>0.5</priority></url>
-  <url><loc>https://engicalc.electroman.by/#led</loc><priority>0.6</priority></url>
-  <url><loc>https://engicalc.electroman.by/#zener</loc><priority>0.6</priority></url>
-  <url><loc>https://engicalc.electroman.by/#rlc</loc><priority>0.6</priority></url>
-  <url><loc>https://engicalc.electroman.by/#bridge</loc><priority>0.5</priority></url>
-  <!-- Микросхемы -->
-  <url><loc>https://engicalc.electroman.by/#ne555</loc><priority>0.7</priority></url>
-  <url><loc>https://engicalc.electroman.by/#opamp</loc><priority>0.6</priority></url>
-  <url><loc>https://engicalc.electroman.by/#7seg</loc><priority>0.5</priority></url>
-  <!-- КИПиА -->
-  <url><loc>https://engicalc.electroman.by/#kipia</loc><priority>0.7</priority></url>
-  <url><loc>https://engicalc.electroman.by/#pneumatics</loc><priority>0.6</priority></url>
-  <url><loc>https://engicalc.electroman.by/#pneumline</loc><priority>0.5</priority></url>
-  <url><loc>https://engicalc.electroman.by/#hydraulics</loc><priority>0.6</priority></url>
-  <url><loc>https://engicalc.electroman.by/#rtdtable</loc><priority>0.5</priority></url>
-  <url><loc>https://engicalc.electroman.by/#tcouple</loc><priority>0.5</priority></url>
-  <url><loc>https://engicalc.electroman.by/#cablelength</loc><priority>0.5</priority></url>
-  <!-- Безопасность -->
-  <url><loc>https://engicalc.electroman.by/#neutral</loc><priority>0.6</priority></url>
-  <url><loc>https://engicalc.electroman.by/#arcflash</loc><priority>0.6</priority></url>
-  <url><loc>https://engicalc.electroman.by/#thd</loc><priority>0.5</priority></url>
-  <url><loc>https://engicalc.electroman.by/#ledstrip</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
 </urlset>

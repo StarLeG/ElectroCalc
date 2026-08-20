@@ -93,6 +93,7 @@ export const I18N = {
     common: {input_data:"Исходные данные",result:"Результат",calculate:"Рассчитать",reset:"Сбросить",export_pdf:"Экспорт PDF",copy:"Копировать",formula_norm:"Формула и норматив",ready:"Готово",copied:"Скопировано",check_data:"Проверьте данные"},
     power: {p_power:"Мощность (кВт)",u_voltage:"Напряжение (В)",phase:"Фазность",phase1:"1 фаза",phase3:"3 фазы",cos_phi:"cos φ",efficiency:"КПД",current:"ТОК",total_power:"ПОЛНАЯ МОЩНОСТЬ",desc:"Расчётный ток нагрузки",ref:"ПУЭ п. 1.3.10"},
     cable: {
+      page_title:"Подбор сечения кабеля",
       net:"Тип сети", net_3ph:"Трёхфазная 380 В", net_1ph:"Однофазная 220 В", net_dc:"Постоянный ток",
       voltage:"Напряжение (В)", length:"Длина линии (м)",
       load_mode:"Нагрузка задана", mode_power:"Мощностью", mode_current:"Током",
@@ -132,6 +133,7 @@ export const I18N = {
       method_note:"Метод: базовая таблица допустимых токов с поправками на изоляцию, способ прокладки, число жил, температуру среды и группу кабелей."
     },
     ledstrip: {
+      page_title:"Расчёт светодиодной ленты",
       mode:"Схема монтажа", mode_single:"Одна лента", mode_multi:"Несколько лент от одной точки",
       voltage:"Напряжение ленты (В)", max_drop:"Допустимое ΔU (%)",
       strip_type:"Тип ленты",
@@ -298,6 +300,7 @@ export const I18N = {
     common: {input_data:"Input Data",result:"Result",calculate:"Calculate",reset:"Reset",export_pdf:"Export PDF",copy:"Copy",formula_norm:"Formula & Standard",ready:"Ready",copied:"Copied to clipboard",check_data:"Please check input data"},
     power: {p_power:"Power (kW)",u_voltage:"Voltage (V)",phase:"Phase",phase1:"Single phase",phase3:"Three phase",cos_phi:"cos φ",efficiency:"Efficiency",current:"CURRENT",total_power:"TOTAL POWER",desc:"Calculated load current",ref:"PUE cl. 1.3.10"},
     cable: {
+      page_title:"Cable sizing",
       net:"Network type", net_3ph:"Three-phase 380 V", net_1ph:"Single-phase 220 V", net_dc:"Direct current",
       voltage:"Voltage (V)", length:"Line length (m)",
       load_mode:"Load defined by", mode_power:"Power", mode_current:"Current",
@@ -337,6 +340,7 @@ export const I18N = {
       method_note:"Method: base ampacity table with corrections for insulation, installation method, number of loaded cores, ambient temperature and grouping."
     },
     ledstrip: {
+      page_title:"LED strip calculation",
       mode:"Installation layout", mode_single:"Single strip", mode_multi:"Several strips from one point",
       voltage:"Strip voltage (V)", max_drop:"Permissible ΔU (%)",
       strip_type:"Strip type",
@@ -589,6 +593,19 @@ export function showPage(name) {
   $('.sidebar')?.classList.remove('open');
   $('.nav-overlay')?.classList.remove('show');
   history.replaceState(null, '', '#' + name);
+  trackPageView(name);
+}
+
+/**
+ * Просмотр раздела для Метрики.
+ *
+ * Разделы живут на одном адресе, и счётчик сам их не различает: без явного
+ * hit вся статистика свелась бы к одному входу на главную. Заголовок берём
+ * из словаря, чтобы в отчётах стояли названия калькуляторов, а не якоря.
+ */
+function trackPageView(name) {
+  if (typeof window.ym !== 'function') return;
+  window.ym(111795803, 'hit', location.href, { title: T('crumb.page.' + name) });
 }
 
 export function showSubTab(name) {

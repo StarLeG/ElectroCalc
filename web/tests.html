@@ -43,11 +43,11 @@ import { plotXY, niceNum, niceScale } from './js/chart.js';
 import { awgArea, awgFromArea } from './js/cable-networks.js';
 import { mvToC, cToMv, TC_COEFFS } from './js/industry.js';
 import { rtdResistance, rtdTemperature, rtdR0 } from './js/data/rtd.js';
-
 import { calcSleeve, sleeveWireLayout, sleeveCutScale } from './js/sleeve.js';
 import { contactClosed } from './js/schematic-editor.js';
 import { SLEEVES, SLEEVE_FAMILIES, FILL_LIMITS } from './js/data/sleeve-data.js';
 import { STD_SECTIONS } from './js/data/cable-data.js';
+
 // ==================== POWER ====================
 function calcPower(P, U, phase, cos, eta) {
   return phase === 3 ? P * 1000 / (Math.sqrt(3) * U * cos * eta) : P * 1000 / (U * cos * eta);
@@ -1153,7 +1153,6 @@ output.innerHTML += '<h3 style="color:#FFB300;margin-top:16px">Model &amp; geome
     rBoth.dropStrip / rOne.dropStrip, 0.25, 0.001);
 }
 
-// ==================== SUMMARY ====================
 // ==================== УГО КОНТАКТА ====================
 // Одного признака «замкнут» мало: его должно быть видно на чертеже. Проверяем
 // саму разметку УГО, потому что именно она и разъехалась с расчётом.
@@ -1476,6 +1475,7 @@ output.innerHTML += '<h3 style="color:#FFB300;margin-top:16px">Model &amp; geome
   assert('Разрез: пустая раскладка не ломает масштаб', sleeveCutScale([], channelR, 'ok'), 1, 1e-12);
 }
 
+// ==================== SUMMARY ====================
 summary.innerHTML = `<div class="summary ${failed === 0 ? 'ok' : 'err'}">${passed} passed, ${failed} failed (total: ${passed + failed})</div>`;
 </script>
 </body>

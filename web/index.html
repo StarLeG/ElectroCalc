@@ -89,9 +89,21 @@
 <link rel="stylesheet" href="css/components.css?v=4">
 <link rel="stylesheet" href="css/help.css?v=4">
 <link rel="stylesheet" href="css/pages.css?v=4">
-<title>EngiCalc — Инженерные расчёты</title>
+<title>EngiCalc — онлайн-калькуляторы для электриков: кабель, ток, КЗ</title>
 </head>
 <body>
+<!-- Яндекс.Метрика: счётчик 111795803. Просмотры разделов отправляются из showPage
+     в core.js — иначе вся статистика свелась бы к одному входу на главную. -->
+<script>
+  (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+  m[i].l=1*new Date();
+  for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+  k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+  (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+
+  ym(111795803, "init", { clickmap: true, trackLinks: true, accurateTrackBounce: true, webvisor: true });
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/111795803" style="position:absolute;left:-9999px" alt=""></div></noscript>
 
 <button class="nav-toggle" aria-label="Menu">
   <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -136,6 +148,7 @@
   <div class="nav-item" data-page="busbar"><svg viewBox="0 0 24 24"><rect x="2" y="10" width="20" height="4" rx="1"/><line x1="2" y1="12" x2="22" y2="12"/></svg><span>Шины</span></div>
   <div class="nav-item" data-page="cabletray"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg><span>Кабель-лоток</span></div>
   <div class="nav-item" data-page="conduitfill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="8" r="1.5"/><circle cx="15" cy="11" r="1.5"/></svg><span>Заполнение труб</span></div>
+  <div class="nav-item" data-page="sleeve"><svg viewBox="0 0 24 24"><rect x="7" y="8" width="10" height="8" rx="2"/><line x1="2" y1="10" x2="7" y2="10"/><line x1="2" y1="14" x2="7" y2="14"/><line x1="17" y1="12" x2="22" y2="12"/><line x1="10" y1="8" x2="10" y2="16"/><line x1="14" y1="8" x2="14" y2="16"/></svg><span>Гильзы</span></div>
   <div class="nav-item" data-page="converter"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span data-i18n="nav.converter">Конвертер</span></div>
 
   <!-- 🏗 МОНТАЖ ШКАФОВ -->
@@ -151,7 +164,6 @@
   <div class="group">ЭНЕРГЕТИКА</div>
   <div class="nav-item" data-page="threephase"><svg viewBox="0 0 24 24"><path d="M2 12h4l2-6 4 12 2-6h4"/><path d="M2 6h4l2 6 4-12 2 6h4"/></svg><span>Три фазы</span></div>
   <div class="nav-item" data-page="energyaudit"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>Энергоаудит</span></div>
-  <div class="nav-item" data-page="sleeve"><svg viewBox="0 0 24 24"><rect x="7" y="8" width="10" height="8" rx="2"/><line x1="2" y1="10" x2="7" y2="10"/><line x1="2" y1="14" x2="7" y2="14"/><line x1="17" y1="12" x2="22" y2="12"/><line x1="10" y1="8" x2="10" y2="16"/><line x1="14" y1="8" x2="14" y2="16"/></svg><span>Гильзы</span></div>
   <div class="nav-item" data-page="solar"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg><span>Солнечная энергия</span></div>
 
   <!-- Редактор схем -->
@@ -205,7 +217,7 @@
 
 <div class="main">
   <header class="topbar">
-    <span class="logo"><span class="e">Engi</span><span class="c">Calc</span></span>
+    <h1 class="logo"><span class="e">Engi</span><span class="c">Calc</span></h1>
     <span class="breadcrumb" id="breadcrumb">Электрика / Мощность</span>
     <div class="topbar-right">
       <button class="btn btn-ghost btn-help" title="Справка">&#x2753;</button>
@@ -223,7 +235,7 @@
   <!-- ====== PAGE: POWER ====== -->
   <main class="content page active" id="page-power">
     <div class="card input-card">
-      <div class="card-title" data-i18n="common.input_data">Исходные данные</div>
+      <h3 class="card-title" data-i18n="common.input_data">Исходные данные</h3>
       <div class="field"><label data-i18n="power.p_power">Мощность (кВт)</label><input type="number" step="0.1" value="2.2" id="p-power"></div>
       <div class="row">
         <div class="field"><label data-i18n="power.u_voltage">Напряжение (В)</label><input type="number" value="380" id="p-u"></div>
@@ -236,7 +248,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-power-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-power-reset" data-i18n="common.reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title" data-i18n="common.result">Результат</div>
+      <h3 class="card-title" data-i18n="common.result">Результат</h3>
       <div class="result-val" id="power-result-val">4.27</div>
       <div class="result-unit" id="power-result-unit">Ампер</div>
       <div class="result-desc" id="power-result-desc" data-i18n="power.desc">Расчётный ток нагрузки</div>
@@ -256,7 +268,7 @@
   <!-- ====== PAGE: CABLE ====== -->
   <main class="content page" id="page-cable">
     <div class="card input-card">
-      <div class="card-title" data-i18n="common.input_data">Исходные данные</div>
+      <h2 class="card-title" data-i18n="cable.page_title">Подбор сечения кабеля</h2>
       <div class="field"><label data-i18n="cable.net">Тип сети</label><select id="c-net"><option value="ac3" data-i18n="cable.net_3ph">Трёхфазная 380 В</option><option value="ac1" data-i18n="cable.net_1ph">Однофазная 220 В</option><option value="dc" data-i18n="cable.net_dc">Постоянный ток</option></select></div>
       <div class="row">
         <div class="field"><label data-i18n="cable.voltage">Напряжение (В)</label><input type="number" value="380" id="c-U"></div>
@@ -302,7 +314,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-cable-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-cable-reset" data-i18n="common.reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title" data-i18n="common.result">Результат</div>
+      <h3 class="card-title" data-i18n="common.result">Результат</h3>
       <div class="result-val" id="cable-result-val">—</div>
       <div class="result-unit">мм²</div>
       <div class="result-desc" data-i18n="cable.section">Рекомендуемое сечение</div>
@@ -335,7 +347,7 @@
   <!-- ====== PAGE: LED STRIP ====== -->
   <main class="content page" id="page-ledstrip">
     <div class="card input-card">
-      <div class="card-title" data-i18n="common.input_data">Исходные данные</div>
+      <h2 class="card-title" data-i18n="ledstrip.page_title">Расчёт светодиодной ленты</h2>
       <div class="field"><label data-i18n="ledstrip.mode">Схема монтажа</label><select id="lst-mode"><option value="single" data-i18n="ledstrip.mode_single">Одна лента</option><option value="multi-strip" data-i18n="ledstrip.mode_multi">Несколько лент от одной точки</option></select></div>
       <div class="row">
         <div class="field"><label data-i18n="ledstrip.voltage">Напряжение ленты (В)</label><input type="number" step="1" value="24" id="lst-U"></div>
@@ -396,7 +408,7 @@
     </div>
 
     <div class="card result-card">
-      <div class="card-title" data-i18n="common.result">Результат</div>
+      <h3 class="card-title" data-i18n="common.result">Результат</h3>
       <div class="result-val" id="lst-result-val">—</div>
       <div class="result-unit">мм²</div>
       <div class="result-desc" data-i18n="ledstrip.section">Рекомендуемое сечение провода</div>
@@ -430,7 +442,7 @@
   <!-- ====== PAGE: VOLTAGE DROP ====== -->
   <main class="content page" id="page-voltage">
     <div class="card input-card">
-      <div class="card-title" data-i18n="common.input_data">Исходные данные</div>
+      <h2 class="card-title" data-i18n="voltage.page_title">Потери напряжения в линии</h2>
       <div class="field"><label data-i18n="voltage.current">Ток (А)</label><input type="number" value="10" id="v-I"></div>
       <div class="field"><label data-i18n="voltage.length">Длина линии (м)</label><input type="number" value="100" id="v-L"></div>
       <div class="field"><label data-i18n="voltage.r_resist">R (Ом/км)</label><input type="number" step="0.01" value="7.24" id="v-R"></div>
@@ -442,7 +454,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-voltage-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-voltage-reset" data-i18n="common.reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title" data-i18n="common.result">Результат</div>
+      <h3 class="card-title" data-i18n="common.result">Результат</h3>
       <div class="result-val" id="voltage-result-val">2.82</div>
       <div class="result-unit">%</div>
       <div class="result-desc" data-i18n="voltage.desc">ПАДЕНИЕ НАПРЯЖЕНИЯ</div>
@@ -461,13 +473,13 @@
   <!-- ====== PAGE: SHORT CIRCUIT ====== -->
   <main class="content page" id="page-shortcircuit">
     <div class="card input-card">
-      <div class="card-title" data-i18n="common.input_data">Исходные данные</div>
+      <h2 class="card-title" data-i18n="shortcircuit.page_title">Ток короткого замыкания</h2>
       <div class="field"><label data-i18n="shortcircuit.voltage">Линейное напряжение (В)</label><input type="number" value="380" id="sc-U"></div>
       <div class="field"><label data-i18n="shortcircuit.impedance">Полное сопротивление (Ом)</label><input type="number" step="0.01" value="0.1" id="sc-Z"></div>
       <div class="btns"><button class="btn btn-primary" id="btn-sc-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-sc-reset" data-i18n="common.reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title" data-i18n="common.result">Результат</div>
+      <h3 class="card-title" data-i18n="common.result">Результат</h3>
       <div class="result-val" id="sc-result-val">2194</div>
       <div class="result-unit">Ампер</div>
       <div class="result-desc" data-i18n="shortcircuit.ikz">ТОК КОРОТКОГО ЗАМЫКАНИЯ</div>
@@ -485,7 +497,7 @@
   <!-- ====== PAGE: GROUNDING ====== -->
   <main class="content page" id="page-grounding">
     <div class="card input-card">
-      <div class="card-title" data-i18n="common.input_data">Исходные данные</div>
+      <h2 class="card-title" data-i18n="grounding.page_title">Расчёт заземляющего устройства</h2>
       <div class="field"><label data-i18n="grounding.rho">ρ грунта (Ом·м)</label><input type="number" value="100" id="g-rho"></div>
       <div class="field"><label data-i18n="grounding.length">Длина электрода (м)</label><input type="number" step="0.1" value="3" id="g-L"></div>
       <div class="field"><label data-i18n="grounding.diameter">Диаметр электрода (м)</label><input type="number" step="0.001" value="0.02" id="g-d"></div>
@@ -493,7 +505,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-g-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-g-reset" data-i18n="common.reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title" data-i18n="common.result">Результат</div>
+      <h3 class="card-title" data-i18n="common.result">Результат</h3>
       <div class="result-val" id="g-result-val">13</div>
       <div class="result-unit" data-i18n="grounding.electrodes">электродов</div>
       <div class="result-desc" data-i18n="grounding.desc">ЧИСЛО ЭЛЕКТРОДОВ</div>
@@ -508,14 +520,14 @@
   <!-- ====== PAGE: PROTECTION ====== -->
   <main class="content page" id="page-protection">
     <div class="card input-card">
-      <div class="card-title" data-i18n="common.input_data">Исходные данные</div>
+      <h2 class="card-title" data-i18n="protection.page_title">Выбор аппарата защиты</h2>
       <div class="field"><label data-i18n="protection.load_current">Ток нагрузки (А)</label><input type="number" value="16" id="pr-I"></div>
       <div class="field"><label data-i18n="protection.breaker_char">Характеристика автомата</label><select id="pr-char"><option>B</option><option selected>C</option><option>D</option></select></div>
       <div class="field"><label data-i18n="protection.leak_current">Ток утечки (мА)</label><input type="number" value="30" id="pr-leak"></div>
       <div class="btns"><button class="btn btn-primary" id="btn-pr-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-pr-reset" data-i18n="common.reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title" data-i18n="common.result">Результат</div>
+      <h3 class="card-title" data-i18n="common.result">Результат</h3>
       <div class="result-val" id="pr-result-val">100</div>
       <div class="result-unit">мА</div>
       <div class="result-desc" data-i18n="protection.uzo_nominal">НОМИНАЛ УЗО</div>
@@ -530,7 +542,7 @@
   <!-- ====== PAGE: COMPENSATION ====== -->
   <main class="content page" id="page-compensation">
     <div class="card input-card">
-      <div class="card-title" data-i18n="compensation.title">Компенсация реактивной мощности</div>
+      <h2 class="card-title" data-i18n="compensation.title">Компенсация реактивной мощности</h2>
       <div class="field"><label data-i18n="compensation.active_power">Активная мощность (кВт)</label><input type="number" value="100" id="comp-P"></div>
       <div class="field"><label data-i18n="compensation.cos_before">cos φ до</label><input type="number" step="0.01" value="0.6" id="comp-cos1"></div>
       <div class="field"><label data-i18n="compensation.cos_after">cos φ после</label><input type="number" step="0.01" value="0.95" id="comp-cos2"></div>
@@ -538,7 +550,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-comp-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-comp-reset" data-i18n="common.reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title" data-i18n="common.result">Результат</div>
+      <h3 class="card-title" data-i18n="common.result">Результат</h3>
       <div class="result-val" id="comp-result-val">80.0</div>
       <div class="result-unit">квар</div>
       <div class="result-desc" data-i18n="compensation.compensation">КОМПЕНСАЦИЯ</div>
@@ -559,7 +571,7 @@
   <!-- ====== PAGE: MOTOR ====== -->
   <main class="content page" id="page-motor">
     <div class="card input-card">
-      <div class="card-title" data-i18n="motor.title">Электродвигатель</div>
+      <h2 class="card-title" data-i18n="motor.title">Электродвигатель</h2>
       <div class="field"><label data-i18n="motor.power">Мощность (кВт)</label><input type="number" value="7.5" id="m-P"></div>
       <div class="field"><label data-i18n="motor.voltage">Напряжение (В)</label><input type="number" value="380" id="m-U"></div>
       <div class="field"><label data-i18n="motor.cos_phi">cos φ</label><input type="number" step="0.01" value="0.85" id="m-cos"></div>
@@ -568,7 +580,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-m-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-m-reset" data-i18n="common.reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title" data-i18n="common.result">Результат</div>
+      <h3 class="card-title" data-i18n="common.result">Результат</h3>
       <div class="result-val" id="m-result-val">15.0 А</div>
       <div class="result-desc" data-i18n="motor.nominal_current">Номинальный ток</div>
       <div class="grid">
@@ -587,7 +599,7 @@
   <!-- ====== PAGE: TRANSFORMER ====== -->
   <main class="content page" id="page-transformer">
     <div class="card input-card">
-      <div class="card-title" data-i18n="transformer.title">Трансформатор</div>
+      <h2 class="card-title" data-i18n="transformer.title">Трансформатор</h2>
       <div class="field"><label data-i18n="transformer.load">Нагрузка (кВт)</label><input type="number" value="500" id="t-P"></div>
       <div class="field"><label data-i18n="transformer.cos_phi">cos φ</label><input type="number" step="0.01" value="0.9" id="t-cos"></div>
       <div class="row">
@@ -598,7 +610,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-t-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-t-reset" data-i18n="common.reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title" data-i18n="common.result">Результат</div>
+      <h3 class="card-title" data-i18n="common.result">Результат</h3>
       <div class="result-val" id="t-result-val">556 кВА</div>
       <div class="grid">
         <div class="detail"><div class="lbl" data-i18n="transformer.hv_current">ТОК ВН</div><div class="val" id="t-Ivn">32.1 А</div></div>
@@ -617,7 +629,7 @@
   <!-- ====== PAGE: LIGHTING ====== -->
   <main class="content page" id="page-lighting">
     <div class="card input-card">
-      <div class="card-title" data-i18n="lighting.title">Освещение</div>
+      <h2 class="card-title" data-i18n="lighting.title">Освещение</h2>
       <div class="field"><label data-i18n="lighting.area">Площадь помещения (м²)</label><input type="number" value="50" id="l-S"></div>
       <div class="field"><label data-i18n="lighting.illuminance">Требуемая освещённость (лк)</label><input type="number" value="300" id="l-E"></div>
       <div class="field"><label data-i18n="lighting.luminous_flux">Световой поток (лм)</label><input type="number" value="3000" id="l-phi"></div>
@@ -626,7 +638,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-l-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-l-reset" data-i18n="common.reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title" data-i18n="common.result">Результат</div>
+      <h3 class="card-title" data-i18n="common.result">Результат</h3>
       <div class="result-val" id="l-result-val">9</div>
       <div class="result-unit" data-i18n="lighting.fixtures">светильников</div>
       <div class="grid">
@@ -644,7 +656,7 @@
   <!-- ====== PAGE: UPS ====== -->
   <main class="content page" id="page-ups">
     <div class="card input-card">
-      <div class="card-title" data-i18n="ups.title">ИБП / АКБ / Генератор</div>
+      <h2 class="card-title" data-i18n="ups.title">ИБП / АКБ / Генератор</h2>
       <div class="field"><label data-i18n="ups.load">Нагрузка (кВт)</label><input type="number" value="5" id="u-P"></div>
       <div class="field"><label data-i18n="ups.reserve_time">Время резерва (мин)</label><input type="number" value="30" id="u-t"></div>
       <div class="field"><label data-i18n="ups.battery_voltage">Напряжение АКБ (В)</label><input type="number" value="12" id="u-U"></div>
@@ -652,7 +664,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-u-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-u-reset" data-i18n="common.reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title" data-i18n="common.result">Результат</div>
+      <h3 class="card-title" data-i18n="common.result">Результат</h3>
       <div class="result-val" id="u-result-val">1389</div>
       <div class="result-unit">А·ч</div>
       <div class="grid">
@@ -669,7 +681,7 @@
   <!-- ====== PAGE: CONVERTER ====== -->
   <main class="content page" id="page-converter">
     <div class="card">
-      <div class="card-title" data-i18n="converter.title">Конвертер единиц</div>
+      <h2 class="card-title" data-i18n="converter.title">Конвертер единиц</h2>
       <div class="field" style="margin-bottom:16px">
         <label data-i18n="converter.type">Тип конвертации</label>
         <select id="conv-type">
@@ -730,7 +742,7 @@
   <!-- ====== PAGE: WIRE CABINET ====== -->
   <main class="content page" id="page-wirecab">
     <div class="card" style="flex:1;display:flex;flex-direction:column">
-      <div class="card-title" data-i18n="wirecab.title">Расчёт провода и НШВИ для электрического шкафа</div>
+      <h2 class="card-title" data-i18n="wirecab.title">Расчёт провода и НШВИ для электрического шкафа</h2>
 
       <!-- Mode switch -->
       <div class="wc-mode-switch" style="display:flex;gap:16px;margin-bottom:20px">
@@ -741,7 +753,7 @@
       <!-- QUICK MODE -->
       <div id="wc-quick-panel" style="display:flex;gap:24px;flex:1">
         <div class="card input-card">
-          <div class="card-title" data-i18n="wirecab.input">Исходные данные</div>
+          <h3 class="card-title" data-i18n="wirecab.input">Исходные данные</h3>
           <div class="row">
             <div class="field"><label data-i18n="wirecab.height">Высота шкафа (мм)</label><input type="number" value="2000" id="wc-H"></div>
             <div class="field"><label data-i18n="wirecab.width">Ширина шкафа (мм)</label><input type="number" value="800" id="wc-W"></div>
@@ -756,7 +768,7 @@
           <div class="btns"><button class="btn btn-primary" id="btn-wc-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-wc-reset" data-i18n="common.reset">Сбросить</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title" data-i18n="common.result">Результат</div>
+          <h3 class="card-title" data-i18n="common.result">Результат</h3>
           <div class="result-val" id="wc-Lavg">—</div>
           <div class="result-unit" data-i18n="wirecab.avg_length">средняя длина провода</div>
           <div class="grid">
@@ -814,7 +826,7 @@
           <div class="detail"><div class="lbl" data-i18n="wirecab.marking">МАРКИРОВКА</div><div class="val" id="wc-adv-marking">—</div></div>
         </div>
 
-        <div class="card-title" data-i18n="wirecab.summary_by_section">Сводка по сечениям</div>
+        <h3 class="card-title" data-i18n="wirecab.summary_by_section">Сводка по сечениям</h3>
         <div style="overflow-x:auto">
           <table id="wc-summary-table">
             <thead><tr>
@@ -837,7 +849,7 @@
   <!-- ====== PAGE: GROUND CIRCUIT ====== -->
   <main class="content page" id="page-groundcircuit">
     <div class="card input-card">
-      <div class="card-title">Заземляющий контур</div>
+      <h2 class="card-title">Заземляющий контур</h2>
       <div class="field"><label>Удельное сопротивление грунта (Ом·м)</label><input type="number" value="100" id="gc-rho"></div>
       <div class="field"><label>Длина вертикального электрода (м)</label><input type="number" step="0.1" value="3" id="gc-Lv"></div>
       <div class="field"><label>Диаметр электрода (мм)</label><input type="number" value="16" id="gc-dv"></div>
@@ -849,7 +861,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-gc-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-gc-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="gc-result-val">—</div>
       <div class="result-unit">Ом</div>
       <div class="result-desc">СОПРОТИВЛЕНИЕ КОНТУРА</div>
@@ -867,7 +879,7 @@
   <!-- ====== PAGE: KZ CABLE CHECK ====== -->
   <main class="content page" id="page-kzcable">
     <div class="card input-card">
-      <div class="card-title">Проверка кабеля по току КЗ</div>
+      <h2 class="card-title">Проверка кабеля по току КЗ</h2>
       <div class="field"><label>Ток КЗ (А)</label><input type="number" value="5000" id="kz-Ikz"></div>
       <div class="field"><label>Время отключения (с)</label><input type="number" step="0.01" value="0.1" id="kz-t"></div>
       <div class="field"><label>Сечение кабеля (мм²)</label><input type="number" value="6" id="kz-S"></div>
@@ -875,7 +887,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-kz-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-kz-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="kz-result-val">—</div>
       <div class="result-unit">мм²</div>
       <div class="result-desc">МИН. СЕЧЕНИЕ ПО ТЕПЛОВОЙ СТОЙКОСТИ</div>
@@ -890,7 +902,7 @@
   <!-- ====== PAGE: BUSBAR ====== -->
   <main class="content page" id="page-busbar">
     <div class="card input-card">
-      <div class="card-title">Расчёт шин</div>
+      <h2 class="card-title">Расчёт шин</h2>
       <div class="field"><label>Расчётный ток (А)</label><input type="number" value="1000" id="bb-I"></div>
       <div class="row">
         <div class="field"><label>Ширина шины (мм)</label><input type="number" value="60" id="bb-w"></div>
@@ -902,7 +914,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-bb-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-bb-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="bb-result-val">—</div>
       <div class="result-unit">А</div>
       <div class="result-desc">ДОПУСТИМЫЙ ТОК</div>
@@ -921,7 +933,7 @@
   <!-- ====== PAGE: DEMAND FACTOR ====== -->
   <main class="content page" id="page-demandfactor">
     <div class="card" style="flex:1;display:flex;flex-direction:column">
-      <div class="card-title">Коэффициент спроса</div>
+      <h2 class="card-title">Коэффициент спроса</h2>
       <div style="overflow-x:auto;margin-bottom:16px">
         <table id="df-table">
           <thead><tr><th>Группа</th><th>P (кВт)</th><th>Kс</th></tr></thead>
@@ -949,7 +961,7 @@
   <!-- ====== PAGE: FUSE ====== -->
   <main class="content page" id="page-fuse">
     <div class="card input-card">
-      <div class="card-title">Подбор предохранителя</div>
+      <h2 class="card-title">Подбор предохранителя</h2>
       <div class="field"><label>Ток нагрузки (А)</label><input type="number" value="10" id="fu-Iload"></div>
       <div class="field"><label>Напряжение (В)</label><input type="number" value="24" id="fu-U"></div>
       <div class="field"><label>Тип</label><select id="fu-type"><option value="gG">gG (общего назначения)</option><option value="aM">aM (двигательный)</option><option value="gR">gR (полупроводниковый)</option></select></div>
@@ -957,7 +969,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-fu-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-fu-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="fu-result-val">—</div>
       <div class="grid">
         <div class="detail"><div class="lbl">РАСЧЁТНЫЙ ТОК</div><div class="val" id="fu-Ifuse">—</div></div>
@@ -971,7 +983,7 @@
   <!-- ====== PAGE: 4-20mA CABLE ====== -->
   <main class="content page" id="page-cablelength">
     <div class="card input-card">
-      <div class="card-title">Длина кабеля 4-20 мА</div>
+      <h2 class="card-title">Длина кабеля 4-20 мА</h2>
       <div class="field"><label>Напряжение питания (В)</label><input type="number" value="24" id="cl2-Vsupply"></div>
       <div class="field"><label>Мин. напряжение прибора (В)</label><input type="number" value="10" id="cl2-Vmin"></div>
       <div class="field"><label>Сопротивление приёмника (Ом)</label><input type="number" value="250" id="cl2-Rload"></div>
@@ -980,7 +992,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-cl2-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-cl2-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="cl2-result-val">—</div>
       <div class="result-unit">м</div>
       <div class="result-desc">МАКС. ДЛИНА КАБЕЛЯ</div>
@@ -998,14 +1010,14 @@
   <!-- ====== PAGE: RTD TABLE ====== -->
   <main class="content page" id="page-rtdtable">
     <div class="card input-card">
-      <div class="card-title">Таблица RTD (Pt100/Pt500/Pt1000)</div>
+      <h2 class="card-title">Таблица RTD (Pt100/Pt500/Pt1000)</h2>
       <div class="field"><label>Режим</label><select id="rt-mode"><option value="t2r">Температура → Сопротивление</option><option value="r2t">Сопротивление → Температура</option></select></div>
       <div class="field"><label>Значение</label><input type="number" step="0.01" value="100" id="rt-val"></div>
       <div class="field"><label>Тип датчика</label><select id="rt-type"><option value="Pt100">Pt100 (R0=100 Ом)</option><option value="Pt500">Pt500</option><option value="Pt1000">Pt1000</option></select></div>
       <div class="btns"><button class="btn btn-primary" id="btn-rt-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-rt-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="rt-result-val">—</div>
       <div class="result-unit" id="rt-result-unit">—</div>
       <div class="formula-panel"><div class="title">Формула</div><div class="formula">R = R₀ × (1 + A·t + B·t²), A=3.9083e-3, B=-5.775e-7</div><div class="ref">IEC 60751</div></div>
@@ -1015,14 +1027,14 @@
   <!-- ====== PAGE: THERMOCOUPLE ====== -->
   <main class="content page" id="page-tcouple">
     <div class="card input-card">
-      <div class="card-title">Термопара</div>
+      <h2 class="card-title">Термопара</h2>
       <div class="field"><label>Режим</label><select id="tc-mode"><option value="mv2c">мВ → °C</option><option value="c2mv">°C → мВ</option></select></div>
       <div class="field"><label>Значение</label><input type="number" step="0.01" value="10" id="tc-val"></div>
       <div class="field"><label>Тип термопары</label><select id="tc-type"><option value="K">K (хромель-алюмель)</option><option value="J">J (железо-константан)</option><option value="T">T (медь-константан)</option><option value="E">E (хромель-константан)</option></select></div>
       <div class="btns"><button class="btn btn-primary" id="btn-tc-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-tc-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="tc-result-val">—</div>
       <div class="result-unit" id="tc-result-unit">—</div>
       <div class="formula-panel"><div class="title">Формула</div><div class="formula">Полином NIST ITS-90, обратное преобразование — численно</div><div class="ref">Диапазоны: K 0…500 °C, J 0…760 °C, T 0…400 °C, E 0…1000 °C. Холодный спай при 0 °C</div></div>
@@ -1032,7 +1044,7 @@
   <!-- ====== PAGE: PNEUMATIC LINE ====== -->
   <main class="content page" id="page-pneumline">
     <div class="card input-card">
-      <div class="card-title">Пневмо-трасса (падение давления)</div>
+      <h2 class="card-title">Пневмо-трасса (падение давления)</h2>
       <div class="field"><label>Расход (л/мин)</label><input type="number" value="200" id="pl-Q"></div>
       <div class="field"><label>Диаметр трубы (мм)</label><input type="number" value="20" id="pl-D"></div>
       <div class="field"><label>Длина трассы (м)</label><input type="number" value="30" id="pl-L"></div>
@@ -1040,7 +1052,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-pl-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-pl-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="pl-result-val">—</div>
       <div class="result-unit">бар</div>
       <div class="result-desc">ПАДЕНИЕ ДАВЛЕНИЯ</div>
@@ -1056,7 +1068,7 @@
   <!-- ====== PAGE: ENERGY AUDIT ====== -->
   <main class="content page" id="page-energyaudit">
     <div class="card" style="flex:1;display:flex;flex-direction:column">
-      <div class="card-title">Энергоаудит</div>
+      <h2 class="card-title">Энергоаудит</h2>
       <div class="row" style="max-width:300px;margin-bottom:16px">
         <div class="field"><label>Тариф (руб/кВт·ч)</label><input type="number" step="0.1" value="5.5" id="ea-price"></div>
       </div>
@@ -1088,7 +1100,7 @@
   <!-- ====== PAGE: CABLE TRAY ====== -->
   <main class="content page" id="page-cabletray">
     <div class="card" style="flex:1;display:flex;flex-direction:column">
-      <div class="card-title">Заполнение кабель-лотка</div>
+      <h2 class="card-title">Заполнение кабель-лотка</h2>
       <div class="row" style="max-width:500px;margin-bottom:16px">
         <div class="field"><label>Ширина лотка (мм)</label><input type="number" value="300" id="ct-trayW"></div>
         <div class="field"><label>Высота лотка (мм)</label><input type="number" value="60" id="ct-trayH"></div>
@@ -1122,14 +1134,14 @@
   <!-- ====== PAGE: THREE-PHASE POWER ====== -->
   <main class="content page" id="page-threephase">
     <div class="card input-card">
-      <div class="card-title">Трёхфазные цепи: мощность</div>
+      <h2 class="card-title">Трёхфазные цепи: мощность</h2>
       <div class="field"><label>Линейное напряжение (В)</label><input type="number" value="380" id="tp-U"></div>
       <div class="field"><label>Ток (А)</label><input type="number" value="10" id="tp-I"></div>
       <div class="field"><label>cos φ</label><input type="number" step="0.01" value="0.85" id="tp-cos"></div>
       <div class="btns"><button class="btn btn-primary" id="btn-tp-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-tp-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="tp-result-val">—</div>
       <div class="result-unit">кВт</div>
       <div class="result-desc">АКТИВНАЯ МОЩНОСТЬ</div>
@@ -1146,7 +1158,7 @@
   <!-- ====== PAGE: DC VOLTAGE DROP ====== -->
   <main class="content page" id="page-dcvdrop">
     <div class="card input-card">
-      <div class="card-title">Потери напряжения DC</div>
+      <h2 class="card-title">Потери напряжения DC</h2>
       <div class="field"><label>Ток (А)</label><input type="number" value="10" id="dc-I"></div>
       <div class="field"><label>Длина линии (м)</label><input type="number" value="20" id="dc-L"></div>
       <div class="field"><label>Сечение (мм²)</label><input type="number" value="2.5" id="dc-S"></div>
@@ -1155,7 +1167,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-dc-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-dc-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="dc-result-val">—</div>
       <div class="result-unit">%</div>
       <div class="result-desc">ПАДЕНИЕ НАПРЯЖЕНИЯ</div>
@@ -1173,7 +1185,7 @@
   <!-- ====== PAGE: CONDUIT FILL ====== -->
   <main class="content page" id="page-conduitfill">
     <div class="card" style="flex:1;display:flex;flex-direction:column">
-      <div class="card-title">Заполнение кабельной трубы (гофры)</div>
+      <h2 class="card-title">Заполнение кабельной трубы (гофры)</h2>
       <div class="row" style="max-width:500px;margin-bottom:16px">
         <div class="field"><label>Диаметр трубы (мм)</label><input type="number" value="32" id="cf-D"></div>
         <div class="field"><label>Лимит заполнения (%)</label><input type="number" value="40" id="cf-limit"></div>
@@ -1203,21 +1215,6 @@
     </div>
   </main>
 
-  <!-- ====== PAGE: MOTOR STARTING ====== -->
-  <main class="content page" id="page-motorstart">
-    <div class="card input-card">
-      <div class="card-title">Пуск двигателя: провал напряжения</div>
-      <div class="field"><label>Мощность двигателя (кВт)</label><input type="number" value="15" id="ms-P"></div>
-      <div class="field"><label>Напряжение (В)</label><input type="number" value="380" id="ms-U"></div>
-      <div class="field"><label>Кратность пускового тока</label><input type="number" value="7" id="ms-k"></div>
-      <div class="field"><label>cos φ</label><input type="number" step="0.01" value="0.85" id="ms-cos"></div>
-      <div class="field"><label>КПД</label><input type="number" step="0.01" value="0.9" id="ms-eta"></div>
-      <div class="field"><label>Z сети (Ом)</label><input type="number" step="0.01" value="0.1" id="ms-Zgrid"></div>
-      <div class="field"><label>Способ пуска</label><select id="ms-method"><option value="DOL">Прямой (DOL)</option><option value="star">Звезда-треугольник</option><option value="soft">Плавный пуск</option></select></div>
-      <div class="btns"><button class="btn btn-primary" id="btn-ms-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-ms-reset">Сбросить</button></div>
-    </div>
-    <div class="card result-card">
-      <div class="card-title">Результат</div>
   <!-- ====== PAGE: SLEEVE FILL ====== -->
   <main class="content page" id="page-sleeve">
     <div class="card" style="flex:1;display:flex;flex-direction:column">
@@ -1288,6 +1285,21 @@
     </div>
   </main>
 
+  <!-- ====== PAGE: MOTOR STARTING ====== -->
+  <main class="content page" id="page-motorstart">
+    <div class="card input-card">
+      <h2 class="card-title">Пуск двигателя: провал напряжения</h2>
+      <div class="field"><label>Мощность двигателя (кВт)</label><input type="number" value="15" id="ms-P"></div>
+      <div class="field"><label>Напряжение (В)</label><input type="number" value="380" id="ms-U"></div>
+      <div class="field"><label>Кратность пускового тока</label><input type="number" value="7" id="ms-k"></div>
+      <div class="field"><label>cos φ</label><input type="number" step="0.01" value="0.85" id="ms-cos"></div>
+      <div class="field"><label>КПД</label><input type="number" step="0.01" value="0.9" id="ms-eta"></div>
+      <div class="field"><label>Z сети (Ом)</label><input type="number" step="0.01" value="0.1" id="ms-Zgrid"></div>
+      <div class="field"><label>Способ пуска</label><select id="ms-method"><option value="DOL">Прямой (DOL)</option><option value="star">Звезда-треугольник</option><option value="soft">Плавный пуск</option></select></div>
+      <div class="btns"><button class="btn btn-primary" id="btn-ms-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-ms-reset">Сбросить</button></div>
+    </div>
+    <div class="card result-card">
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="ms-result-val">—</div>
       <div class="result-unit">%</div>
       <div class="result-desc">ПРОВАЛ НАПРЯЖЕНИЯ</div>
@@ -1306,7 +1318,7 @@
   <!-- ====== PAGE: NEUTRAL CURRENT ====== -->
   <main class="content page" id="page-neutral">
     <div class="card input-card">
-      <div class="card-title">Ток нейтрали (трёхфазная цепь)</div>
+      <h2 class="card-title">Ток нейтрали (трёхфазная цепь)</h2>
       <div class="field"><label>Ток фазы L1 (А)</label><input type="number" value="20" id="nc-IL1"></div>
       <div class="field"><label>Ток фазы L2 (А)</label><input type="number" value="15" id="nc-IL2"></div>
       <div class="field"><label>Ток фазы L3 (А)</label><input type="number" value="10" id="nc-IL3"></div>
@@ -1316,7 +1328,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-nc-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-nc-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="nc-result-val">—</div>
       <div class="result-unit">А</div>
       <div class="result-desc">ТОК НЕЙТРАЛИ</div>
@@ -1333,7 +1345,7 @@
   <!-- ====== PAGE: CABLE POWER LOSS ====== -->
   <main class="content page" id="page-cableloss">
     <div class="card input-card">
-      <div class="card-title">Потери мощности в кабеле</div>
+      <h2 class="card-title">Потери мощности в кабеле</h2>
       <div class="field"><label>Ток (А)</label><input type="number" value="25" id="cl-I"></div>
       <div class="field"><label>Длина линии (м)</label><input type="number" value="50" id="cl-L"></div>
       <div class="field"><label>Сечение (мм²)</label><input type="number" value="4" id="cl-S"></div>
@@ -1344,7 +1356,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-cl-loss-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-cl-loss-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="cl-result-val">—</div>
       <div class="result-unit">%</div>
       <div class="result-desc">ПОТЕРИ МОЩНОСТИ</div>
@@ -1362,7 +1374,7 @@
   <!-- ====== PAGE: EMERGENCY LIGHTING ====== -->
   <main class="content page" id="page-emergency">
     <div class="card input-card">
-      <div class="card-title">Аварийное освещение</div>
+      <h2 class="card-title">Аварийное освещение</h2>
       <div class="field"><label>Площадь помещения (м²)</label><input type="number" value="200" id="el-area"></div>
       <div class="field"><label>Рабочая освещённость (лк)</label><input type="number" value="300" id="el-lux"></div>
       <div class="field"><label>Время работы от АКБ (мин)</label><input type="number" value="60" id="el-duration"></div>
@@ -1370,7 +1382,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-el-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-el-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="el-result-val">—</div>
       <div class="result-unit">А·ч</div>
       <div class="result-desc">ЁМКОСТЬ АКБ (12В)</div>
@@ -1389,7 +1401,7 @@
   <!-- ====== PAGE: SOLAR PANEL ====== -->
   <main class="content page" id="page-solar">
     <div class="card input-card">
-      <div class="card-title">Солнечная электростанция</div>
+      <h2 class="card-title">Солнечная электростанция</h2>
       <div class="field"><label>Потребление в день (кВт·ч)</label><input type="number" value="10" id="sp-demand"></div>
       <div class="field"><label>Солнечные часы в день</label><input type="number" value="5" id="sp-sun"></div>
       <div class="field"><label>Мощность панели (Вт)</label><input type="number" value="400" id="sp-panel"></div>
@@ -1398,7 +1410,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-sp-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-sp-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="sp-result-val">—</div>
       <div class="result-unit">панелей</div>
       <div class="result-desc">КОЛИЧЕСТВО ПАНЕЛЕЙ</div>
@@ -1416,7 +1428,7 @@
   <!-- ====== PAGE: ARC FLASH ====== -->
   <main class="content page" id="page-arcflash">
     <div class="card input-card">
-      <div class="card-title">Дуговая вспышка (Arc Flash)</div>
+      <h2 class="card-title">Дуговая вспышка (Arc Flash)</h2>
       <div class="field"><label>Ток КЗ (А)</label><input type="number" value="10000" id="af-Ibf"></div>
       <div class="field"><label>Напряжение (В)</label><input type="number" value="400" id="af-V"></div>
       <div class="field"><label>Время отключения (с)</label><input type="number" step="0.01" value="0.1" id="af-t"></div>
@@ -1427,7 +1439,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-af-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-af-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="af-result-val">—</div>
       <div class="result-unit">кал/см²</div>
       <div class="result-desc">ЭНЕРГИЯ ДУГОВОЙ ВСПЫШКИ</div>
@@ -1444,7 +1456,7 @@
   <!-- ====== PAGE: THD HARMONICS ====== -->
   <main class="content page" id="page-thd">
     <div class="card" style="flex:1;display:flex;flex-direction:column">
-      <div class="card-title">THD — коэффициент искажений</div>
+      <h2 class="card-title">THD — коэффициент искажений</h2>
       <div class="field" style="max-width:300px;margin-bottom:16px"><label>Амплитуда основной гармоники</label><input type="number" value="100" id="thd-fund"></div>
       <div style="overflow-x:auto;margin-bottom:16px">
         <table id="thd-table">
@@ -1474,7 +1486,7 @@
   <!-- ====== PAGE: SCHEMATIC EDITOR ====== -->
   <main class="content page" id="page-editor">
     <div class="card editor-card">
-      <div class="card-title" data-i18n="editor.title">Редактор электрических схем</div>
+      <h2 class="card-title" data-i18n="editor.title">Редактор электрических схем</h2>
 
       <div class="editor-toolbar">
         <select id="editor-preset" class="tbl-input"></select>
@@ -1531,7 +1543,7 @@
   <!-- ====== PAGE: RESISTOR CAPACITOR ====== -->
   <main class="content page" id="page-rccalc">
     <div class="card" style="flex:1;display:flex;flex-direction:column">
-      <div class="card-title">Расчёт элементов цепи</div>
+      <h2 class="card-title">Расчёт элементов цепи</h2>
       <div class="sub-tabs">
         <div class="sub-tab active" data-sub="rser">R послед.</div>
         <div class="sub-tab" data-sub="rpar">R паралл.</div>
@@ -1548,7 +1560,7 @@
       <!-- Sub: Resistor Series -->
       <div class="sub-page active" id="sub-rser">
         <div class="card input-card">
-          <div class="card-title">Последовательное соединение резисторов</div>
+          <h3 class="card-title">Последовательное соединение резисторов</h3>
           <div id="rs-list" class="dynamic-list">
             <div class="dynamic-item"><label>R1 (Ом)</label><input type="number" value="1000" class="dynamic-val"></div>
             <div class="dynamic-item"><label>R2 (Ом)</label><input type="number" value="2200" class="dynamic-val"></div>
@@ -1557,7 +1569,7 @@
           <div class="btns"><button class="btn btn-primary" id="btn-rs-calc">Рассчитать</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title">Результат</div>
+          <h3 class="card-title">Результат</h3>
           <div class="result-val" id="rs-result-val">3200</div>
           <div class="result-unit">Ом</div>
           <div class="result-desc">СУММАРНОЕ СОПРОТИВЛЕНИЕ</div>
@@ -1569,7 +1581,7 @@
       <!-- Sub: Resistor Parallel -->
       <div class="sub-page" id="sub-rpar">
         <div class="card input-card">
-          <div class="card-title">Параллельное соединение резисторов</div>
+          <h3 class="card-title">Параллельное соединение резисторов</h3>
           <div id="rp-list" class="dynamic-list">
             <div class="dynamic-item"><label>R1 (Ом)</label><input type="number" value="1000" class="dynamic-val"></div>
             <div class="dynamic-item"><label>R2 (Ом)</label><input type="number" value="2200" class="dynamic-val"></div>
@@ -1578,7 +1590,7 @@
           <div class="btns"><button class="btn btn-primary" id="btn-rp-calc">Рассчитать</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title">Результат</div>
+          <h3 class="card-title">Результат</h3>
           <div class="result-val" id="rp-result-val">687.5</div>
           <div class="result-unit">Ом</div>
           <div class="result-desc">СУММАРНОЕ СОПРОТИВЛЕНИЕ</div>
@@ -1589,7 +1601,7 @@
       <!-- Sub: Capacitor Series -->
       <div class="sub-page" id="sub-cser">
         <div class="card input-card">
-          <div class="card-title">Последовательное соединение конденсаторов</div>
+          <h3 class="card-title">Последовательное соединение конденсаторов</h3>
           <div id="cs-list" class="dynamic-list">
             <div class="dynamic-item"><label>C1 (мкФ)</label><input type="number" value="100" class="dynamic-val"></div>
             <div class="dynamic-item"><label>C2 (мкФ)</label><input type="number" value="220" class="dynamic-val"></div>
@@ -1598,7 +1610,7 @@
           <div class="btns"><button class="btn btn-primary" id="btn-cs-calc">Рассчитать</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title">Результат</div>
+          <h3 class="card-title">Результат</h3>
           <div class="result-val" id="cs-result-val">68.75</div>
           <div class="result-unit">мкФ</div>
           <div class="result-desc">СУММАРНАЯ ЁМКОСТЬ</div>
@@ -1609,7 +1621,7 @@
       <!-- Sub: Capacitor Parallel -->
       <div class="sub-page" id="sub-cpar">
         <div class="card input-card">
-          <div class="card-title">Параллельное соединение конденсаторов</div>
+          <h3 class="card-title">Параллельное соединение конденсаторов</h3>
           <div id="cp-list" class="dynamic-list">
             <div class="dynamic-item"><label>C1 (мкФ)</label><input type="number" value="100" class="dynamic-val"></div>
             <div class="dynamic-item"><label>C2 (мкФ)</label><input type="number" value="220" class="dynamic-val"></div>
@@ -1618,7 +1630,7 @@
           <div class="btns"><button class="btn btn-primary" id="btn-cp-calc">Рассчитать</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title">Результат</div>
+          <h3 class="card-title">Результат</h3>
           <div class="result-val" id="cp-result-val">320</div>
           <div class="result-unit">мкФ</div>
           <div class="result-desc">СУММАРНАЯ ЁМКОСТЬ</div>
@@ -1629,7 +1641,7 @@
       <!-- Sub: Inductor Series -->
       <div class="sub-page" id="sub-lser">
         <div class="card input-card">
-          <div class="card-title">Последовательное соединение катушек</div>
+          <h3 class="card-title">Последовательное соединение катушек</h3>
           <div id="ls-list" class="dynamic-list">
             <div class="dynamic-item"><label>L1 (мГн)</label><input type="number" value="10" class="dynamic-val"></div>
             <div class="dynamic-item"><label>L2 (мГн)</label><input type="number" value="22" class="dynamic-val"></div>
@@ -1638,7 +1650,7 @@
           <div class="btns"><button class="btn btn-primary" id="btn-ls-calc">Рассчитать</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title">Результат</div>
+          <h3 class="card-title">Результат</h3>
           <div class="result-val" id="ls-result-val">32</div>
           <div class="result-unit">мГн</div>
           <div class="result-desc">СУММАРНАЯ ИНДУКТИВНОСТЬ</div>
@@ -1649,7 +1661,7 @@
       <!-- Sub: Inductor Parallel -->
       <div class="sub-page" id="sub-lpar">
         <div class="card input-card">
-          <div class="card-title">Параллельное соединение катушек</div>
+          <h3 class="card-title">Параллельное соединение катушек</h3>
           <div id="lp-list" class="dynamic-list">
             <div class="dynamic-item"><label>L1 (мГн)</label><input type="number" value="10" class="dynamic-val"></div>
             <div class="dynamic-item"><label>L2 (мГн)</label><input type="number" value="22" class="dynamic-val"></div>
@@ -1658,7 +1670,7 @@
           <div class="btns"><button class="btn btn-primary" id="btn-lp-elec-calc">Рассчитать</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title">Результат</div>
+          <h3 class="card-title">Результат</h3>
           <div class="result-val" id="lp-result-val">6.875</div>
           <div class="result-unit">мГн</div>
           <div class="result-desc">СУММАРНАЯ ИНДУКТИВНОСТЬ</div>
@@ -1669,7 +1681,7 @@
       <!-- Sub: Voltage Divider -->
       <div class="sub-page" id="sub-vdiv">
         <div class="card input-card">
-          <div class="card-title">Делитель напряжения</div>
+          <h3 class="card-title">Делитель напряжения</h3>
           <div class="field"><label>Vin (В)</label><input type="number" value="12" id="vd-Vin"></div>
           <div class="field"><label>R1 (Ом) — верхний</label><input type="number" value="10000" id="vd-R1"></div>
           <div class="field"><label>R2 (Ом) — нижний</label><input type="number" value="10000" id="vd-R2"></div>
@@ -1677,7 +1689,7 @@
           <div class="btns"><button class="btn btn-primary" id="btn-vd-calc">Рассчитать</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title">Результат</div>
+          <h3 class="card-title">Результат</h3>
           <div class="result-val" id="vd-result-val">6.00</div>
           <div class="result-unit">В</div>
           <div class="result-desc">ВЫХОДНОЕ НАПРЯЖЕНИЕ</div>
@@ -1694,13 +1706,13 @@
       <!-- Sub: RC Time Constant -->
       <div class="sub-page" id="sub-rc_tau">
         <div class="card input-card">
-          <div class="card-title">Постоянная времени RC</div>
+          <h3 class="card-title">Постоянная времени RC</h3>
           <div class="field"><label>R (Ом)</label><input type="number" value="10000" id="rc-R"></div>
           <div class="field"><label>C (мкФ)</label><input type="number" value="100" id="rc-C"></div>
           <div class="btns"><button class="btn btn-primary" id="btn-rc-calc">Рассчитать</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title">Результат</div>
+          <h3 class="card-title">Результат</h3>
           <div class="result-val" id="rc-result-val">1.000</div>
           <div class="result-unit">с</div>
           <div class="result-desc">ПОСТОЯННАЯ ВРЕМЕНИ τ</div>
@@ -1716,13 +1728,13 @@
       <!-- Sub: RL Time Constant -->
       <div class="sub-page" id="sub-rl_tau">
         <div class="card input-card">
-          <div class="card-title">Постоянная времени RL</div>
+          <h3 class="card-title">Постоянная времени RL</h3>
           <div class="field"><label>R (Ом)</label><input type="number" value="100" id="rl-R"></div>
           <div class="field"><label>L (мГн)</label><input type="number" value="100" id="rl-L"></div>
           <div class="btns"><button class="btn btn-primary" id="btn-rl-tau-calc">Рассчитать</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title">Результат</div>
+          <h3 class="card-title">Результат</h3>
           <div class="result-val" id="rl-tau-result-val">1.000</div>
           <div class="result-unit">мс</div>
           <div class="result-desc">ПОСТОЯННАЯ ВРЕМЕНИ τ</div>
@@ -1737,13 +1749,13 @@
       <!-- Sub: LC Resonance -->
       <div class="sub-page" id="sub-lc_res">
         <div class="card input-card">
-          <div class="card-title">Резонанс LC-контура</div>
+          <h3 class="card-title">Резонанс LC-контура</h3>
           <div class="field"><label>L (мГн)</label><input type="number" value="10" id="lc-L"></div>
           <div class="field"><label>C (мкФ)</label><input type="number" value="1" id="lc-C"></div>
           <div class="btns"><button class="btn btn-primary" id="btn-lc-calc">Рассчитать</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title">Результат</div>
+          <h3 class="card-title">Результат</h3>
           <div class="result-val" id="lc-result-val">1592</div>
           <div class="result-unit">Гц</div>
           <div class="result-desc">РЕЗОНАНСНАЯ ЧАСТОТА</div>
@@ -1761,7 +1773,7 @@
   <!-- ====== PAGE: MOTOR CAPACITOR ====== -->
   <main class="content page" id="page-motorcap">
     <div class="card input-card">
-      <div class="card-title">Конденсатор для двигателя</div>
+      <h2 class="card-title">Конденсатор для двигателя</h2>
       <div class="field"><label>Мощность двигателя (кВт)</label><input type="number" step="0.1" value="1.5" id="mc-P"></div>
       <div class="field"><label>Напряжение (В)</label><input type="number" value="220" id="mc-U"></div>
       <div class="field"><label>Частота (Гц)</label><input type="number" value="50" id="mc-f"></div>
@@ -1771,7 +1783,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-mc-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-mc-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="mc-result-val">65.9</div>
       <div class="result-unit">мкФ</div>
       <div class="result-desc">РАБОЧИЙ КОНДЕНСАТОР</div>
@@ -1792,13 +1804,13 @@
   <!-- ====== PAGE: DIAMETER TO SECTION ====== -->
   <main class="content page" id="page-diam2sec">
     <div class="card input-card">
-      <div class="card-title">Диаметр → Сечение</div>
+      <h2 class="card-title">Диаметр → Сечение</h2>
       <div class="field"><label>Диаметр (мм)</label><input type="number" step="0.01" value="1.78" id="ds-d"></div>
       <div class="field"><label>Число жил</label><input type="number" value="1" id="ds-n"></div>
       <div class="btns"><button class="btn btn-primary" id="btn-ds-calc">Рассчитать</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="ds-result-val">2.49</div>
       <div class="result-unit">мм²</div>
       <div class="result-desc">ПОПЕРЕЧНОЕ СЕЧЕНИЕ</div>
@@ -1819,7 +1831,7 @@
   <!-- ====== PAGE: WHEATSTONE BRIDGE ====== -->
   <main class="content page" id="page-bridge">
     <div class="card input-card">
-      <div class="card-title">Мост Уитстона</div>
+      <h2 class="card-title">Мост Уитстона</h2>
       <div class="field"><label>R1 (Ом)</label><input type="number" value="1000" id="wb-R1"></div>
       <div class="field"><label>R2 (Ом)</label><input type="number" value="1000" id="wb-R2"></div>
       <div class="field"><label>R3 (Ом)</label><input type="number" value="1000" id="wb-R3"></div>
@@ -1828,7 +1840,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-wb-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-wb-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="wb-result-val">0.000</div>
       <div class="result-unit">В</div>
       <div class="result-desc">НАПРЯЖЕНИЕ НА ДИАГОНАЛИ</div>
@@ -1849,7 +1861,7 @@
   <!-- ====== PAGE: CAPACITOR VALUE ====== -->
   <main class="content page" id="page-capval">
     <div class="card" style="flex:1;display:flex;flex-direction:column">
-      <div class="card-title">Значения конденсаторов</div>
+      <h2 class="card-title">Значения конденсаторов</h2>
       <div class="sub-tabs">
         <div class="sub-tab active" data-sub="capcode">Код на корпусе</div>
         <div class="sub-tab" data-sub="capunit">Перевод единиц</div>
@@ -1857,7 +1869,7 @@
 
       <div class="sub-page active" id="sub-capcode">
         <div class="card input-card">
-          <div class="card-title">Декодер кода конденсатора</div>
+          <h3 class="card-title">Декодер кода конденсатора</h3>
           <div class="field"><label>Код на корпусе (например: 104, 222, 470)</label><input type="text" value="104" id="cc-code"></div>
           <div class="btns"><button class="btn btn-primary" id="btn-cc-calc">Декодировать</button></div>
           <div style="margin-top:16px;font-size:12px;color:var(--text-muted)">
@@ -1872,7 +1884,7 @@
           </div>
         </div>
         <div class="card result-card">
-          <div class="card-title">Результат</div>
+          <h3 class="card-title">Результат</h3>
           <div class="result-val" id="cc-result-val">100</div>
           <div class="result-unit">нФ</div>
           <div class="result-desc" id="cc-desc">0.1 мкФ = 100000 пФ</div>
@@ -1892,13 +1904,13 @@
 
       <div class="sub-page" id="sub-capunit">
         <div class="card input-card">
-          <div class="card-title">Перевод единиц ёмкости</div>
+          <h3 class="card-title">Перевод единиц ёмкости</h3>
           <div class="field"><label>Значение</label><input type="number" step="any" value="0.1" id="cu-val"></div>
           <div class="field"><label>Единица</label><select id="cu-unit"><option value="uF">мкФ (микрофарады)</option><option value="nF">нФ (нанофарады)</option><option value="pF">пФ (пикофарады)</option><option value="F">Ф (фарады)</option></select></div>
           <div class="btns"><button class="btn btn-primary" id="btn-cu-calc">Конвертировать</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title">Результат</div>
+          <h3 class="card-title">Результат</h3>
           <div class="result-val" id="cu-result-val">100000</div>
           <div class="result-unit">пФ</div>
           <div class="grid">
@@ -1915,7 +1927,7 @@
   <!-- ====== PAGE: ZENER DIODE ====== -->
   <main class="content page" id="page-zener">
     <div class="card input-card">
-      <div class="card-title">Калькулятор стабилитрона</div>
+      <h2 class="card-title">Калькулятор стабилитрона</h2>
       <div class="field"><label>Входное напряжение (В)</label><input type="number" step="0.1" value="24" id="zen-Vin"></div>
       <div class="field"><label>Напряжение стабилизации (В)</label><input type="number" step="0.1" value="5.1" id="zen-Vz"></div>
       <div class="field"><label>Ток нагрузки (мА)</label><input type="number" value="20" id="zen-IL"></div>
@@ -1924,7 +1936,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-zen-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-zen-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="zen-result-val">630</div>
       <div class="result-unit">Ом</div>
       <div class="result-desc">СОПРОТИВЛЕНИЕ РЕЗИСТОРА</div>
@@ -1947,7 +1959,7 @@
   <!-- ====== PAGE: LED RESISTOR ====== -->
   <main class="content page" id="page-led">
     <div class="card input-card">
-      <div class="card-title">Калькулятор светодиода</div>
+      <h2 class="card-title">Калькулятор светодиода</h2>
       <div class="field"><label>Напряжение питания (В)</label><input type="number" step="0.1" value="12" id="led-V"></div>
       <div class="field"><label>Прямое напряжение светодиода (В)</label><input type="number" step="0.1" value="2.0" id="led-Vf"></div>
       <div class="field"><label>Ток светодиода (мА)</label><input type="number" value="20" id="led-I"></div>
@@ -1956,7 +1968,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-led-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-led-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="led-result-val">500</div>
       <div class="result-unit">Ом</div>
       <div class="result-desc">СОПРОТИВЛЕНИЕ РЕЗИСТОРА</div>
@@ -1977,7 +1989,7 @@
   <!-- ====== PAGE: RLC IMPEDANCE ====== -->
   <main class="content page" id="page-rlc">
     <div class="card input-card">
-      <div class="card-title">Импеданс цепи RLC</div>
+      <h2 class="card-title">Импеданс цепи RLC</h2>
       <div class="field"><label>Сопротивление R (Ом)</label><input type="number" value="100" id="rlc-R"></div>
       <div class="field"><label>Индуктивность L (мГн)</label><input type="number" step="0.1" value="10" id="rlc-L"></div>
       <div class="field"><label>Ёмкость C (мкФ)</label><input type="number" step="0.1" value="1" id="rlc-C"></div>
@@ -1986,7 +1998,7 @@
       <div class="btns"><button class="btn btn-primary" id="btn-rlc-calc">Рассчитать</button><button class="btn btn-ghost" id="btn-rlc-reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title">Результат</div>
+      <h3 class="card-title">Результат</h3>
       <div class="result-val" id="rlc-result-val">100.0</div>
       <div class="result-unit">Ом</div>
       <div class="result-desc">ПОЛНЫЙ ИМПЕДАНС</div>
@@ -2009,7 +2021,7 @@
   <!-- ====== PAGE: NE555 ====== -->
   <main class="content page" id="page-ne555">
     <div class="card" style="flex:1;display:flex;flex-direction:column">
-      <div class="card-title">Калькулятор NE555</div>
+      <h2 class="card-title">Калькулятор NE555</h2>
       <div class="sub-tabs">
         <div class="sub-tab active" data-sub="astable">Астабильный (генератор)</div>
         <div class="sub-tab" data-sub="mono555">Моностабильный (одновибратор)</div>
@@ -2018,7 +2030,7 @@
 
       <div class="sub-page active" id="sub-astable">
         <div class="card input-card">
-          <div class="card-title">Астабильный режим (генератор)</div>
+          <h3 class="card-title">Астабильный режим (генератор)</h3>
           <div class="field"><label>R1 (Ом)</label><input type="number" value="1000" id="ast-R1"></div>
           <div class="field"><label>R2 (Ом)</label><input type="number" value="10000" id="ast-R2"></div>
           <div class="field"><label>C (мкФ)</label><input type="number" step="0.1" value="0.1" id="ast-C"></div>
@@ -2033,7 +2045,7 @@
           </div>
         </div>
         <div class="card result-card">
-          <div class="card-title">Результат</div>
+          <h3 class="card-title">Результат</h3>
           <div class="result-val" id="ast-result-val">727</div>
           <div class="result-unit">Гц</div>
           <div class="result-desc">ЧАСТОТА ГЕНЕРАТОРА</div>
@@ -2055,7 +2067,7 @@
 
       <div class="sub-page" id="sub-mono555">
         <div class="card input-card">
-          <div class="card-title">Моностабильный режим (одновибратор)</div>
+          <h3 class="card-title">Моностабильный режим (одновибратор)</h3>
           <div class="field"><label>R (кОм)</label><input type="number" step="0.1" value="10" id="mono-R"></div>
           <div class="field"><label>C (мкФ)</label><input type="number" step="0.1" value="1" id="mono-C"></div>
           <div class="btns"><button class="btn btn-primary" id="btn-mono-calc">Рассчитать</button></div>
@@ -2065,7 +2077,7 @@
           </div>
         </div>
         <div class="card result-card">
-          <div class="card-title">Результат</div>
+          <h3 class="card-title">Результат</h3>
           <div class="result-val" id="mono-result-val">11.0</div>
           <div class="result-unit">мс</div>
           <div class="result-desc">ДЛИТЕЛЬНОСТЬ ИМПУЛЬСА</div>
@@ -2080,7 +2092,7 @@
       <!-- Sub: Circuits -->
       <div class="sub-page" id="sub-circuits555">
         <div class="card" style="flex:1;display:flex;flex-direction:column">
-          <div class="card-title">Готовые схемы на NE555</div>
+          <h3 class="card-title">Готовые схемы на NE555</h3>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
             <button class="btn btn-secondary btn-sm circuit-btn" data-circuit="555-astable">Мигающий LED</button>
             <button class="btn btn-secondary btn-sm circuit-btn" data-circuit="555-metronome">Метроном</button>
@@ -2098,7 +2110,7 @@
   <!-- ====== PAGE: OPERATIONAL AMPLIFIER ====== -->
   <main class="content page" id="page-opamp">
     <div class="card" style="flex:1;display:flex;flex-direction:column">
-      <div class="card-title">Операционные усилители</div>
+      <h2 class="card-title">Операционные усилители</h2>
       <div class="sub-tabs">
         <div class="sub-tab active" data-sub="invop">Инвертирующий</div>
         <div class="sub-tab" data-sub="noninvop">Неинвертирующий</div>
@@ -2109,14 +2121,14 @@
 
       <div class="sub-page active" id="sub-invop">
         <div class="card input-card">
-          <div class="card-title">Инвертирующий усилитель</div>
+          <h3 class="card-title">Инвертирующий усилитель</h3>
           <div class="field"><label>R1 (кОм)</label><input type="number" step="0.1" value="10" id="inv-R1"></div>
           <div class="field"><label>Rf (кОм)</label><input type="number" step="0.1" value="100" id="inv-Rf"></div>
           <div class="field"><label>Vin (В)</label><input type="number" step="0.1" value="0.5" id="inv-Vin"></div>
           <div class="btns"><button class="btn btn-primary" id="btn-inv-calc">Рассчитать</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title">Результат</div>
+          <h3 class="card-title">Результат</h3>
           <div class="result-val" id="inv-result-val">-5.00</div>
           <div class="result-unit">В</div>
           <div class="result-desc">ВЫХОДНОЕ НАПРЯЖЕНИЕ</div>
@@ -2134,14 +2146,14 @@
 
       <div class="sub-page" id="sub-noninvop">
         <div class="card input-card">
-          <div class="card-title">Неинвертирующий усилитель</div>
+          <h3 class="card-title">Неинвертирующий усилитель</h3>
           <div class="field"><label>R1 (кОм)</label><input type="number" step="0.1" value="10" id="ninv-R1"></div>
           <div class="field"><label>Rf (кОм)</label><input type="number" step="0.1" value="100" id="ninv-Rf"></div>
           <div class="field"><label>Vin (В)</label><input type="number" step="0.1" value="0.5" id="ninv-Vin"></div>
           <div class="btns"><button class="btn btn-primary" id="btn-ninv-calc">Рассчитать</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title">Результат</div>
+          <h3 class="card-title">Результат</h3>
           <div class="result-val" id="ninv-result-val">5.50</div>
           <div class="result-unit">В</div>
           <div class="result-desc">ВЫХОДНОЕ НАПРЯЖЕНИЕ</div>
@@ -2159,7 +2171,7 @@
 
       <div class="sub-page" id="sub-sumop">
         <div class="card input-card">
-          <div class="card-title">Сумматор (инвертирующий)</div>
+          <h3 class="card-title">Сумматор (инвертирующий)</h3>
           <div class="field"><label>R1 (кОм)</label><input type="number" step="0.1" value="10" id="sum-R1"></div>
           <div class="field"><label>R2 (кОм)</label><input type="number" step="0.1" value="10" id="sum-R2"></div>
           <div class="field"><label>Rf (кОм)</label><input type="number" step="0.1" value="10" id="sum-Rf"></div>
@@ -2168,7 +2180,7 @@
           <div class="btns"><button class="btn btn-primary" id="btn-sum-calc">Рассчитать</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title">Результат</div>
+          <h3 class="card-title">Результат</h3>
           <div class="result-val" id="sum-result-val">-3.00</div>
           <div class="result-unit">В</div>
           <div class="result-desc">ВЫХОДНОЕ НАПРЯЖЕНИЕ</div>
@@ -2182,7 +2194,7 @@
 
       <div class="sub-page" id="sub-diffop">
         <div class="card input-card">
-          <div class="card-title">Дифференциальный усилитель</div>
+          <h3 class="card-title">Дифференциальный усилитель</h3>
           <div class="field"><label>R1 (кОм)</label><input type="number" step="0.1" value="10" id="diff-R1"></div>
           <div class="field"><label>R2 (кОм)</label><input type="number" step="0.1" value="10" id="diff-R2"></div>
           <div class="field"><label>R3 (кОм)</label><input type="number" step="0.1" value="10" id="diff-R3"></div>
@@ -2192,7 +2204,7 @@
           <div class="btns"><button class="btn btn-primary" id="btn-diff-calc">Рассчитать</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title">Результат</div>
+          <h3 class="card-title">Результат</h3>
           <div class="result-val" id="diff-result-val">10.00</div>
           <div class="result-unit">В</div>
           <div class="result-desc">ВЫХОДНОЕ НАПРЯЖЕНИЕ</div>
@@ -2207,7 +2219,7 @@
       <!-- Sub: Op-Amp Circuits -->
       <div class="sub-page" id="sub-opamp-circuits">
         <div class="card" style="flex:1;display:flex;flex-direction:column">
-          <div class="card-title">Готовые схемы на ОУ</div>
+          <h3 class="card-title">Готовые схемы на ОУ</h3>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
             <button class="btn btn-secondary btn-sm circuit-btn" data-circuit="opamp-buffer">Повторитель</button>
             <button class="btn btn-secondary btn-sm circuit-btn" data-circuit="opamp-lpf">Фильтр НЧ</button>
@@ -2222,7 +2234,7 @@
   <!-- ====== PAGE: 7-SEGMENT DISPLAY ====== -->
   <main class="content page" id="page-7seg">
     <div class="card" style="flex:1;display:flex;flex-direction:column">
-      <div class="card-title">7-сегментный индикатор</div>
+      <h2 class="card-title">7-сегментный индикатор</h2>
       <div class="sub-tabs">
         <div class="sub-tab active" data-sub="seg7res">Резистор сегмента</div>
         <div class="sub-tab" data-sub="seg7dec">Декодер цифр</div>
@@ -2231,7 +2243,7 @@
 
       <div class="sub-page active" id="sub-seg7res">
         <div class="card input-card">
-          <div class="card-title">Расчёт резистора для сегмента</div>
+          <h3 class="card-title">Расчёт резистора для сегмента</h3>
           <div class="field"><label>Напряжение питания (В)</label><input type="number" step="0.1" value="5" id="s7r-V"></div>
           <div class="field"><label>Прямое напряжение LED (В)</label><input type="number" step="0.1" value="2.0" id="s7r-Vf"></div>
           <div class="field"><label>Ток сегмента (мА)</label><input type="number" value="10" id="s7r-I"></div>
@@ -2240,7 +2252,7 @@
           <div class="btns"><button class="btn btn-primary" id="btn-s7r-calc">Рассчитать</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title">Результат</div>
+          <h3 class="card-title">Результат</h3>
           <div class="result-val" id="s7r-result-val">300</div>
           <div class="result-unit">Ом</div>
           <div class="result-desc">СОПРОТИВЛЕНИЕ РЕЗИСТОРА</div>
@@ -2262,7 +2274,7 @@
 
       <div class="sub-page" id="sub-seg7dec">
         <div class="card input-card">
-          <div class="card-title">Декодер: цифра → сегменты</div>
+          <h3 class="card-title">Декодер: цифра → сегменты</h3>
           <div class="field"><label>Цифра или буква (0-9, A-F)</label><input type="text" value="8" id="s7d-char" maxlength="1" style="text-transform:uppercase"></div>
           <div class="field"><label>Тип индикатора</label><select id="s7d-type"><option value="ca">Общий анод (CA) — логика LOW</option><option value="cc">Общий катод (CC) — логика HIGH</option></select></div>
           <div class="btns"><button class="btn btn-primary" id="btn-s7d-calc">Декодировать</button></div>
@@ -2272,7 +2284,7 @@
           </div>
         </div>
         <div class="card result-card">
-          <div class="card-title">Результат</div>
+          <h3 class="card-title">Результат</h3>
           <div style="display:flex;align-items:center;gap:24px;margin-bottom:16px">
             <div style="font-family:var(--font-mono);font-size:64px;font-weight:700;color:var(--result);line-height:1" id="s7d-display">8</div>
             <div style="font-size:14px;color:var(--text-muted)" id="s7d-hex">HEX: 0x7F</div>
@@ -2300,7 +2312,7 @@
 
       <div class="sub-page" id="sub-seg7pin">
         <div class="card" style="flex:1">
-          <div class="card-title">Распиновка 7-сегментного индикатора</div>
+          <h3 class="card-title">Распиновка 7-сегментного индикатора</h3>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
             <div>
               <h3 style="color:var(--accent);margin-bottom:12px">14-пиновый корпус (DIP-14)</h3>
@@ -2363,7 +2375,7 @@ COM2 = пин 1
   <!-- ====== PAGE: KИПиА ====== -->
   <main class="content page" id="page-kipia">
     <div class="card" style="flex:1;display:flex;flex-direction:column">
-      <div class="card-title" data-i18n="kipia.title">КИПиА — Расчёты</div>
+      <h2 class="card-title" data-i18n="kipia.title">КИПиА — Расчёты</h2>
       <div class="sub-tabs">
         <div class="sub-tab active" data-sub="currentloop" data-i18n="kipia.tab_loop">Токовая петля</div>
         <div class="sub-tab" data-sub="scaling" data-i18n="kipia.tab_scaling">Масштабирование</div>
@@ -2375,7 +2387,7 @@ COM2 = пин 1
       <!-- Sub: Current Loop -->
       <div class="sub-page active" id="sub-currentloop">
         <div class="card input-card">
-          <div class="card-title" data-i18n="kipia.loop_title">Токовая петля 4–20 мА</div>
+          <h3 class="card-title" data-i18n="kipia.loop_title">Токовая петля 4–20 мА</h3>
           <div class="field"><label data-i18n="kipia.supply_voltage">Напряжение питания (В)</label><input type="number" value="24" id="cl-V"></div>
           <div class="field"><label data-i18n="kipia.min_voltage">Мин. напряжение прибора (В)</label><input type="number" value="10" id="cl-Vmin"></div>
           <div class="field"><label data-i18n="kipia.r_wires">R проводов (Ом)</label><input type="number" value="20" id="cl-Rw"></div>
@@ -2384,7 +2396,7 @@ COM2 = пин 1
           <div class="btns"><button class="btn btn-primary" id="btn-cl-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-cl-reset" data-i18n="common.reset">Сбросить</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title" data-i18n="common.result">Результат</div>
+          <h3 class="card-title" data-i18n="common.result">Результат</h3>
           <div class="result-val" id="cl-loop-result-val" style="color:var(--result)">✓ Петля валидна</div>
           <div class="grid">
             <div class="detail"><div class="lbl" data-i18n="kipia.r_max">МАКС. R</div><div class="val" id="cl-Rmax">700 Ом</div></div>
@@ -2398,7 +2410,7 @@ COM2 = пин 1
       <!-- Sub: Scaling -->
       <div class="sub-page" id="sub-scaling">
         <div class="card input-card">
-          <div class="card-title" data-i18n="kipia.scaling_title">Масштабирование сигнала</div>
+          <h3 class="card-title" data-i18n="kipia.scaling_title">Масштабирование сигнала</h3>
           <div class="field"><label data-i18n="kipia.signal">Сигнал (мА)</label><input type="number" value="12" id="sc-signal"></div>
           <div class="row">
             <div class="field"><label data-i18n="kipia.sig_min">Мин. сигнал (мА)</label><input type="number" value="4" id="sc-Smin"></div>
@@ -2411,7 +2423,7 @@ COM2 = пин 1
           <div class="btns"><button class="btn btn-primary" id="btn-sc-scale-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-sc-scale-reset" data-i18n="common.reset">Сбросить</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title" data-i18n="common.result">Результат</div>
+          <h3 class="card-title" data-i18n="common.result">Результат</h3>
           <div class="result-val" id="sc-scale-val">50.00</div>
           <div class="result-unit" data-i18n="kipia.process_units">единиц процесса</div>
           <div class="result-desc" id="sc-scale-pct">50.0 %</div>
@@ -2426,14 +2438,14 @@ COM2 = пин 1
       <!-- Sub: RTD -->
       <div class="sub-page" id="sub-rtd">
         <div class="card input-card">
-          <div class="card-title" data-i18n="kipia.rtd_title">RTD Pt100 / Pt500 / Pt1000</div>
+          <h3 class="card-title" data-i18n="kipia.rtd_title">RTD Pt100 / Pt500 / Pt1000</h3>
           <div class="field"><label data-i18n="kipia.mode">Режим</label><select id="rtd-mode"><option value="t2r" data-i18n="kipia.temp_to_res">Температура → Сопротивление</option><option value="r2t" data-i18n="kipia.res_to_temp">Сопротивление → Температура</option></select></div>
           <div class="field"><label data-i18n="kipia.value">Значение</label><input type="number" step="0.01" value="100" id="rtd-val"></div>
           <div class="field"><label data-i18n="kipia.sensor_type">Тип датчика</label><select id="rtd-type"><option value="Pt100" selected>Pt100 (R0=100 Ом)</option><option value="Pt500">Pt500</option><option value="Pt1000">Pt1000</option></select></div>
           <div class="btns"><button class="btn btn-primary" id="btn-rtd-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-rtd-reset" data-i18n="common.reset">Сбросить</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title" data-i18n="common.result">Результат</div>
+          <h3 class="card-title" data-i18n="common.result">Результат</h3>
           <div class="result-val" id="rtd-result-val">100.00 °C</div>
           <div class="result-unit" id="rtd-result-unit">→ 138.506 Ом</div>
           <div class="formula-panel">
@@ -2447,13 +2459,13 @@ COM2 = пин 1
       <!-- Sub: PID -->
       <div class="sub-page" id="sub-pid">
         <div class="card input-card">
-          <div class="card-title" data-i18n="kipia.pid_title">Настройка ПИД</div>
+          <h3 class="card-title" data-i18n="kipia.pid_title">Настройка ПИД</h3>
           <div class="field"><label data-i18n="kipia.ku">Критическое усиление Ku</label><input type="number" step="0.1" value="2.0" id="pid-Ku"></div>
           <div class="field"><label data-i18n="kipia.tu">Критический период Tu (с)</label><input type="number" step="0.1" value="10" id="pid-Tu"></div>
           <div class="btns"><button class="btn btn-primary" id="btn-pid-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-pid-reset" data-i18n="common.reset">Сбросить</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title" data-i18n="common.result">Результат</div>
+          <h3 class="card-title" data-i18n="common.result">Результат</h3>
           <div class="result-val" id="pid-result-val">Kp = 1.200</div>
           <div class="grid">
             <div class="detail"><div class="lbl">Ti (с)</div><div class="val" id="pid-Ti">5.00 с</div></div>
@@ -2472,14 +2484,14 @@ COM2 = пин 1
       <!-- Sub: Accuracy -->
       <div class="sub-page" id="sub-accuracy">
         <div class="card input-card">
-          <div class="card-title" data-i18n="kipia.accuracy_title">Погрешности и разрядность</div>
+          <h3 class="card-title" data-i18n="kipia.accuracy_title">Погрешности и разрядность</h3>
           <div class="field"><label data-i18n="kipia.accuracy_class">Класс точности (%)</label><input type="number" step="0.1" value="0.5" id="acc-cl"></div>
           <div class="field"><label data-i18n="kipia.range">Диапазон</label><input type="number" value="100" id="acc-range"></div>
           <div class="field"><label data-i18n="kipia.adc_bits">Разрядность АЦП</label><input type="number" value="12" id="acc-bits"></div>
           <div class="btns"><button class="btn btn-primary" id="btn-acc-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-acc-reset" data-i18n="common.reset">Сбросить</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title" data-i18n="common.result">Результат</div>
+          <h3 class="card-title" data-i18n="common.result">Результат</h3>
           <div class="result-val" id="acc-result-val">±0.500</div>
           <div class="grid">
             <div class="detail"><div class="lbl" data-i18n="kipia.abs_error">АБС. ПОГРЕШНОСТЬ</div><div class="val" id="acc-abs">0.500</div></div>
@@ -2493,7 +2505,7 @@ COM2 = пин 1
   <!-- ====== PAGE: DERATING ====== -->
   <main class="content page" id="page-derating">
     <div class="card input-card">
-      <div class="card-title" data-i18n="derating.title">Кабельный дерейтинг</div>
+      <h2 class="card-title" data-i18n="derating.title">Кабельный дерейтинг</h2>
       <div class="field"><label data-i18n="derating.base_current">Базовый ток кабеля (А)</label><input type="number" value="50" id="dr-I"></div>
       <div class="field"><label data-i18n="derating.ambient_temp">Температура окружения (°C)</label><input type="number" value="40" id="dr-T"></div>
       <div class="field"><label data-i18n="derating.cable_count">Число кабелей в пучке</label><input type="number" value="3" id="dr-N"></div>
@@ -2501,7 +2513,7 @@ COM2 = пин 1
       <div class="btns"><button class="btn btn-primary" id="btn-dr-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-dr-reset" data-i18n="common.reset">Сбросить</button></div>
     </div>
     <div class="card result-card">
-      <div class="card-title" data-i18n="common.result">Результат</div>
+      <h3 class="card-title" data-i18n="common.result">Результат</h3>
       <div class="result-val" id="dr-result-val">36.0</div>
       <div class="result-unit">А</div>
       <div class="result-desc" data-i18n="derating.desc">ДОПУСТИМЫЙ ТОК</div>
@@ -2522,7 +2534,7 @@ COM2 = пин 1
   <!-- ====== PAGE: LOAD PANEL ====== -->
   <main class="content page" id="page-loadpanel">
     <div class="card" style="flex:1;display:flex;flex-direction:column">
-      <div class="card-title" data-i18n="loadpanel.title">Щит нагрузок</div>
+      <h2 class="card-title" data-i18n="loadpanel.title">Щит нагрузок</h2>
       <div class="table-scroll">
         <table id="load-table">
           <thead><tr><th data-i18n="loadpanel.group">Группа</th><th data-i18n="loadpanel.power_kW">P (кВт)</th><th data-i18n="loadpanel.cos_phi">cos φ</th><th data-i18n="loadpanel.demand">Kс</th><th data-i18n="loadpanel.phase">Фаза</th></tr></thead>
@@ -2561,7 +2573,7 @@ COM2 = пин 1
   <!-- ====== PAGE: PNEUMATICS ====== -->
   <main class="content page" id="page-pneumatics">
     <div class="card" style="flex:1;display:flex;flex-direction:column">
-      <div class="card-title" data-i18n="pneumatics.title">Пневматика</div>
+      <h2 class="card-title" data-i18n="pneumatics.title">Пневматика</h2>
       <div class="sub-tabs">
         <div class="sub-tab active" data-sub="pflow" data-i18n="pneumatics.tab_flow">Расход воздуха</div>
         <div class="sub-tab" data-sub="pcyl" data-i18n="pneumatics.tab_cylinder">Пневмоцилиндр</div>
@@ -2570,7 +2582,7 @@ COM2 = пин 1
 
       <div class="sub-page active" id="sub-pflow">
         <div class="card input-card">
-          <div class="card-title" data-i18n="pneumatics.flow_title">Расход сжатого воздуха</div>
+          <h3 class="card-title" data-i18n="pneumatics.flow_title">Расход сжатого воздуха</h3>
           <div class="field"><label data-i18n="pneumatics.devices_count">Число потребителей</label><input type="number" value="5" id="pf-N"></div>
           <div class="field"><label data-i18n="pneumatics.device_flow">Расход 1 потребителя (л/мин)</label><input type="number" value="100" id="pf-q"></div>
           <div class="field"><label data-i18n="pneumatics.duty_cycle">Коэфф. использования (0–1)</label><input type="number" step="0.1" value="0.6" id="pf-k"></div>
@@ -2578,7 +2590,7 @@ COM2 = пин 1
           <div class="btns"><button class="btn btn-primary" id="btn-pf-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-pf-reset" data-i18n="common.reset">Сбросить</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title" data-i18n="common.result">Результат</div>
+          <h3 class="card-title" data-i18n="common.result">Результат</h3>
           <div class="result-val" id="pf-result-val">360</div>
           <div class="result-unit">л/мин</div>
           <div class="result-desc" data-i18n="pneumatics.total_flow">СУММАРНЫЙ РАСХОД</div>
@@ -2596,7 +2608,7 @@ COM2 = пин 1
 
       <div class="sub-page" id="sub-pcyl">
         <div class="card input-card">
-          <div class="card-title" data-i18n="pneumatics.cyl_title">Пневмоцилиндр</div>
+          <h3 class="card-title" data-i18n="pneumatics.cyl_title">Пневмоцилиндр</h3>
           <div class="field"><label data-i18n="pneumatics.bore_diameter">Диаметр поршня (мм)</label><input type="number" value="50" id="pc-D"></div>
           <div class="field"><label data-i18n="pneumatics.rod_diameter">Диаметр штока (мм)</label><input type="number" value="20" id="pc-d"></div>
           <div class="field"><label data-i18n="pneumatics.stroke">Ход (мм)</label><input type="number" value="200" id="pc-L"></div>
@@ -2605,7 +2617,7 @@ COM2 = пин 1
           <div class="btns"><button class="btn btn-primary" id="btn-pc-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-pc-reset" data-i18n="common.reset">Сбросить</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title" data-i18n="common.result">Результат</div>
+          <h3 class="card-title" data-i18n="common.result">Результат</h3>
           <div class="result-val" id="pc-result-val">1178</div>
           <div class="result-unit">Н</div>
           <div class="result-desc" data-i18n="pneumatics.force_forward">СИЛА (ВПЕРЁД)</div>
@@ -2625,7 +2637,7 @@ COM2 = пин 1
 
       <div class="sub-page" id="sub-pcomp">
         <div class="card input-card">
-          <div class="card-title" data-i18n="pneumatics.comp_title">Подбор компрессора</div>
+          <h3 class="card-title" data-i18n="pneumatics.comp_title">Подбор компрессора</h3>
           <div class="field"><label data-i18n="pneumatics.required_flow">Требуемый расход (л/мин)</label><input type="number" value="500" id="pcomp-Q"></div>
           <div class="field"><label data-i18n="pneumatics.required_pressure">Требуемое давление (бар)</label><input type="number" value="7" id="pcomp-P"></div>
           <div class="field"><label data-i18n="pneumatics.reserve_factor">Коэфф. запаса</label><input type="number" step="0.1" value="1.3" id="pcomp-k"></div>
@@ -2633,7 +2645,7 @@ COM2 = пин 1
           <div class="btns"><button class="btn btn-primary" id="btn-pcomp-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-pcomp-reset" data-i18n="common.reset">Сбросить</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title" data-i18n="common.result">Результат</div>
+          <h3 class="card-title" data-i18n="common.result">Результат</h3>
           <div class="result-val" id="pcomp-result-val">650</div>
           <div class="result-unit">л/мин</div>
           <div class="result-desc" data-i18n="pneumatics.comp_flow">РАСХОД КОМПРЕССОРА</div>
@@ -2654,7 +2666,7 @@ COM2 = пин 1
   <!-- ====== PAGE: HYDRAULICS ====== -->
   <main class="content page" id="page-hydraulics">
     <div class="card" style="flex:1;display:flex;flex-direction:column">
-      <div class="card-title" data-i18n="hydraulics.title">Гидравлика</div>
+      <h2 class="card-title" data-i18n="hydraulics.title">Гидравлика</h2>
       <div class="sub-tabs">
         <div class="sub-tab active" data-sub="hcyl" data-i18n="hydraulics.tab_cylinder">Гидроцилиндр</div>
         <div class="sub-tab" data-sub="hpump" data-i18n="hydraulics.tab_pump">Гидронасос</div>
@@ -2663,7 +2675,7 @@ COM2 = пин 1
 
       <div class="sub-page active" id="sub-hcyl">
         <div class="card input-card">
-          <div class="card-title" data-i18n="hydraulics.cyl_title">Гидроцилиндр</div>
+          <h3 class="card-title" data-i18n="hydraulics.cyl_title">Гидроцилиндр</h3>
           <div class="field"><label data-i18n="hydraulics.bore">Диаметр поршня (мм)</label><input type="number" value="80" id="hc-D"></div>
           <div class="field"><label data-i18n="hydraulics.rod">Диаметр штока (мм)</label><input type="number" value="40" id="hc-d"></div>
           <div class="field"><label data-i18n="hydraulics.stroke">Ход (мм)</label><input type="number" value="500" id="hc-L"></div>
@@ -2673,7 +2685,7 @@ COM2 = пин 1
           <div class="btns"><button class="btn btn-primary" id="btn-hc-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-hc-reset" data-i18n="common.reset">Сбросить</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title" data-i18n="common.result">Результат</div>
+          <h3 class="card-title" data-i18n="common.result">Результат</h3>
           <div class="result-val" id="hc-result-val">76.4</div>
           <div class="result-unit">кН</div>
           <div class="result-desc" data-i18n="hydraulics.force_push">СИЛА (ТОЛКАНИЕ)</div>
@@ -2693,7 +2705,7 @@ COM2 = пин 1
 
       <div class="sub-page" id="sub-hpump">
         <div class="card input-card">
-          <div class="card-title" data-i18n="hydraulics.pump_title">Подбор гидронасоса</div>
+          <h3 class="card-title" data-i18n="hydraulics.pump_title">Подбор гидронасоса</h3>
           <div class="field"><label data-i18n="hydraulics.required_flow">Требуемый расход (л/мин)</label><input type="number" value="30" id="hp-Q"></div>
           <div class="field"><label data-i18n="hydraulics.required_pressure">Рабочее давление (бар)</label><input type="number" value="160" id="hp-P"></div>
           <div class="field"><label data-i18n="hydraulics.pump_efficiency">КПД насоса</label><input type="number" step="0.01" value="0.9" id="hp-eta"></div>
@@ -2701,7 +2713,7 @@ COM2 = пин 1
           <div class="btns"><button class="btn btn-primary" id="btn-hp-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-hp-reset" data-i18n="common.reset">Сбросить</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title" data-i18n="common.result">Результат</div>
+          <h3 class="card-title" data-i18n="common.result">Результат</h3>
           <div class="result-val" id="hp-result-val">9.7</div>
           <div class="result-unit">кВт</div>
           <div class="result-desc" data-i18n="hydraulics.motor_power">МОЩНОСТЬ ДВИГАТЕЛЯ</div>
@@ -2719,7 +2731,7 @@ COM2 = пин 1
 
       <div class="sub-page" id="sub-hpipe">
         <div class="card input-card">
-          <div class="card-title" data-i18n="hydraulics.pipe_title">Потери давления в трубе</div>
+          <h3 class="card-title" data-i18n="hydraulics.pipe_title">Потери давления в трубе</h3>
           <div class="field"><label data-i18n="hydraulics.pipe_length">Длина трубы (м)</label><input type="number" value="10" id="hpp-L"></div>
           <div class="field"><label data-i18n="hydraulics.pipe_diameter">Диаметр трубы (мм)</label><input type="number" value="16" id="hpp-D"></div>
           <div class="field"><label data-i18n="hydraulics.oil_flow">Расход масла (л/мин)</label><input type="number" value="20" id="hpp-Q"></div>
@@ -2727,7 +2739,7 @@ COM2 = пин 1
           <div class="btns"><button class="btn btn-primary" id="btn-hpp-calc" data-i18n="common.calculate">Рассчитать</button><button class="btn btn-ghost" id="btn-hpp-reset" data-i18n="common.reset">Сбросить</button></div>
         </div>
         <div class="card result-card">
-          <div class="card-title" data-i18n="common.result">Результат</div>
+          <h3 class="card-title" data-i18n="common.result">Результат</h3>
           <div class="result-val" id="hpp-result-val">2.8</div>
           <div class="result-unit">бар</div>
           <div class="result-desc" data-i18n="hydraulics.pressure_loss">ПОТЕРЯ ДАВЛЕНИЯ</div>
@@ -2750,7 +2762,7 @@ COM2 = пин 1
   <!-- ====== PAGE: HELP ====== -->
   <main class="content page" id="page-help">
     <div class="card" style="flex:1;max-width:800px">
-      <div class="card-title">Справка по калькуляторам</div>
+      <h2 class="card-title">Справка по калькуляторам</h2>
       <p style="color:var(--text-muted);margin-bottom:24px;font-size:14px;line-height:1.6">Здесь собраны краткие объяснения каждого калькулятора — что он считает и зачем это нужно. Если остались вопросы, напишите в Telegram: <a href="https://t.me/Electro_Calc" target="_blank" style="color:var(--accent)">@Electro_Calc</a></p>
 
       <div style="margin-bottom:24px">
@@ -2920,7 +2932,7 @@ COM2 = пин 1
   <!-- ====== PAGE: DEVELOPER ====== -->
   <main class="content page" id="page-developer">
     <div class="card" style="flex:1;max-width:700px">
-      <div class="card-title" data-i18n="developer.title">О программе</div>
+      <h2 class="card-title" data-i18n="developer.title">О программе</h2>
       <div class="about-grid">
         <div class="about-card">
           <div class="about-icon">&#x1F3E2;</div>
@@ -2982,7 +2994,7 @@ COM2 = пин 1
   <!-- ====== PAGE: DONATE ====== -->
   <main class="content page" id="page-donate">
     <div class="card" style="flex:1;max-width:700px">
-      <div class="card-title" data-i18n="donate.title">Поддержать проект</div>
+      <h2 class="card-title" data-i18n="donate.title">Поддержать проект</h2>
       <p style="color:var(--text-muted);margin-bottom:24px" data-i18n="donate.desc">Если EngiCalc оказался полезен, вы можете поддержать его развитие.</p>
       <div style="display:flex;flex-direction:column;gap:20px">
         <div style="background:var(--bg-input);border-radius:var(--r-input);padding:16px">
@@ -2998,7 +3010,7 @@ COM2 = пин 1
         <div style="background:var(--bg-input);border-radius:var(--r-input);padding:16px">
           <h3 style="color:var(--accent);margin-bottom:8px">3. QR-код</h3>
           <p style="color:var(--text-muted);font-size:13px" data-i18n="donate.qr">Считайте QR-код с помощью приложения мобильного банкинга</p>
-          <img src="assets/epos_12316-1-3.png" alt="QR EPOS 12316-1-3" style="width:180px;height:auto;border-radius:var(--r-input);margin-top:8px">
+          <img src="assets/epos_12316-1-3.png" alt="QR-код для оплаты через ЕРИП, код услуги 12316-1-3" width="360" height="600" loading="lazy" decoding="async" style="width:180px;height:auto;border-radius:var(--r-input);margin-top:8px">
         </div>
       </div>
     </div>

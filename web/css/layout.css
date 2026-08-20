@@ -77,7 +77,7 @@
   padding:0 var(--sp-5);gap:var(--sp-4);
   flex-shrink:0;
 }
-.logo{font-size:20px;font-weight:700;white-space:nowrap}
+.logo{font-size:20px;font-weight:700;white-space:nowrap;margin:0;line-height:1}
 .logo .e{color:var(--text)}.logo .c{color:var(--accent)}
 .breadcrumb{font-size:13px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar-right{margin-left:auto;display:flex;gap:var(--sp-2);align-items:center}

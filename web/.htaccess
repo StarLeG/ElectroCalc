@@ -22,3 +22,35 @@ AddDefaultCharset UTF-8
     ExpiresByType application/javascript "access plus 1 week"
     ExpiresByType image/svg+xml "access plus 1 month"
 </IfModule>
+
+# Канонический адрес: один сайт — один адрес.
+# До этого http://, www. и /index.html отвечали кодом 200 наравне с каноническим
+# адресом, то есть для поиска сайт существовал в четырёх экземплярах.
+# На чистом nginx этот файл игнорируется — тогда те же правила заводятся
+# в панели управления хостингом (Domains -> Redirects).
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # http -> https
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteRule ^ https://engicalc.electroman.by%{REQUEST_URI} [R=301,L]
+
+    # www -> без www
+    RewriteCond %{HTTP_HOST} ^www\. [NC]
+    RewriteRule ^ https://engicalc.electroman.by%{REQUEST_URI} [R=301,L]
+
+    # /index.html -> /
+    # Условие смотрит на исходную строку запроса: без него правило зациклится,
+    # ведь сервер сам отдаёт index.html как индекс каталога.
+    RewriteCond %{THE_REQUEST} \s/+index\.html[\s?] [NC]
+    RewriteRule ^index\.html$ / [R=301,L]
+</IfModule>
+
+# HSTS начинаем с суток. Убедившись, что весь сайт открывается по https без
+# исключений, срок можно поднять до года (max-age=31536000). Раньше времени
+# длинный срок ставить не стоит: браузер запомнит правило, и откатить его
+# быстро не получится.
+<IfModule mod_headers.c>
+    Header always set Strict-Transport-Security "max-age=86400"
+</IfModule>
