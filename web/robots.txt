@@ -1,5 +1,11 @@
 User-agent: *
 Allow: /
+# Иконки открыты роботам намеренно: по ним поиск показывает фавиконку сайта,
+# а соцсети — картинку предпросмотра (og:image). Остальное в /assets/ закрыто:
+# там платёжный QR, которому в выдаче делать нечего.
+Allow: /assets/icon-192.png
+Allow: /assets/og-cover.png
+Allow: /assets/icon-512.png
 Disallow: /assets/
 
 Sitemap: https://engicalc.electroman.by/sitemap.xml

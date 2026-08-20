@@ -24,7 +24,10 @@ param(
     [string]$LocalRoot  = "$PSScriptRoot\web",
     # Не выгружать на прод (пути относительно web/, разделитель — прямой слэш).
     # Эти же файлы удаляются с сервера, иначе ранее залитая копия осталась бы висеть.
-    [string[]]$Exclude  = @('tests.html')
+    # assets/favicon.svg переехал в корень (/favicon.svg): каталог /assets/ закрыт
+    # в robots.txt, и робот не мог загрузить оттуда фавиконку. Старую копию надо
+    # снять с публикации, иначе она останется висеть на сервере после переезда.
+    [string[]]$Exclude  = @('tests.html', 'assets/favicon.svg')
 )
 
 $ErrorActionPreference = 'Stop'
