@@ -90,3 +90,8 @@ web/index.html
 web/*/index.html
 web/404.html
 web/sitemap.xml
+
+# ===== Тесты веб-версии =====
+node_modules/
+test-results/
+playwright-report/
